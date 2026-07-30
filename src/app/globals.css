@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary-50: #eefdf6;
+  --color-primary-100: #d6fae7;
+  --color-primary-200: #b0f4d1;
+  --color-primary-300: #76e8b0;
+  --color-primary-400: #3cd48c;
+  --color-primary-500: #10b981; /* Brand Jade Green */
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-800: #065f46;
+  --color-primary-900: #064e3b;
+
+  --color-earth-50: #fafaf8;
+  --color-earth-100: #f4f4ef;
+  --color-earth-200: #e9e9df;
+  --color-earth-300: #d4d4c5;
+  --color-earth-400: #a4a491;
+  --color-earth-500: #7e7e6c; /* Clay/Earth Warm Gray */
+  --color-earth-600: #626252;
+  --color-earth-700: #4e4e41;
+  --color-earth-800: #33332a;
+  --color-earth-900: #1c1c17;
+
+  --color-accent-50: #fefbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-500: #f59e0b; /* Sunshine Gold */
+  --color-accent-600: #d97706;
+
+  --animate-fade-in: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-up: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-scale-up: scale-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-glow-pulse: glow-pulse 3s infinite ease-in-out;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes scale-up {
+    from { transform: scale(0.96); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 15px -3px rgba(16, 185, 129, 0.1); }
+    50% { box-shadow: 0 0 25px 2px rgba(16, 185, 129, 0.25); }
+  }
+}
+
+:root {
+  --background: #f7f9f6;
+  --foreground: #141b18;
+  --card: #ffffff;
+  --card-foreground: #141b18;
+  --border: #e3e8e4;
+  --ring: #10b981;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-headline: 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+:root.dark {
+  --background: #090e0c;
+  --foreground: #f0f4f1;
+  --card: #111714;
+  --card-foreground: #f0f4f1;
+  --border: #1d2621;
+  --ring: #10b981;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+
+h4, h5, h6 {
+  font-family: var(--font-headline), system-ui, sans-serif;
+}
+
+/* Glassmorphism Classes */
+.vlink-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(16, 185, 129, 0.08);
+}
+
+.dark .vlink-glass {
+  background: rgba(17, 23, 20, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(16, 185, 129, 0.06);
+}
+
+/* Glow Effect */
+.vlink-glow {
+  animation: glow-pulse 3s infinite ease-in-out;
+}
+
+/* Elevated Hover Cards */
+.vlink-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.vlink-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(10, 185, 129, 0.3);
+  box-shadow: 0 16px 32px -8px rgba(16, 185, 129, 0.06);
+}
+
+.dark .vlink-card:hover {
+  box-shadow: 0 16px 32px -8px rgba(16, 185, 129, 0.12);
+}
+
+/* Modern Rounded Controls */
+.vlink-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+.vlink-input:focus {
+  background: var(--card);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.dark .vlink-input {
+  background: rgba(17, 23, 20, 0.5);
+}
+.dark .vlink-input:focus {
+  background: var(--card);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ring);
+}
