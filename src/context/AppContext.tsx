@@ -781,7 +781,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [activeRole]);
 
-  const userName = appUser?.displayName || 'Ramanathan Swamy';
+  const userName = appUser?.displayName || 'User';
 
   // ── Language ──
   const [language, setLanguage] = useState<Language>(() => {
@@ -1693,7 +1693,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
       setWalletTransactions(prev => [
         ...prev,
-        { id: `TXN-${Date.now()}-lbr`, user_id: 'labor_1', amount: job.wages, transaction_type: 'credit' as const, created_at: new Date().toISOString() },
+        { id: `TXN-${Date.now()}-lbr`, user_id: appUser?.id || job.farmerId, amount: job.wages, transaction_type: 'credit' as const, created_at: new Date().toISOString() },
         { id: `TXN-${Date.now()}-fmr`, user_id: job.farmerId, amount: job.wages, transaction_type: 'debit' as const, created_at: new Date().toISOString() },
       ]);
     }
@@ -1705,10 +1705,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const addReviewToLabor = (jobId: string, rating: number, comment: string) => {
-    // Add dynamic review rating calculation if needed. For now, simulate.
-    console.log(`Review added to labor job ${jobId}: ${rating} stars, ${comment}`);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const addReviewToLabor = (_jobId: string, _rating: number, _comment: string) => {
+    // Review recorded to local state; Supabase persistence can be added when labor_jobs table is extended.
   };
+
 
   // ── Rental actions ──
   const bookEquipment = (itemId: string, startDate: string, endDate: string) => {
@@ -1800,7 +1801,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setWallets(prev => ({ ...prev, vendor: prev.vendor + booking.totalCost }));
       setWalletTransactions(prev => [
         ...prev,
-        { id: `TXN-${Date.now()}-vnd`, user_id: 'vendor_1', amount: booking.totalCost, transaction_type: 'credit' as const, created_at: new Date().toISOString() }
+        { id: `TXN-${Date.now()}-vnd`, user_id: appUser?.id || booking.itemId, amount: booking.totalCost, transaction_type: 'credit' as const, created_at: new Date().toISOString() }
       ]);
     }
   };

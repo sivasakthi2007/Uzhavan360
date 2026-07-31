@@ -443,5 +443,13 @@
   "support_tab": "வாடிக்கையாளர் சேவை",
   "nav_short_support": "உதவி",
   "support_title": "வாடிக்கையாளர் சேவை",
-  "support_desc": "உதவி மையம், FAQ, டிக்கெட்கள் & கருத்து"
+  "support_desc": "உதவி மையம், FAQ, டிக்கெட்கள் & கருத்து",
+
+  "or_sign_in_with": "அல்லது இதன் மூலம் உள்நுழைக",
+  "enter_otp_sent_to": "OTP அனுப்பப்பட்டது",
+  "booting_workspace": "பணியிடம் தொடங்குகிறது...",
+  "sync_status_online": "இணைக்கப்பட்டது",
+  "sync_status_offline": "உள்ளூர் தரவு",
+  "platform_tagline": "விவசாய கிளவுட் தளம்",
+  "change_contact": "அலைபேசி / மின்னஞ்சலை மாற்று"
 }

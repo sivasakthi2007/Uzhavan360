@@ -443,5 +443,13 @@
   "support_tab": "Customer Care",
   "nav_short_support": "Support",
   "support_title": "Customer Care",
-  "support_desc": "Help center, FAQ, tickets & feedback"
+  "support_desc": "Help center, FAQ, tickets & feedback",
+
+  "or_sign_in_with": "or sign in with",
+  "enter_otp_sent_to": "OTP sent to",
+  "booting_workspace": "Booting workspace...",
+  "sync_status_online": "ONLINE",
+  "sync_status_offline": "OFFLINE",
+  "platform_tagline": "Agri Cloud Platform",
+  "change_contact": "Change Phone / Email"
 }

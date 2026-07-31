@@ -21,7 +21,7 @@ export default function RentalsBoard() {
   const { 
     rentalItems, rentalBookings, addRentalItem, bookEquipment, 
     cancelRentalBooking, acceptRentalBooking, startRentalBooking, 
-    completeRentalBooking, deleteRentalItem, updateRentalItem, wallets, userName, t
+    completeRentalBooking, deleteRentalItem, updateRentalItem, wallets, userName, t, user
   } = useApp();
 
   // Mode: 'renter' (farmer looking for gear) vs 'owner' (equipment fleet supplier)
@@ -99,23 +99,23 @@ export default function RentalsBoard() {
     return results;
   }, [processedGear, searchQuery]);
 
-  // Filter owner's listings (mocking owner owns items listed by Rajan Agri Rentals/vendor_self/vendor_1)
+  // Filter owner's listings (items published by the currently logged-in vendor/farmer)
   const ownerListings = useMemo(() => {
-    return rentalItems.filter(item => item.vendorId === 'vendor_1' || item.vendorId === 'vendor_self');
-  }, [rentalItems]);
+    return rentalItems.filter(item => item.vendorId === user?.id);
+  }, [rentalItems, user?.id]);
 
   // Filter bookings renter placed
   const renterBookings = useMemo(() => {
-    return rentalBookings.filter(b => b.renterId === 'farmer_1');
-  }, [rentalBookings]);
+    return rentalBookings.filter(b => b.renterId === user?.id);
+  }, [rentalBookings, user?.id]);
 
   // Filter requests owner received
   const ownerBookingRequests = useMemo(() => {
     return rentalBookings.filter(b => {
       const item = rentalItems.find(r => r.id === b.itemId);
-      return item && (item.vendorId === 'vendor_1' || item.vendorId === 'vendor_self');
+      return item && item.vendorId === user?.id;
     });
-  }, [rentalBookings, rentalItems]);
+  }, [rentalBookings, rentalItems, user?.id]);
 
   // Owner earnings metrics
   const ownerStats = useMemo(() => {

@@ -203,7 +203,7 @@ function SignupContent() {
               </div>
               <div className="flex items-center justify-center gap-2 text-xs text-primary-500 font-mono font-bold">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>BOOTING WORKSPACE...</span>
+                <span>{t('booting_workspace')}</span>
               </div>
             </div>
           ) : (
@@ -221,7 +221,7 @@ function SignupContent() {
                 <p className="text-xs text-earth-500 dark:text-earth-450 leading-relaxed font-semibold">
                   {step === 'request'
                     ? t('request_otp')
-                    : `${t('enter_otp')} to ${inputVal}`}
+                    : `${t('enter_otp_sent_to')}: ${inputVal}`}
                 </p>
               </div>
 
@@ -280,7 +280,7 @@ function SignupContent() {
                     <div className="relative flex py-1 items-center">
                        <div className="flex-grow border-t border-earth-200/50 dark:border-primary-950/20"></div>
                        <span className="flex-shrink mx-4 text-[9px] font-mono font-black uppercase tracking-widest text-earth-450">
-                         or sign in with
+                         {t('or_sign_in_with')}
                        </span>
                        <div className="flex-grow border-t border-earth-200/50 dark:border-primary-950/20"></div>
                     </div>
@@ -357,7 +357,7 @@ function SignupContent() {
                       }}
                       className="text-[10px] font-mono font-black uppercase tracking-widest text-primary-500 hover:text-primary-600 border-0 bg-transparent cursor-pointer"
                     >
-                      {language === 'ta' ? 'அலைபேசி எண் / மின்னஞ்சலை மாற்று' : 'Change Phone Number / Email'}
+                      {t('change_contact')}
                     </button>
                   </div>
                 </form>

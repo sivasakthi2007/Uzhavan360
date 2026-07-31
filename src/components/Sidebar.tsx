@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export default function Sidebar() {
-  const { userName, logout, activeRole, t } = useApp();
+  const { userName, logout, activeRole, t, isOffline } = useApp();
   const pathname = usePathname() || '';
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -57,7 +57,7 @@ export default function Sidebar() {
           </div>
           <div>
             <span className="font-display font-black text-xl tracking-tight text-foreground block">V-LINK</span>
-            <span className="text-[9px] block font-mono text-primary-500 font-extrabold uppercase tracking-widest -mt-0.5">agri cloud</span>
+            <span className="text-[9px] block font-mono text-primary-500 font-extrabold uppercase tracking-widest -mt-0.5">{t('platform_tagline')}</span>
           </div>
         </div>
 
@@ -114,10 +114,21 @@ export default function Sidebar() {
         {/* Footer Actions */}
         <div className="p-4 border-t border-earth-150/40 dark:border-earth-900/10 bg-earth-50/20 dark:bg-earth-950/10 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-ping"></div>
-            <span className="text-[9px] font-mono font-bold text-primary-500 tracking-wider">
-              ONLINE
-            </span>
+            {isOffline ? (
+              <>
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                <span className="text-[9px] font-mono font-bold text-amber-500 tracking-wider">
+                  {t('sync_status_offline')}
+                </span>
+              </>
+            ) : (
+              <>
+                <div className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-ping"></div>
+                <span className="text-[9px] font-mono font-bold text-primary-500 tracking-wider">
+                  {t('sync_status_online')}
+                </span>
+              </>
+            )}
           </div>
 
           <button

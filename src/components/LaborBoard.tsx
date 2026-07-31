@@ -18,7 +18,7 @@ import SuccessModal from './SuccessModal';
 export default function LaborBoard() {
   const { 
     laborJobs, createLaborJob, applyForLaborJob, 
-    hireLaborWorker, toggleSaveJob, wallets, userName, t
+    hireLaborWorker, toggleSaveJob, wallets, userName, t, user
   } = useApp();
 
   // Mode: 'worker' (laborer seeking work) vs 'farmer' (farmer hiring laborers)
@@ -100,10 +100,9 @@ export default function LaborBoard() {
     return results;
   }, [processedJobs, minWage, searchQuery]);
 
-  // Farmer's own postings
   const farmerPostings = useMemo(() => {
-    return laborJobs.filter(job => job.farmerId === 'farmer_1');
-  }, [laborJobs]);
+    return laborJobs.filter(job => job.farmerId === user?.id);
+  }, [laborJobs, user?.id]);
 
   // Worker's jobs data
   const workerAppliedJobs = useMemo(() => {

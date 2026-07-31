@@ -16,7 +16,7 @@ export default function JobDetails({
   onClose,
   onApply
 }: JobDetailsProps) {
-  const { laborJobs, activeRole, hireLaborWorker, toggleSaveJob, userName } = useApp();
+  const { laborJobs, activeRole, hireLaborWorker, toggleSaveJob, userName, user } = useApp();
   const [contactMode, setContactMode] = useState<string | null>(null);
 
   const job = laborJobs.find(j => j.id === jobId);
@@ -187,7 +187,7 @@ export default function JobDetails({
           </div>
 
           {/* Farmer View: Candidates List */}
-          {isFarmer && job.farmerId === 'farmer_1' && (
+          {isFarmer && job.farmerId === user?.id && (
             <div className="space-y-3.5">
               <div className="flex items-center justify-between border-b border-earth-150 dark:border-earth-900/40 pb-2">
                 <h4 className="text-xs font-black text-foreground uppercase tracking-widest">
