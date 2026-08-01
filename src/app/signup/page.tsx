@@ -94,23 +94,23 @@ function SignupContent() {
       return;
     }
 
-    const isEmail = inputVal.includes('@');
-    if (!isEmail) {
-      setError(
-        language === 'ta'
-          ? 'தொலைபேசி OTP தற்போது கிடைக்கவில்லை. மற்றொரு உள்நுழைவு முறையைப் பயன்படுத்தவும்.'
-          : 'Phone OTP is currently unavailable. Please use another sign-in method.'
-      );
-      return;
-    }
-
     setLocalLoading(true);
     try {
       await signInWithOtp(inputVal.trim());
       setStep('verify');
       setResendCountdown(30);
     } catch (err: any) {
-      setError(err.message || t('error_send_failed'));
+      const errMsg = err.message || '';
+      const isUnsupported = errMsg.includes('Unsupported provider') || errMsg.includes('provider is not enabled') || errMsg.includes('provider_not_enabled');
+      if (isUnsupported) {
+        setError(
+          language === 'ta'
+            ? 'தொலைபேசி OTP தற்போது கிடைக்கவில்லை. மற்றொரு உள்நுழைவு முறையைப் பயன்படுத்தவும்.'
+            : 'Phone OTP is currently unavailable. Please use another sign-in method.'
+        );
+      } else {
+        setError(errMsg || t('error_send_failed'));
+      }
     } finally {
       setLocalLoading(false);
     }
@@ -119,16 +119,6 @@ function SignupContent() {
   const handleResendOtp = async () => {
     if (resendCountdown > 0) return;
     setError('');
-
-    const isEmail = inputVal.includes('@');
-    if (!isEmail) {
-      setError(
-        language === 'ta'
-          ? 'தொலைபேசி OTP தற்போது கிடைக்கவில்லை. மற்றொரு உள்நுழைவு முறையைப் பயன்படுத்தவும்.'
-          : 'Phone OTP is currently unavailable. Please use another sign-in method.'
-      );
-      return;
-    }
 
     setLocalLoading(true);
     try {
@@ -139,7 +129,17 @@ function SignupContent() {
         'success'
       );
     } catch (err: any) {
-      setError(err.message || t('error_send_failed'));
+      const errMsg = err.message || '';
+      const isUnsupported = errMsg.includes('Unsupported provider') || errMsg.includes('provider is not enabled') || errMsg.includes('provider_not_enabled');
+      if (isUnsupported) {
+        setError(
+          language === 'ta'
+            ? 'தொலைபேசி OTP தற்போது கிடைக்கவில்லை. மற்றொரு உள்நுழைவு முறையைப் பயன்படுத்தவும்.'
+            : 'Phone OTP is currently unavailable. Please use another sign-in method.'
+        );
+      } else {
+        setError(errMsg || t('error_send_failed'));
+      }
     } finally {
       setLocalLoading(false);
     }
