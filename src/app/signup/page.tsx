@@ -94,6 +94,16 @@ function SignupContent() {
       return;
     }
 
+    const isEmail = inputVal.includes('@');
+    if (!isEmail) {
+      setError(
+        language === 'ta'
+          ? 'தொலைபேசி OTP தற்போது கிடைக்கவில்லை. மற்றொரு உள்நுழைவு முறையைப் பயன்படுத்தவும்.'
+          : 'Phone OTP is currently unavailable. Please use another sign-in method.'
+      );
+      return;
+    }
+
     setLocalLoading(true);
     try {
       await signInWithOtp(inputVal.trim());
@@ -109,6 +119,17 @@ function SignupContent() {
   const handleResendOtp = async () => {
     if (resendCountdown > 0) return;
     setError('');
+
+    const isEmail = inputVal.includes('@');
+    if (!isEmail) {
+      setError(
+        language === 'ta'
+          ? 'தொலைபேசி OTP தற்போது கிடைக்கவில்லை. மற்றொரு உள்நுழைவு முறையைப் பயன்படுத்தவும்.'
+          : 'Phone OTP is currently unavailable. Please use another sign-in method.'
+      );
+      return;
+    }
+
     setLocalLoading(true);
     try {
       await signInWithOtp(inputVal.trim());
