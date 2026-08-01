@@ -24,6 +24,9 @@ export default function LaborBoard() {
   // Mode: 'worker' (laborer seeking work) vs 'farmer' (farmer hiring laborers)
   const [workspaceMode, setWorkspaceMode] = useState<'worker' | 'farmer'>('worker');
 
+  // Availability state for laborer
+  const [isAvailableToday, setIsAvailableToday] = useState(true);
+
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState('Recommended');
@@ -222,6 +225,38 @@ export default function LaborBoard() {
       {workspaceMode === 'worker' && (
         <div className="space-y-6 animate-fade-in">
           
+          {/* Availability Status Card */}
+          <div className="p-6 rounded-3xl border border-primary-500/25 bg-primary-500/5 dark:bg-primary-950/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-black text-foreground">இன்று வேலைக்கு போக தயாரா?</h3>
+              <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">Are you ready to go for agricultural farm work today?</p>
+            </div>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setIsAvailableToday(true)}
+                className={`flex-1 sm:flex-none h-12 px-8 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 border-0 cursor-pointer ${
+                  isAvailableToday
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'bg-white dark:bg-[#151c19] text-foreground border border-earth-200 dark:border-primary-950/20 hover:bg-earth-50'
+                }`}
+              >
+                ஆம் / YES
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAvailableToday(false)}
+                className={`flex-1 sm:flex-none h-12 px-8 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 border-0 cursor-pointer ${
+                  !isAvailableToday
+                    ? 'bg-red-500 text-white shadow-md'
+                    : 'bg-white dark:bg-[#151c19] text-foreground border border-earth-200 dark:border-primary-950/20 hover:bg-earth-50'
+                }`}
+              >
+                இல்லை / NO
+              </button>
+            </div>
+          </div>
+
           {/* Quick Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatisticsCard

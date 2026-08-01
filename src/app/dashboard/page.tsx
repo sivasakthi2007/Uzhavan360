@@ -3,6 +3,7 @@ import { prioritizeProducts } from '@/services/priorityService';
 import ProductCard from '@/components/ProductCard';
 import OrderModal from '@/components/OrderModal';
 import MyFarmBoard from '@/components/MyFarmBoard';
+import Link from 'next/link';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useApp, Product } from '@/context/AppContext';
@@ -23,7 +24,14 @@ import {
   IndianRupee,
   Filter,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Package,
+  Users,
+  CloudSun,
+  Bot,
+  ClipboardList,
+  Wallet,
+  Headset
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
@@ -79,8 +87,17 @@ function DashboardContent() {
     placeOrder,
     toasts,
     activeRole,
+    setActiveRole,
     applyForScheme,
-    schemeApplications
+    schemeApplications,
+    orders,
+    confirmOrder,
+    completeOrder,
+    cancelOrder,
+    wallets,
+    walletTransactions,
+    user,
+    language
   } = useApp();
 
   const searchParams = useSearchParams();
@@ -230,101 +247,282 @@ function DashboardContent() {
             )}
 
             {/* ========================================================================= */}
-            {/* 1. MANDI-SYNC TAB */}
+            {/* 1. FARMER HOME TAB */}
             {/* ========================================================================= */}
             {activeTab === 'home' && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-2xl font-black tracking-tight text-foreground">{t('market_benchmarks') || 'Government Market Prices'}</h1>
-                  <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
-                    {t('mandi_prices_subtitle') || 'Live Agricultural Produce Prices across regional wholesale markets.'}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Prices Table Column */}
-                  <div className="md:col-span-2 p-6 rounded-3xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] shadow-xs space-y-4">
-                    <h3 className="text-sm font-black text-foreground uppercase tracking-wider">{t('benchmark_rates') || 'Benchmark Rates'}</h3>
-                    <div className="overflow-x-auto">
-                      {marketPrices.length === 0 ? (
-                        <div className="text-center py-8 text-earth-400 text-xs font-semibold">
-                          {t('no_price_data') || 'No market price data available. Click Sync to fetch.'}
-                        </div>
+              <div className="space-y-6 animate-fade-in text-foreground">
+                {/* Greeting banner */}
+                <div className="p-6 rounded-3xl border border-primary-500/10 bg-gradient-to-br from-primary-500/10 to-primary-600/5 dark:from-primary-950/20 dark:to-primary-900/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-black tracking-tight">
+                      {language === 'ta' ? 'வணக்கம் 👋' : 'Welcome 👋'}
+                    </h1>
+                    <p className="text-base font-black text-primary-700 dark:text-primary-400">
+                      {userName || 'Farmer Partner'}
+                    </p>
+                    <div className="flex items-center gap-1 text-xs text-earth-500 dark:text-earth-400 mt-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-primary-500" />
+                      <span>Madurai District, Tamil Nadu</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white dark:bg-[#111714] border border-earth-100 dark:border-primary-950/20 shadow-xs">
+                      {isOffline ? (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                          <span className="text-xs font-black uppercase tracking-wider font-mono text-amber-600 dark:text-amber-400">
+                            {language === 'ta' ? 'உள்ளூர் தரவு' : 'Offline'}
+                          </span>
+                        </>
                       ) : (
-                        <table className="w-full text-xs text-left">
-                          <thead className="text-[10px] uppercase text-earth-400 tracking-wider border-b border-earth-150 dark:border-earth-900/40">
-                            <tr>
-                              <th className="py-2.5 font-bold">{t('col_crop') || 'Crop'}</th>
-                              <th className="py-2.5 font-bold">{t('location') || 'Location'}</th>
-                              <th className="py-2.5 font-bold">{t('price_range') || 'Price Range'}</th>
-                              <th className="py-2.5 font-bold text-right">{t('modal_price') || 'Modal Price'}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="font-bold divide-y divide-earth-100 dark:divide-earth-900/20">
-                            {marketPrices.map((item) => (
-                              <tr key={item.id} className="hover:bg-earth-50/20">
-                                <td className="py-3 text-foreground font-black flex items-center gap-1.5">
-                                  <Leaf className="w-3.5 h-3.5 text-primary-500" />
-                                  {item.cropName}
-                                </td>
-                                <td className="py-3 text-earth-500 font-semibold">
-                                  {item.market}, {item.state}
-                                </td>
-                                <td className="py-3 text-earth-400 font-mono">
-                                  ₹{item.minPrice} - ₹{item.maxPrice} /kg
-                                </td>
-                                <td className="py-3 text-right text-primary-600 dark:text-primary-400 font-black">
-                                  ₹{item.modalPrice} /kg
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-ping"></span>
+                          <span className="text-xs font-black uppercase tracking-wider font-mono text-primary-600 dark:text-primary-400">
+                            {language === 'ta' ? 'இணைக்கப்பட்டுள்ளது' : 'Live / Online'}
+                          </span>
+                        </>
                       )}
                     </div>
+                    <button
+                      onClick={handleSync}
+                      disabled={isSyncing}
+                      className="h-10 px-4 rounded-2xl bg-white dark:bg-[#111714] hover:bg-earth-50 border border-earth-200 dark:border-primary-950/25 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-black transition-all shadow-xs"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-primary-500 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span>{language === 'ta' ? 'ஒத்திசை' : 'Sync'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick actions grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Link
+                    href="/dashboard?tab=myfarm"
+                    className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs hover:border-primary-500/20 hover:scale-102 transition-all flex flex-col items-center text-center gap-3 no-underline cursor-pointer group"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center transition-transform group-hover:scale-110">
+                      <Leaf className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-foreground block">
+                        {language === 'ta' ? 'என் பண்ணை' : 'My Farm'}
+                      </span>
+                      <span className="text-[9px] text-earth-400 mt-0.5 block">
+                        {language === 'ta' ? 'பயிர்களை நிர்வகி' : 'Manage your crops'}
+                      </span>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/dashboard?tab=market"
+                    className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs hover:border-primary-500/20 hover:scale-102 transition-all flex flex-col items-center text-center gap-3 no-underline cursor-pointer group"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center transition-transform group-hover:scale-110">
+                      <ShoppingBag className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-foreground block">
+                        {language === 'ta' ? 'பயிர் சந்தை' : 'Find Crops'}
+                      </span>
+                      <span className="text-[9px] text-earth-400 mt-0.5 block">
+                        {language === 'ta' ? 'சந்தையில் விற்க' : 'Discover marketplaces'}
+                      </span>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/dashboard?tab=prebookings"
+                    className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs hover:border-primary-500/20 hover:scale-102 transition-all flex flex-col items-center text-center gap-3 no-underline cursor-pointer group"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center transition-transform group-hover:scale-110">
+                      <Package className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-foreground block">
+                        {language === 'ta' ? 'முன்-பதிவு' : 'Pre-Book'}
+                      </span>
+                      <span className="text-[9px] text-earth-400 mt-0.5 block">
+                        {language === 'ta' ? 'விற்பனை ஒப்பந்தங்கள்' : 'Contract agreements'}
+                      </span>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/dashboard?tab=labor"
+                    className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs hover:border-primary-500/20 hover:scale-102 transition-all flex flex-col items-center text-center gap-3 no-underline cursor-pointer group"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center transition-transform group-hover:scale-110">
+                      <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-foreground block">
+                        {language === 'ta' ? 'வேலைக்கு ஆட்கள்' : 'Find Labour'}
+                      </span>
+                      <span className="text-[9px] text-earth-400 mt-0.5 block">
+                        {language === 'ta' ? 'பண்ணை தொழிலாளர்கள்' : 'Hire local workforces'}
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+
+                {/* Weather advisory banner */}
+                <div className="p-5 rounded-3xl border border-amber-500/25 bg-amber-500/5 dark:bg-amber-950/10 flex flex-col md:flex-row items-center gap-4">
+                  <CloudSun className="w-10 h-10 text-amber-500 shrink-0" />
+                  <div className="flex-1 text-center md:text-left">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                      {language === 'ta' ? 'இன்றைய வானிலை ஆலோசனை' : 'Weather & Crop Advisory'}
+                    </h3>
+                    <p className="text-xs text-earth-500 dark:text-earth-400 mt-1 leading-relaxed">
+                      {language === 'ta'
+                        ? 'அடுத்த 24 மணிநேரத்தில் மிதமான மழைக்கு வாய்ப்பு உள்ளது. உங்கள் தக்காளி செடிகளுக்கு தேங்கிய நீரை வெளியேற்ற வடிகால் வசதி செய்யுங்கள்.'
+                        : 'Expect light showers in the evening. Keep tomato fields clear of standing water to avoid root damage.'}
+                    </p>
+                  </div>
+                  <Link
+                    href="/dashboard?tab=weather"
+                    className="h-9 px-4 rounded-xl border border-amber-500/20 bg-white dark:bg-[#111714] hover:bg-earth-50 text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer no-underline shrink-0"
+                  >
+                    {language === 'ta' ? 'மேலும் காண்க' : 'Open Weather'}
+                  </Link>
+                </div>
+
+                {/* Nearby Crops Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-black text-foreground">
+                        {language === 'ta' ? 'அருகிலுள்ள விளைபொருட்கள்' : 'Nearby Upcoming Harvests'}
+                      </h2>
+                      <p className="text-[11px] text-earth-400 mt-0.5">
+                        {language === 'ta' ? 'உங்களுக்கு அருகில் அறுவடை செய்யப்பட இருக்கும் பயிர்கள்' : 'Discover upcoming crop listings registered by local farms.'}
+                      </p>
+                    </div>
+                    <Link
+                      href="/dashboard?tab=market"
+                      className="text-xs font-black text-primary-500 hover:underline"
+                    >
+                      {language === 'ta' ? 'அனைத்தையும் பார்' : 'View Market →'}
+                    </Link>
                   </div>
 
-                  {/* Market intelligence / Advice Column */}
-                  <div className="space-y-6">
-                    <div className="p-6 rounded-3xl border border-primary-500/20 bg-primary-500/5 shadow-xs space-y-4">
-                      <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400">
-                        <TrendingUp className="w-5 h-5" />
-                        <h4 className="text-xs font-black uppercase tracking-widest">{t('crop_market_insights') || 'Crop Market Insights'}</h4>
-                      </div>
-                      <p className="text-[11px] leading-relaxed text-earth-500 dark:text-earth-400">
-                        {t('crop_market_insights_desc') || 'Sell suggestions are computed dynamically by comparing local market rates against benchmark trends.'}
-                      </p>
-
-                      <div className="space-y-3">
-                        {marketPrices.map((item) => (
-                          <div key={item.id} className="p-3 bg-white dark:bg-[#1a201c] border border-earth-150 dark:border-earth-900/30 rounded-2xl flex items-center justify-between text-xs">
-                            <span className="font-black text-foreground">{item.cropName}</span>
-                            <div className="flex items-center gap-1.5">
-                              {item.trend === 'up' && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500 text-white">
-                                  <TrendingUp className="w-3 h-3" /> {t('trend_sell') || 'SELL'}
-                                </span>
-                              )}
-                              {item.trend === 'stable' && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-blue-500 text-white">
-                                  {t('trend_hold') || 'HOLD'}
-                                </span>
-                              )}
-                              {item.trend === 'down' && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500 text-white">
-                                  <TrendingDown className="w-3 h-3" /> {t('trend_hold') || 'HOLD'}
-                                </span>
-                              )}
+                  {products.length === 0 ? (
+                    <div className="p-8 text-center bg-white dark:bg-[#111714] rounded-3xl border border-earth-150 text-earth-450 text-xs font-semibold">
+                      {language === 'ta' ? 'பயிர்கள் எதுவும் கிடைக்கவில்லை.' : 'No crop listings found.'}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {products.slice(0, 3).map((prod) => (
+                        <div
+                          key={prod.id}
+                          className="bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                        >
+                          <div className="p-5 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary-500/10 text-primary-600 dark:text-primary-400">
+                                {prod.category}
+                              </span>
+                              <span className="text-[10px] text-earth-400 font-bold font-mono">
+                                {prod.village || 'Madurai East'}
+                              </span>
+                            </div>
+                            <div>
+                              <h4 className="text-base font-black text-foreground">{prod.name}</h4>
+                              <p className="text-xs text-earth-400 mt-0.5">
+                                {language === 'ta' ? 'விவசாயி' : 'Farmer'}: {prod.farmerName || 'Ramanathan'}
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs pt-2">
+                              <div>
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Available</span>
+                                <span className="font-bold text-foreground">{prod.stockKg} {t('kg_unit')}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Expected Harvest</span>
+                                <span className="font-bold text-foreground">10-Aug-2026</span>
+                              </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
 
+                          <div className="p-5 pt-0 border-t border-earth-100 dark:border-earth-900/20 bg-earth-50/20 dark:bg-earth-950/10 flex items-center justify-between">
+                            <span className="text-base font-black text-primary-600 dark:text-primary-400 font-mono">
+                              ₹{prod.pricePerKg} <span className="text-[10px] text-earth-400 font-normal">/kg</span>
+                            </span>
+                            <button
+                              onClick={() => {
+                                setSelectedProdForOrder(prod);
+                                setIsOrderModalOpen(true);
+                              }}
+                              className="h-8 px-4 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs border-0"
+                            >
+                              {language === 'ta' ? 'முன்பதிவு செய்' : 'Pre-book'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* More services section */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-earth-450">
+                    {language === 'ta' ? 'இதர பயனுள்ள சேவைகள்' : 'More Services'}
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <Link
+                      href="/dashboard?tab=assistant"
+                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <Bot className="w-5 h-5 text-primary-500" />
+                      <span className="text-xs font-bold text-foreground truncate w-full">
+                        {language === 'ta' ? 'AI உதவியாளர்' : 'AI Assistant'}
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/dashboard?tab=orders"
+                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <ClipboardList className="w-5 h-5 text-primary-500" />
+                      <span className="text-xs font-bold text-foreground truncate w-full">
+                        {language === 'ta' ? 'என் ஆர்டர்கள்' : 'Orders & Escrow'}
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/dashboard?tab=wallet"
+                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <Wallet className="w-5 h-5 text-primary-500" />
+                      <span className="text-xs font-bold text-foreground truncate w-full">
+                        {language === 'ta' ? 'பணப்பை' : 'My Wallet'}
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/dashboard?tab=schemes"
+                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <BookOpen className="w-5 h-5 text-primary-500" />
+                      <span className="text-xs font-bold text-foreground truncate w-full">
+                        {language === 'ta' ? 'அரசு திட்டங்கள்' : 'Gov Schemes'}
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/dashboard?tab=support"
+                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <Headset className="w-5 h-5 text-primary-500" />
+                      <span className="text-xs font-bold text-foreground truncate w-full">
+                        {language === 'ta' ? 'உதவி மையம்' : 'Support Care'}
+                      </span>
+                    </Link>
+                  </div>
                 </div>
               </div>
             )}
+
 
             {/* ========================================================================= */}
             {/* 2. GOV SCHEMES TAB */}
@@ -564,7 +762,285 @@ function DashboardContent() {
               </div>
             )}
 
-                        {activeTab === 'diagnosis' && (
+            {/* ========================================================================= */}
+            {/* 4. PRE-BOOKINGS TAB */}
+            {/* ========================================================================= */}
+            {activeTab === 'prebookings' && (
+              <div className="space-y-6 animate-fade-in text-foreground">
+                <div>
+                  <h1 className="text-2xl font-black tracking-tight">{language === 'ta' ? 'முன்பதிவுகள் & எஸ்க்ரோ' : 'My Pre-Bookings & Escrow'}</h1>
+                  <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
+                    {language === 'ta'
+                      ? 'கொள்முதல் ஒப்பந்தங்கள் மற்றும் எஸ்க்ரோவில் உள்ள முன்பதிவு தொகைகள்.'
+                      : 'Track active crop booking contracts, secure 10% escrow clearing, and update statuses.'}
+                  </p>
+                </div>
+
+                {(() => {
+                  const filtered = orders.filter(
+                    o => activeRole === 'farmer' ? o.farmerId === user?.id : o.buyerId === user?.id
+                  );
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="p-12 text-center rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] text-earth-450 text-xs font-bold">
+                        {language === 'ta' ? 'முன்பதிவுகள் எதுவும் இல்லை.' : 'No pre-booking contracts found.'}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {filtered.map((ord) => {
+                        const escrowAmt = Math.round(ord.totalPrice * 0.1);
+                        return (
+                          <div
+                            key={ord.id}
+                            className="p-6 rounded-3xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] shadow-xs flex flex-col justify-between space-y-4"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-mono font-bold text-earth-400 uppercase tracking-widest">
+                                {ord.id}
+                              </span>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                ord.status === 'pending'
+                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                  : ord.status === 'accepted'
+                                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                  : ord.status === 'completed'
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                  : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                              }`}>
+                                {ord.status}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <h4 className="text-base font-black text-foreground">{ord.productName}</h4>
+                              <p className="text-xs text-earth-500 dark:text-earth-400">
+                                {activeRole === 'farmer' ? `Buyer: ${ord.buyerName}` : `Farmer Partner`}
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-earth-100 dark:border-earth-900/10">
+                              <div>
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Quantity</span>
+                                <span className="font-bold text-foreground">{ord.quantity} kg</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Escrow Secured (10%)</span>
+                                <span className="font-mono font-bold text-primary-600 dark:text-primary-400">₹{escrowAmt}</span>
+                              </div>
+                              <div className="col-span-2">
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Total Value</span>
+                                <span className="font-mono font-bold text-foreground">₹{ord.totalPrice}</span>
+                              </div>
+                            </div>
+
+                            {activeRole === 'farmer' && (
+                              <div className="flex items-center gap-2 pt-2">
+                                {ord.status === 'pending' && (
+                                  <>
+                                    <button
+                                      onClick={() => confirmOrder(ord.id)}
+                                      className="flex-1 h-9 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs cursor-pointer border-0 shadow-xs"
+                                    >
+                                      Accept
+                                    </button>
+                                    <button
+                                      onClick={() => cancelOrder(ord.id)}
+                                      className="flex-1 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/15 text-red-500 font-bold text-xs cursor-pointer border-0"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
+                                {ord.status === 'accepted' && (
+                                  <>
+                                    <button
+                                      onClick={() => completeOrder(ord.id)}
+                                      className="flex-1 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs cursor-pointer border-0 shadow-xs"
+                                    >
+                                      Handover & Complete
+                                    </button>
+                                    <button
+                                      onClick={() => cancelOrder(ord.id)}
+                                      className="h-9 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/15 text-red-500 font-bold text-xs cursor-pointer border-0"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                            {activeRole === 'buyer' && ord.status === 'pending' && (
+                              <button
+                                onClick={() => cancelOrder(ord.id)}
+                                className="w-full h-9 rounded-xl bg-red-500/10 hover:bg-red-500/15 text-red-500 font-bold text-xs cursor-pointer border-0"
+                              >
+                                Cancel Pre-booking
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* 5. ORDERS TAB */}
+            {/* ========================================================================= */}
+            {activeTab === 'orders' && (
+              <div className="space-y-6 animate-fade-in text-foreground">
+                <div>
+                  <h1 className="text-2xl font-black tracking-tight">{language === 'ta' ? 'ஆர்டர்கள் & கண்காணிப்பு' : 'Purchase Orders & Tracking'}</h1>
+                  <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
+                    {language === 'ta' ? 'அறுவடைக்கு பிந்தைய விநியோகக் கண்காணிப்பு.' : 'Post-harvest dispatch tracking and logistics status updates.'}
+                  </p>
+                </div>
+
+                {(() => {
+                  const filtered = orders.filter(
+                    o => activeRole === 'farmer' ? o.farmerId === user?.id : o.buyerId === user?.id
+                  );
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="p-12 text-center rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] text-earth-450 text-xs font-bold">
+                        {language === 'ta' ? 'ஆர்டர்கள் எதுவும் இல்லை.' : 'No orders in tracking list.'}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      {filtered.map((ord) => (
+                        <div
+                          key={ord.id}
+                          className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        >
+                          <div className="space-y-1">
+                            <span className="text-[9px] font-mono font-bold text-earth-400 block">{ord.id} • {ord.createdAt.slice(0,10)}</span>
+                            <h4 className="text-base font-black text-foreground">{ord.productName}</h4>
+                            <p className="text-xs text-earth-500 dark:text-earth-400">
+                              Quantity: <span className="font-bold">{ord.quantity} kg</span> | Price: <span className="font-bold">₹{ord.totalPrice}</span>
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-6">
+                            {/* Simple tracking step visualizer */}
+                            <div className="flex items-center gap-2 text-xs font-semibold">
+                              <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                                ord.status !== 'cancelled' ? 'bg-primary-500 text-white' : 'bg-red-500 text-white'
+                              }`}>1</span>
+                              <span className="text-earth-500">Ordered</span>
+                              <span className="w-4 border-t border-earth-200"></span>
+                              <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                                ord.status === 'accepted' || ord.status === 'completed' ? 'bg-primary-500 text-white' : 'bg-earth-200 text-earth-400'
+                              }`}>2</span>
+                              <span className={ord.status === 'accepted' || ord.status === 'completed' ? 'text-foreground' : 'text-earth-400'}>Dispatched</span>
+                              <span className="w-4 border-t border-earth-200"></span>
+                              <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                                ord.status === 'completed' ? 'bg-primary-500 text-white' : 'bg-earth-200 text-earth-400'
+                              }`}>3</span>
+                              <span className={ord.status === 'completed' ? 'text-foreground' : 'text-earth-400'}>Delivered</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* 6. WALLET TAB */}
+            {/* ========================================================================= */}
+            {activeTab === 'wallet' && (
+              <div className="space-y-6 animate-fade-in text-foreground">
+                <div className="p-6 rounded-3xl border border-primary-500/10 bg-gradient-to-br from-primary-500/10 to-primary-600/5 dark:from-primary-950/20 dark:to-primary-900/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest block">Account Balance</span>
+                    <h2 className="text-3xl font-black text-foreground font-mono">₹{(wallets[activeRole] || 0).toLocaleString()}</h2>
+                    <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">Ecosystem clearing account active for role: <span className="font-bold capitalize">{activeRole}</span></p>
+                  </div>
+                  <button className="h-10 px-6 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs cursor-pointer border-0 shadow-xs">
+                    Withdraw to Bank
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-wider">Transaction History</h3>
+                  {walletTransactions.length === 0 ? (
+                    <div className="p-8 text-center bg-white dark:bg-[#111714] rounded-3xl border border-earth-150 text-earth-450 text-xs font-semibold">
+                      No transaction records found.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {walletTransactions.map((txn) => (
+                        <div
+                          key={txn.id}
+                          className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] flex items-center justify-between text-xs"
+                        >
+                          <div className="space-y-0.5">
+                            <span className="font-mono font-bold text-earth-400 block text-[9px]">{txn.id} • {txn.created_at.slice(0, 10)}</span>
+                            <span className="font-bold text-foreground capitalize">{txn.transaction_type} Clearing</span>
+                          </div>
+                          <span className={`font-mono font-black text-sm ${txn.transaction_type === 'credit' ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {txn.transaction_type === 'credit' ? '+' : '-'} ₹{txn.amount}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* 7. PROFILE TAB */}
+            {/* ========================================================================= */}
+            {activeTab === 'profile' && (
+              <div className="space-y-6 animate-fade-in text-foreground">
+                <div className="p-6 rounded-3xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center font-headline font-black text-2xl shrink-0">
+                    {userName?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-black text-foreground">{userName || 'V-LINK Partner'}</h3>
+                    <p className="text-xs text-earth-500 dark:text-earth-400">Account status: <span className="font-bold text-emerald-500">Verified Partner</span></p>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-3xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] space-y-4">
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-wider">Active Role Selector</h3>
+                  <p className="text-xs text-earth-500 dark:text-earth-400">Swap workspaces instantly. RLS permissions and dashboards update in real-time.</p>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {(['farmer', 'buyer', 'labor', 'vendor'] as const).map((role) => (
+                      <button
+                        key={role}
+                        onClick={() => setActiveRole(role)}
+                        className={`h-12 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border-0 cursor-pointer ${
+                          activeRole === role
+                            ? 'bg-primary-500 text-white shadow-md font-black'
+                            : 'bg-earth-50 dark:bg-earth-900/50 hover:bg-earth-100 text-earth-500 hover:text-foreground'
+                        }`}
+                      >
+                        {role}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'diagnosis' && (
               <DiseaseDiagnosisBoard />
             )}
 
