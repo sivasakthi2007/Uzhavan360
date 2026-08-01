@@ -31,6 +31,7 @@ function SignupContent() {
   const prefillEmail = searchParams.get('prefill');
 
   const [inputVal, setInputVal] = useState(''); // phone or email
+  const isPhoneInput = inputVal.trim().length > 0 && !inputVal.includes('@');
   const [otpVal, setOtpVal] = useState('');
   const [step, setStep] = useState<'request' | 'verify' | 'profile'>('request'); // request OTP, verify, or collect profile
   const [error, setError] = useState('');
@@ -342,11 +343,13 @@ function SignupContent() {
 
                     <button
                       type="submit"
-                      disabled={isLoading}
+                      disabled={isLoading || isPhoneInput}
                       className="w-full h-12 bg-primary-500 hover:bg-primary-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary-500/10 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 border-0 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
                       {isLoading ? (
                         <Loader2 className="w-4.5 h-4.5 animate-spin" />
+                      ) : isPhoneInput ? (
+                        <span>{language === 'ta' ? 'தொலைபேசி OTP விரைவில் கிடைக்கும்' : 'Phone OTP - Coming Soon'}</span>
                       ) : (
                         <>
                           <span>{t('send_otp')}</span>
