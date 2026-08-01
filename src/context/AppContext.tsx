@@ -630,7 +630,8 @@ interface AppContextProps {
   loginWithGoogle: (role: Role, buyerType?: BuyerType | null) => Promise<void>;
   logout: () => Promise<void>;
   signInWithOtp: (emailOrPhone: string) => Promise<void>;
-  verifyOtp: (emailOrPhone: string, token: string) => Promise<void>;
+  verifyOtp: (emailOrPhone: string, token: string) => Promise<{ profileExists: boolean }>;
+  completeSignup: (fullName: string, role: Role, buyerType?: BuyerType | null) => Promise<void>;
 
   // Product actions
   addProduct: (product: Omit<Product, 'id' | 'farmerId' | 'farmerName' | 'createdAt' | 'distanceKm' | 'farmerRating' | 'isVerifiedFarmer' | 'isRecommended' | 'salesCount'>) => void;
@@ -1461,18 +1462,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (res.error) throw res.error;
   };
 
-  const verifyOtp = async (emailOrPhone: string, token: string) => {
+  const verifyOtp = async (emailOrPhone: string, token: string): Promise<{ profileExists: boolean }> => {
     const res = await auth.verifyOtp(emailOrPhone, token);
     if (res.error) throw res.error;
 
     // Restore saved role (or fall back to 'farmer')
     const savedRole = typeof window !== 'undefined' ? localStorage.getItem('vlink_active_role') : null;
-    const role = (savedRole as Role) || 'farmer';
-    setActiveRole(role);
+    let role = (savedRole as Role) || 'farmer';
 
     const metaName = res.data.user?.user_metadata?.full_name;
     const savedName = typeof window !== 'undefined' ? localStorage.getItem('vlink_user_name') : null;
-    const displayName = metaName || savedName || emailOrPhone.split('@')[0];
+    let displayName = metaName || savedName || emailOrPhone.split('@')[0];
+
+    let profileExists = false;
+
+    if (isSupabaseConfigured && supabase && res.data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', res.data.user.id)
+        .maybeSingle();
+
+      if (profile) {
+        profileExists = true;
+        role = profile.role as Role;
+        displayName = profile.full_name;
+        setActiveRole(role);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('vlink_active_role', role);
+          localStorage.setItem('vlink_user_name', displayName);
+        }
+      }
+    } else {
+      // Sandbox Mode: check if user already has a mock profile
+      const users = JSON.parse(localStorage.getItem('vlink_mock_users') || '[]');
+      const matched = users.find((u: any) => u.email.toLowerCase() === emailOrPhone.toLowerCase() || u.email.toLowerCase() === res.data.user?.email?.toLowerCase());
+      if (matched && matched.profile) {
+        // If password is not empty, it means they registered with name/role in sandbox
+        if (matched.password !== '' || (matched.profile.user_metadata && matched.profile.user_metadata.full_name && matched.profile.user_metadata.full_name !== emailOrPhone.split('@')[0])) {
+          profileExists = true;
+          role = matched.profile.user_metadata?.role || role;
+          displayName = matched.profile.user_metadata?.full_name || displayName;
+          setActiveRole(role);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('vlink_active_role', role);
+            localStorage.setItem('vlink_user_name', displayName);
+          }
+        }
+      }
+    }
 
     setAppUser({
       id: res.data.user?.id || `mock_${Date.now()}`,
@@ -1485,6 +1523,82 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (displayName && typeof window !== 'undefined') {
       localStorage.setItem('vlink_user_name', displayName);
+    }
+
+    return { profileExists };
+  };
+
+  const completeSignup = async (fullName: string, role: Role, bt?: BuyerType | null) => {
+    if (!auth.user) {
+      throw new Error('No authenticated user session found');
+    }
+
+    const email = auth.user.email || auth.user.phone || '';
+
+    // Create profile
+    const { error: profileError } = await createProfile({
+      id: auth.user.id,
+      email,
+      full_name: fullName,
+      role,
+      language,
+    });
+    if (profileError) throw profileError;
+
+    // Update Supabase Auth metadata so future sessions get the metadata
+    if (isSupabaseConfigured && supabase) {
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          full_name: fullName,
+          role,
+          language,
+        }
+      });
+      if (authError) {
+        console.warn('[V-Link] Failed to update auth metadata:', authError.message);
+      }
+    } else {
+      // Sandbox Mode: Update mock user role and name in localStorage
+      try {
+        const mockUsers = JSON.parse(localStorage.getItem('vlink_mock_users') || '[]');
+        const updatedUsers = mockUsers.map((u: any) => {
+          if (u.profile.id === auth.user.id || u.email.toLowerCase() === email.toLowerCase()) {
+            return {
+              ...u,
+              password: 'verified', // Mark password to show profile exists
+              profile: {
+                ...u.profile,
+                user_metadata: {
+                  ...u.profile.user_metadata,
+                  full_name: fullName,
+                  role,
+                }
+              }
+            };
+          }
+          return u;
+        });
+        localStorage.setItem('vlink_mock_users', JSON.stringify(updatedUsers));
+      } catch (err) {
+        console.warn('[V-Link] Failed to update mock user details:', err);
+      }
+    }
+
+    setActiveRole(role);
+    if (bt) setBuyerType(bt);
+
+    setAppUser({
+      id: auth.user.id,
+      email,
+      displayName: fullName,
+      role,
+      buyerType: bt || null,
+      createdAt: new Date().toISOString(),
+    });
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vlink_active_role', role);
+      localStorage.setItem('vlink_user_name', fullName);
     }
   };
 
@@ -1880,6 +1994,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logout,
     signInWithOtp,
     verifyOtp,
+    completeSignup,
     addProduct,
     updateProduct,
     deleteProduct,

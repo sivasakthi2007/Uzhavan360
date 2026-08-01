@@ -23,26 +23,44 @@ import {
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 function SignupContent() {
-  const { theme, setTheme, signInWithOtp, verifyOtp, loginWithGoogle, loading: appLoading, user, language, setLanguage, t } = useApp();
+  const { theme, setTheme, signInWithOtp, verifyOtp, completeSignup, loginWithGoogle, loading: appLoading, user, language, setLanguage, t, addToast } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // Prefill check from search params (for quick sandbox access)
   const prefillEmail = searchParams.get('prefill');
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (!appLoading && user) {
-      router.replace('/dashboard');
-    }
-  }, [user, appLoading, router]);
-
   const [inputVal, setInputVal] = useState(''); // phone or email
   const [otpVal, setOtpVal] = useState('');
-  const [step, setStep] = useState<'request' | 'verify'>('request'); // request OTP or verify
+  const [step, setStep] = useState<'request' | 'verify' | 'profile'>('request'); // request OTP, verify, or collect profile
   const [error, setError] = useState('');
   const [localLoading, setLocalLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // New profile collection states
+  const [fullName, setFullName] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'farmer' | 'buyer' | 'labor' | 'vendor'>('farmer');
+  const [selectedBuyerType, setSelectedBuyerType] = useState<'customer' | 'hotel' | 'retail' | 'marriage'>('customer');
+  
+  // Resend OTP countdown timer state
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!appLoading && user) {
+      if (step !== 'profile') {
+        router.replace('/dashboard');
+      }
+    }
+  }, [user, appLoading, router, step]);
+
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCountdown]);
 
   const handleGoogleLogin = async () => {
     setError('');
@@ -76,20 +94,29 @@ function SignupContent() {
       return;
     }
 
-    // Basic validation
-    const val = inputVal.trim();
-    const isEmail = val.includes('@');
-    const isPhone = /^\+?[0-9]{10,15}$/.test(val.replace(/[\s-]/g, ''));
-
-    if (!isEmail && !isPhone) {
-      setError(t('error_input_format'));
-      return;
-    }
-
     setLocalLoading(true);
     try {
-      await signInWithOtp(val);
+      await signInWithOtp(inputVal.trim());
       setStep('verify');
+      setResendCountdown(30);
+    } catch (err: any) {
+      setError(err.message || t('error_send_failed'));
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCountdown > 0) return;
+    setError('');
+    setLocalLoading(true);
+    try {
+      await signInWithOtp(inputVal.trim());
+      setResendCountdown(30);
+      addToast(
+        language === 'ta' ? 'OTP மீண்டும் அனுப்பப்பட்டது!' : 'OTP resent successfully!',
+        'success'
+      );
     } catch (err: any) {
       setError(err.message || t('error_send_failed'));
     } finally {
@@ -108,13 +135,44 @@ function SignupContent() {
 
     setLocalLoading(true);
     try {
-      await verifyOtp(inputVal.trim(), otpVal.trim());
+      const { profileExists } = await verifyOtp(inputVal.trim(), otpVal.trim());
+      if (!profileExists) {
+        setStep('profile');
+      } else {
+        setSuccess(true);
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1500);
+      }
+    } catch (err: any) {
+      setError(err.message || t('error_verify_failed'));
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  const handleCompleteSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!fullName.trim()) {
+      setError(language === 'ta' ? 'தயவுசெய்து உங்கள் பெயரை உள்ளிடவும்.' : 'Please enter your name.');
+      return;
+    }
+
+    setLocalLoading(true);
+    try {
+      await completeSignup(
+        fullName.trim(),
+        selectedRole,
+        selectedRole === 'buyer' ? selectedBuyerType : null
+      );
       setSuccess(true);
       setTimeout(() => {
         router.push('/dashboard');
       }, 1500);
     } catch (err: any) {
-      setError(err.message || t('error_verify_failed'));
+      setError(err.message || t('error_signup_failed') || 'Signup failed');
     } finally {
       setLocalLoading(false);
     }
@@ -202,7 +260,7 @@ function SignupContent() {
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 text-xs text-primary-500 font-mono font-bold">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4.5 h-4.5 animate-spin" />
                 <span>{t('booting_workspace')}</span>
               </div>
             </div>
@@ -216,12 +274,14 @@ function SignupContent() {
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <h1 className="text-2xl font-display font-black text-foreground tracking-tight">
-                  {step === 'request' ? t('signup_title') : t('enter_otp')}
+                  {step === 'request' ? t('signup_title') : step === 'verify' ? t('enter_otp') : (language === 'ta' ? 'விவரங்களை பூர்த்தி செய்யவும்' : 'Complete Profile')}
                 </h1>
                 <p className="text-xs text-earth-500 dark:text-earth-450 leading-relaxed font-semibold">
                   {step === 'request'
                     ? t('request_otp')
-                    : `${t('enter_otp_sent_to')}: ${inputVal}`}
+                    : step === 'verify'
+                    ? `${t('enter_otp_sent_to')}: ${inputVal}`
+                    : (language === 'ta' ? 'உங்களது விவசாய கணக்கை அமைக்க கீழே உள்ள விவரங்களை பூர்த்தி செய்யவும்.' : 'Please enter your details to finalize your operator account.')}
                 </p>
               </div>
 
@@ -237,7 +297,7 @@ function SignupContent() {
                 <>
                   <form onSubmit={handleSendOtp} className="space-y-5">
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-mono font-black uppercase tracking-widest text-earth-450 block">
+                      <label className="text-[9px] font-mono font-black uppercase tracking-widest text-earth-455 block">
                         {t('phone_email_label')}
                       </label>
                       <div className="relative">
@@ -314,7 +374,7 @@ function SignupContent() {
                     </button>
                   </div>
                 </>
-              ) : (
+              ) : step === 'verify' ? (
                 /* Step 2: Verify OTP */
                 <form onSubmit={handleVerifyOtp} className="space-y-5">
                   <div className="space-y-1.5">
@@ -348,18 +408,95 @@ function SignupContent() {
                     )}
                   </button>
 
-                  <div className="text-center pt-2">
+                  <div className="flex items-center justify-between pt-2">
                     <button
                       type="button"
                       onClick={() => {
                         setStep('request');
                         setOtpVal('');
                       }}
-                      className="text-[10px] font-mono font-black uppercase tracking-widest text-primary-500 hover:text-primary-600 border-0 bg-transparent cursor-pointer"
+                      className="text-[10px] font-mono font-black uppercase tracking-widest text-earth-500 hover:text-foreground border-0 bg-transparent cursor-pointer"
                     >
                       {t('change_contact')}
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={isLoading || resendCountdown > 0}
+                      className="text-[10px] font-mono font-black uppercase tracking-widest text-primary-500 hover:text-primary-600 border-0 bg-transparent cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {resendCountdown > 0
+                        ? `${language === 'ta' ? 'மீண்டும் அனுப்பவும்' : 'Resend'} (${resendCountdown}s)`
+                        : (language === 'ta' ? 'மீண்டும் அனுப்பவும்' : 'Resend OTP')}
+                    </button>
                   </div>
+                </form>
+              ) : (
+                /* Step 3: Collect Profile Details */
+                <form onSubmit={handleCompleteSignup} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-mono font-black uppercase tracking-widest text-earth-450 block">
+                      {language === 'ta' ? 'முழு பெயர்' : 'Full Name'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder={language === 'ta' ? 'உங்களது பெயரை உள்ளிடவும்' : 'Enter your name'}
+                      className="vlink-input"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-mono font-black uppercase tracking-widest text-earth-450 block">
+                      {language === 'ta' ? 'விவசாயி / பயனர் வகை' : 'Operator Role'}
+                    </label>
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value as any)}
+                      className="w-full h-12 px-4 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-primary-950/20 rounded-xl text-xs font-bold text-foreground focus:outline-none focus:border-primary-500 transition-all cursor-pointer"
+                    >
+                      <option value="farmer">{language === 'ta' ? 'விவசாயி (Farmer)' : 'Farmer'}</option>
+                      <option value="buyer">{language === 'ta' ? 'கொள்முதல் செய்பவர் (Buyer)' : 'Buyer'}</option>
+                      <option value="labor">{language === 'ta' ? 'விவசாய தொழிலாளி (Labour)' : 'Labour'}</option>
+                      <option value="vendor">{language === 'ta' ? 'கருவி வாடகை தருபவர் (Rental Vendor)' : 'Rental Vendor'}</option>
+                    </select>
+                  </div>
+
+                  {selectedRole === 'buyer' && (
+                    <div className="space-y-1.5 animate-fade-in">
+                      <label className="text-[9px] font-mono font-black uppercase tracking-widest text-earth-450 block">
+                        {language === 'ta' ? 'கொள்முதல் வகை' : 'Buyer Type'}
+                      </label>
+                      <select
+                        value={selectedBuyerType}
+                        onChange={(e) => setSelectedBuyerType(e.target.value as any)}
+                        className="w-full h-12 px-4 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-primary-950/20 rounded-xl text-xs font-bold text-foreground focus:outline-none focus:border-primary-500 transition-all cursor-pointer"
+                      >
+                        <option value="customer">{language === 'ta' ? 'நேரடி நுகர்வோர்' : 'Direct Customer'}</option>
+                        <option value="hotel">{language === 'ta' ? 'ஹோட்டல்' : 'Hotel / Restaurant'}</option>
+                        <option value="retail">{language === 'ta' ? 'சில்லறை கடை' : 'Retail Store'}</option>
+                        <option value="marriage">{language === 'ta' ? 'திருமண மண்டபம் / விழாக்கள்' : 'Marriage / Event Caterer'}</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-12 bg-primary-500 hover:bg-primary-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary-500/10 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 border-0 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4.5 h-4.5 animate-spin" />
+                    ) : (
+                      <>
+                        <span>{language === 'ta' ? 'பதிவை முடிக்கவும்' : 'Complete Registration'}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
                 </form>
               )}
 

@@ -187,21 +187,44 @@ export async function getCurrentUser(): Promise<{ data: { user: any }; error: an
   }
 }
 
+// Helper to normalize and validate email/phone inputs
+export function normalizeInput(emailOrPhone: string): { normalized: string; isEmail: boolean; error: any } {
+  const val = emailOrPhone.trim();
+  if (val.includes('@')) {
+    return { normalized: val.toLowerCase(), isEmail: true, error: null };
+  }
+
+  // Clean non-digit/non-plus characters
+  const digitsOnly = val.replace(/[^\d+]/g, '');
+  if (!digitsOnly || digitsOnly.replace('+', '').length < 10) {
+    return { normalized: val, isEmail: false, error: { message: 'Invalid phone number format. Please enter a valid number.' } };
+  }
+
+  let normalized = digitsOnly;
+  if (!normalized.startsWith('+')) {
+    normalized = '+91' + normalized;
+  }
+
+  if (!/^\+[1-9]\d{1,14}$/.test(normalized)) {
+    return { normalized, isEmail: false, error: { message: 'Phone number must be in E.164 format (e.g. +91XXXXXXXXXX).' } };
+  }
+
+  return { normalized, isEmail: false, error: null };
+}
+
 // ─── Sign In With OTP (Phone/Email) ─────────────────────────────────
 export async function signInWithOtp(emailOrPhone: string): Promise<{ error: any }> {
+  const { normalized, isEmail, error: normError } = normalizeInput(emailOrPhone);
+  if (normError) return { error: normError };
+
   if (isSupabaseConfigured && supabase) {
-    const isEmail = emailOrPhone.includes('@');
     let res;
     if (isEmail) {
-      res = await supabase.auth.signInWithOtp({ email: emailOrPhone });
+      res = await supabase.auth.signInWithOtp({ email: normalized });
     } else {
-      res = await supabase.auth.signInWithOtp({ phone: emailOrPhone });
+      res = await supabase.auth.signInWithOtp({ phone: normalized });
     }
-    if (res.error) {
-      console.warn('[V-Link] Supabase OTP error, falling back to sandbox simulator:', res.error.message);
-      return { error: null }; // Silent fallback to simulated mode
-    }
-    return { error: null };
+    return { error: res.error };
   }
 
   // Sandbox Mode: simulate sending OTP
@@ -210,27 +233,29 @@ export async function signInWithOtp(emailOrPhone: string): Promise<{ error: any 
 
 // ─── Verify OTP ──────────────────────────────────────────────────────
 export async function verifyOtp(emailOrPhone: string, token: string): Promise<AuthResult> {
+  const { normalized, isEmail, error: normError } = normalizeInput(emailOrPhone);
+  if (normError) return { data: { user: null, session: null }, error: normError };
+
   if (isSupabaseConfigured && supabase) {
-    const isEmail = emailOrPhone.includes('@');
     let result;
     if (isEmail) {
       result = await supabase.auth.verifyOtp({
-        email: emailOrPhone,
+        email: normalized,
         token,
         type: 'magiclink',
       });
     } else {
       result = await supabase.auth.verifyOtp({
-        phone: emailOrPhone,
+        phone: normalized,
         token,
         type: 'sms',
       });
     }
     const { data, error } = result;
-    if (!error && data?.user) {
-      return { data: { user: data.user, session: data.session }, error: null };
+    if (error) {
+      return { data: { user: null, session: null }, error };
     }
-    console.warn('[V-Link] Supabase OTP verification error, falling back to sandbox verification:', error?.message);
+    return { data: { user: data.user, session: data.session }, error: null };
   }
 
   // Sandbox Mode: verify OTP
@@ -240,23 +265,23 @@ export async function verifyOtp(emailOrPhone: string, token: string): Promise<Au
 
   try {
     const users = JSON.parse(localStorage.getItem('vlink_mock_users') || '[]');
-    let matched = users.find((u: any) => u.email.toLowerCase() === emailOrPhone.toLowerCase());
+    let matched = users.find((u: any) => u.email.toLowerCase() === normalized.toLowerCase());
 
     if (!matched) {
       // Auto-signup in sandbox mode if user doesn't exist yet!
       const activeLanguage = (typeof window !== 'undefined' ? localStorage.getItem('vlink_language') : 'ta') || 'ta';
       const mockUser = {
         id: `mock_user_${Date.now()}`,
-        email: emailOrPhone,
+        email: normalized,
         role: 'authenticated',
         user_metadata: {
-          full_name: emailOrPhone.split('@')[0],
+          full_name: isEmail ? normalized.split('@')[0] : 'Farmer ' + normalized.slice(-4),
           role: 'farmer',
           language: activeLanguage,
         },
         created_at: new Date().toISOString(),
       };
-      matched = { email: emailOrPhone, password: '', profile: mockUser };
+      matched = { email: normalized, password: '', profile: mockUser };
       users.push(matched);
       localStorage.setItem('vlink_mock_users', JSON.stringify(users));
     }
@@ -275,4 +300,5 @@ export async function verifyOtp(emailOrPhone: string, token: string): Promise<Au
     return { data: { user: null, session: null }, error: err };
   }
 }
+
 
