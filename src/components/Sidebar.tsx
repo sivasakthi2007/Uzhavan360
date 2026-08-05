@@ -17,7 +17,6 @@ import {
   User,
   ShieldAlert,
   Leaf,
-  LogOut,
   ChevronDown,
   ChevronRight,
   Truck,
@@ -27,7 +26,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export default function Sidebar() {
-  const { userName, logout, activeRole, t, isOffline, language } = useApp();
+  const { userName, activeRole, t, isOffline, language } = useApp();
   const pathname = usePathname() || '';
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -185,16 +184,6 @@ export default function Sidebar() {
             )}
           </div>
 
-          <button
-            onClick={async () => {
-              await logout();
-              router.push('/');
-            }}
-            className="h-8 px-3 rounded-xl hover:bg-red-500/10 text-earth-450 hover:text-red-500 border border-transparent hover:border-red-500/20 bg-transparent flex items-center gap-1.5 font-black text-[10px] cursor-pointer transition-all"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>EXIT</span>
-          </button>
         </div>
 
       </div>

@@ -795,7 +795,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: auth.user.created_at || new Date().toISOString(),
       });
     } else {
-      setAppUser(null);
+      // Auth removed: always provide a mock user so the app doesn't crash expecting a user
+      setAppUser({
+        id: `mock_${Date.now()}`,
+        email: 'mock@example.com',
+        displayName: 'Guest Farmer',
+        role: 'farmer',
+        buyerType: null,
+        createdAt: new Date().toISOString(),
+      });
     }
     setLoading(false);
   }, [auth.user, auth.loading]);

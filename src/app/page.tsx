@@ -11,11 +11,8 @@ export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-      router.replace('/dashboard');
-    } else {
-      router.replace('/signup');
-    }
+    // Auth removed: directly go to dashboard
+    router.replace('/dashboard');
   }, [router]);
 
   // Sandbox Mode Indicator
@@ -72,7 +69,7 @@ export default function LandingPage() {
           </button>
 
           <Link
-            href="/signup"
+            href="/dashboard"
             className="flex items-center gap-1.5 py-2.5 px-5 rounded-xl text-xs font-bold bg-primary-500 hover:bg-primary-600 text-white shadow-md shadow-primary-500/10 hover:shadow-lg transition-all duration-300 cursor-pointer text-center no-underline"
           >
             <span>{t('get_started')}</span>
@@ -98,7 +95,7 @@ export default function LandingPage() {
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
           <Link
-            href="/signup"
+            href="/dashboard"
             className="w-full sm:w-auto h-12 flex items-center justify-center gap-2 px-8 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-xs font-bold text-white shadow-xl shadow-primary-500/10 hover:shadow-2xl transition-all duration-300 cursor-pointer no-underline"
           >
             <span>{t('get_started')}</span>
@@ -112,52 +109,7 @@ export default function LandingPage() {
           </a>
         </div>
 
-        {/* Dynamic Sandbox Quick Access (Appears only when supabase is unconfigured/sandbox mode is active) */}
-        {isSandbox && (
-          <div className="mt-14 w-full max-w-2xl p-6 rounded-[24px] border border-primary-500/10 bg-white/50 dark:bg-[#111714]/40 backdrop-blur-md space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary-500 animate-ping"></span>
-              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-primary-600 dark:text-primary-400">
-                {language === 'ta' ? 'சாண்ட்பாக்ஸ் நேரடி அணுகல்' : 'Sandbox Quick Access'}
-              </span>
-            </div>
-            <p className="text-[11px] text-earth-500 dark:text-earth-400 max-w-md mx-auto font-semibold">
-              {language === 'ta'
-                ? 'நீங்கள் தற்போது ஆஃப்லைன் சாண்ட்பாக்ஸ் முறையில் இயங்குகிறீர்கள். உடனடியாக உள்நுழைய கீழே உள்ள பாத்திரங்களில் ஒன்றை கிளிக் செய்க.'
-                : 'You are currently running in **Offline Sandbox Mode**. Click a role preset below to log in instantly.'}
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <Link
-                href="/signup?prefill=farmer_1@vlink.com"
-                className="p-3 rounded-2xl bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 hover:border-primary-500/40 text-center text-xs font-black text-foreground hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col items-center gap-1.5"
-              >
-                <span className="text-xl">👨‍🌾</span>
-                <span>{language === 'ta' ? 'விவசாயி' : 'Farmer'} (farmer_1)</span>
-              </Link>
-              <Link
-                href="/signup?prefill=buyer_1@vlink.com"
-                className="p-3 rounded-2xl bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 hover:border-primary-500/40 text-center text-xs font-black text-foreground hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col items-center gap-1.5"
-              >
-                <span className="text-xl">🤝</span>
-                <span>{language === 'ta' ? 'வாங்குபவர்' : 'Buyer'} (buyer_1)</span>
-              </Link>
-              <Link
-                href="/signup?prefill=labor_1@vlink.com"
-                className="p-3 rounded-2xl bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 hover:border-primary-500/40 text-center text-xs font-black text-foreground hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col items-center gap-1.5"
-              >
-                <span className="text-xl">👷</span>
-                <span>{language === 'ta' ? 'தொழிலாளர்' : 'Labour'} (labor_1)</span>
-              </Link>
-              <Link
-                href="/signup?prefill=admin@vlink.com"
-                className="p-3 rounded-2xl bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 hover:border-primary-500/40 text-center text-xs font-black text-foreground hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col items-center gap-1.5"
-              >
-                <span className="text-xl">🛡️</span>
-                <span>{language === 'ta' ? 'நிர்வாகி' : 'Admin'}</span>
-              </Link>
-            </div>
-          </div>
-        )}
+
       </section>
 
       {/* Core Agriculture Features Preview */}
