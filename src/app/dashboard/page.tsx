@@ -31,7 +31,10 @@ import {
   Bot,
   ClipboardList,
   Wallet,
-  Headset
+  Headset,
+  Truck,
+  Languages,
+  User
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
@@ -44,6 +47,7 @@ import DiseaseDiagnosisBoard from '@/components/DiseaseDiagnosisBoard';
 import WeatherBoard from '@/components/WeatherBoard';
 import AIAssistantBoard from '@/components/AIAssistantBoard';
 import CustomerCareBoard from '@/components/CustomerCareBoard';
+import TranslatorBoard from '@/components/TranslatorBoard';
 import { useSearchParams } from 'next/navigation';
 
 // ─── Official Schemes API Sandbox Mock ──────────────────────────────
@@ -101,7 +105,7 @@ function DashboardContent() {
   } = useApp();
 
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'market';
+  const activeTab = searchParams.get('tab') || 'home';
 
   // State Management
   const [isSyncing, setIsSyncing] = useState(false);
@@ -1068,6 +1072,276 @@ function DashboardContent() {
               <CustomerCareBoard />
             )}
 
+            {activeTab === 'translator' && (
+              <TranslatorBoard />
+            )}
+
+            {/* Buy/Sell Mobile & Desktop Dashboard */}
+            {activeTab === 'buysell' && (
+              <div className="space-y-6 animate-fade-in text-foreground">
+                <div>
+                  <h1 className="text-2xl font-black tracking-tight">{language === 'ta' ? 'வாங்கு / விற்று (Buy/Sell)' : 'Buy & Sell Services'}</h1>
+                  <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
+                    {language === 'ta' ? 'விவசாய வர்த்தக சேவைகள் மற்றும் சந்தை தளம்.' : 'Grouped agricultural marketplace and trading services.'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Card 1: Crop Marketplace */}
+                  <Link
+                    href="/dashboard?tab=market&sub=crops"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <ShoppingBag className="w-5 h-5" />
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'பயிர் சந்தை' : 'Crop Market (Crops Available)'}</h3>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
+                        {language === 'ta' ? 'விளைபொருட்களை விற்க அல்லது கொள்முதல் செய்ய.' : 'Sell your registered crop produce or purchase from local inventory.'}
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Card 2: Buyer Requirements */}
+                  <Link
+                    href="/dashboard?tab=market&sub=requirements"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <Leaf className="w-5 h-5" />
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'கொள்முதல் தேவைகள்' : 'Buyer Requirements'}</h3>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
+                        {language === 'ta' ? 'மொத்த கொள்முதல் செய்யும் நிறுவனங்களின் தேவைகள்.' : 'Browse active bulk purchase demands posted by verified corporate buyers.'}
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Card 3: Pre-booking Offer */}
+                  <Link
+                    href="/dashboard?tab=market&sub=prebooking"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'அறுவடைக்கு முந்தைய ஒப்பந்தம்' : 'Pre-booking Offer'}</h3>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
+                        {language === 'ta' ? 'அறுவடைக்கு முன் 10% முன்பணத்துடன் பதிவு செய்ய.' : 'Lock prices before harvest with secured 10% advance deposit.'}
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Card 4: My Pre-bookings List */}
+                  <Link
+                    href="/dashboard?tab=prebookings"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <Package className="w-5 h-5" />
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'என் ஒப்பந்தங்கள் & எஸ்க்ரோ' : 'My Pre-Bookings & Escrow'}</h3>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
+                        {language === 'ta' ? 'முன்பதிவு ஒப்பந்தங்கள் மற்றும் எஸ்க்ரோ நிலவரம்.' : 'Track your active pre-bookings and secure escrow balances.'}
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Card 5: Orders Tracking */}
+                  <Link
+                    href="/dashboard?tab=orders"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <ClipboardList className="w-5 h-5" />
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'ஆர்டர்கள் & கண்காணிப்பு' : 'Purchase Orders & Tracking'}</h3>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
+                        {language === 'ta' ? 'அறுவடைக்கு பிந்தைய விநியோகக் கண்காணிப்பு.' : 'Post-harvest dispatch tracking and logistics status updates.'}
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Card 6: Equipment Rental */}
+                  <Link
+                    href="/dashboard?tab=rentals"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <Truck className="w-5 h-5" />
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'இயந்திர வாடகை' : 'Equipment Rental'}</h3>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
+                        {language === 'ta' ? 'டிராக்டர்கள் மற்றும் இதர கருவிகள் வாடகைக்கு.' : 'Rent agricultural machinery or list your machinery.'}
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Card 7: Labour Exchange */}
+                  <Link
+                    href="/dashboard?tab=labor"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'வேலைவாய்ப்பு' : 'Labour Exchange'}</h3>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
+                        {language === 'ta' ? 'பயிர்த்தொழில் வேலைகள் மற்றும் பணியாளர்கள்.' : 'Find seasonal workforce or browse local farm job listings.'}
+                      </p>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* More Services Mobile Dashboard */}
+            {activeTab === 'more' && (
+              <div className="space-y-6 animate-fade-in text-foreground">
+                <div>
+                  <h1 className="text-2xl font-black tracking-tight">{language === 'ta' ? 'இதர சேவைகள் (More)' : 'More Services'}</h1>
+                  <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
+                    {language === 'ta' ? 'கூடுதல் விவரங்கள் மற்றும் உதவிக்கான சேவைகள்.' : 'Access support, government schemes, weather details, and wallet.'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Weather */}
+                  <Link
+                    href="/dashboard?tab=weather"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <CloudSun className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'வானிலை' : 'Weather'}</h4>
+                      <p className="text-[10px] text-earth-500 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'வானிலை முன்னறிவிப்பு' : 'Live weather forecasts'}</p>
+                    </div>
+                  </Link>
+
+                  {/* Orders */}
+                  <Link
+                    href="/dashboard?tab=orders"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <ClipboardList className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'ஆர்டர்கள்' : 'Orders'}</h4>
+                      <p className="text-[10px] text-earth-500 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'விற்பனை & கண்காணிப்பு' : 'Post-harvest dispatch tracking'}</p>
+                    </div>
+                  </Link>
+
+                  {/* Wallet */}
+                  <Link
+                    href="/dashboard?tab=wallet"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Wallet className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'பணப்பை' : 'Wallet'}</h4>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'நிலுவைத்தொகை & பரிவர்த்தனை' : 'Manage bank payouts & balance'}</p>
+                    </div>
+                  </Link>
+
+                  {/* Profile */}
+                  <Link
+                    href="/dashboard?tab=profile"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'சுயவிவரம்' : 'Profile'}</h4>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'கணக்கு அமைப்புகள்' : 'Operator credentials & roles'}</p>
+                    </div>
+                  </Link>
+
+                  {/* Government Schemes */}
+                  <Link
+                    href="/dashboard?tab=schemes"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'அரசு திட்டங்கள்' : 'Gov Schemes'}</h4>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'மானியங்கள் & உதவித்தொகை' : 'Check active subsidies & apply'}</p>
+                    </div>
+                  </Link>
+
+                  {/* Labour Exchange */}
+                  <Link
+                    href="/dashboard?tab=labor"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'வேலைவாய்ப்பு' : 'Labour Exchange'}</h4>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'விவசாய வேலை வாய்ப்புகள்' : 'Seasonal workforce exchange'}</p>
+                    </div>
+                  </Link>
+
+                  {/* Equipment Rental */}
+                  <Link
+                    href="/dashboard?tab=rentals"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Truck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'இயந்திர வாடகை' : 'Equipment Rental'}</h4>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'விவசாயக் குத்தகைகள்' : 'Rent tractors & farm equipment'}</p>
+                    </div>
+                  </Link>
+
+                  {/* AI Translator */}
+                  <Link
+                    href="/dashboard?tab=translator"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary-500/10 text-primary-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Languages className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'AI மொழிபெயர்ப்பு' : 'AI Translator'}</h4>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'அகில உலக மொழிபெயர்ப்பாளர்' : 'Universal real-time translator'}</p>
+                    </div>
+                  </Link>
+
+                  {/* Customer Support */}
+                  <Link
+                    href="/dashboard?tab=support"
+                    className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group animate-fade-in"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Headset className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black">{language === 'ta' ? 'உதவி மையம்' : 'Support'}</h4>
+                      <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'அழைப்பு & உதவி' : 'Speak with rural advisors'}</p>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            )}
+
             <OrderModal
               product={selectedProdForOrder}
               isOpen={isOrderModalOpen}
@@ -1103,6 +1377,7 @@ function DashboardContent() {
 
           </div>
         </main>
+        <BottomNav />
       </div>
 
       {/* Modal: List Crop Form */}

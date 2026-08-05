@@ -1,5 +1,7 @@
 'use client';
 
+import { useApp } from '@/context/AppContext';
+
 interface ConfirmationDialogProps {
   isOpen: boolean;
   title: string;
@@ -16,12 +18,18 @@ export default function ConfirmationDialog({
   title,
   description,
   confirmText,
-  cancelText = 'Cancel',
+  cancelText,
   onConfirm,
   onCancel,
   isConfirming = false
 }: ConfirmationDialogProps) {
+  const { language } = useApp();
   if (!isOpen) return null;
+
+  const displayCancelText = cancelText || (language === 'ta' ? 'ரத்து செய்' : 'Cancel');
+  const displayConfirmText = isConfirming 
+    ? (language === 'ta' ? 'செயலாக்கப்படுகிறது...' : 'Processing...') 
+    : confirmText;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
@@ -43,14 +51,14 @@ export default function ConfirmationDialog({
             disabled={isConfirming}
             className="flex-1 h-10 rounded-xl border border-earth-200 dark:border-primary-950/20 hover:bg-earth-50 dark:hover:bg-earth-900/40 text-earth-700 dark:text-earth-300 font-bold text-xs cursor-pointer transition-all disabled:opacity-50"
           >
-            {cancelText}
+            {displayCancelText}
           </button>
           <button
             onClick={onConfirm}
             disabled={isConfirming}
             className="flex-1 h-10 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs shadow-md transition-all duration-200 cursor-pointer border-0 disabled:opacity-50"
           >
-            {isConfirming ? 'Processing...' : confirmText}
+            {displayConfirmText}
           </button>
         </div>
       </div>

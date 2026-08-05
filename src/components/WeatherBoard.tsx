@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   CloudRain,
@@ -20,171 +20,76 @@ import {
   ArrowDown,
   Umbrella,
   Waves,
-  Leaf,
   CalendarDays,
   Bell,
   CheckCircle,
-  Info
+  Info,
+  MapPin,
+  RefreshCw,
+  Search
 } from 'lucide-react';
-
-// ─── Mock Weather Data ──────────────────────────────────────────────
-const CURRENT_WEATHER = {
-  temp: 32,
-  feelsLike: 35,
-  humidity: 78,
-  windSpeed: 14,
-  windDir: 'SW',
-  condition: 'partly_cloudy' as const,
-  rainProbability: 65,
-  uvIndex: 7,
-  visibility: 8,
-  pressure: 1008,
-  sunrise: '06:02',
-  sunset: '18:34',
-  updatedAt: new Date().toISOString(),
-};
 
 type WeatherCondition = 'sunny' | 'partly_cloudy' | 'cloudy' | 'rainy' | 'thunderstorm' | 'drizzle';
 
-interface ForecastDay {
-  day: string;
-  dayTa: string;
-  date: string;
-  high: number;
-  low: number;
-  condition: WeatherCondition;
-  rainProb: number;
-  humidity: number;
-  wind: number;
+interface WeatherData {
+  is_mock?: boolean;
+  current: {
+    temp: number;
+    feelsLike: number;
+    condition: WeatherCondition;
+    conditionText: string;
+    humidity: number;
+    windSpeed: number;
+    windDir: string;
+    rainProbability: number;
+    visibility: number;
+    pressure: number;
+    sunrise: string;
+    sunset: string;
+    updatedAt: string;
+  };
+  forecast: Array<{
+    day: string;
+    dayTa: string;
+    date: string;
+    high: number;
+    low: number;
+    condition: WeatherCondition;
+    conditionText: string;
+    rainProb: number;
+    humidity: number;
+    wind: number;
+  }>;
+  alerts: Array<{
+    id: string;
+    type: 'warning' | 'watch' | 'info';
+    title: string;
+    description: string;
+    validUntil: string;
+  }>;
 }
 
-const FORECAST_7DAY: ForecastDay[] = (() => {
-  const days = [
-    { day: 'Today', dayTa: 'இன்று', condition: 'partly_cloudy' as const, high: 32, low: 25, rainProb: 65, humidity: 78, wind: 14 },
-    { day: 'Tomorrow', dayTa: 'நாளை', condition: 'rainy' as const, high: 29, low: 24, rainProb: 85, humidity: 88, wind: 20 },
-    { day: 'Wednesday', dayTa: 'புதன்', condition: 'thunderstorm' as const, high: 28, low: 23, rainProb: 90, humidity: 92, wind: 25 },
-    { day: 'Thursday', dayTa: 'வியாழன்', condition: 'rainy' as const, high: 27, low: 23, rainProb: 70, humidity: 85, wind: 18 },
-    { day: 'Friday', dayTa: 'வெள்ளி', condition: 'cloudy' as const, high: 30, low: 24, rainProb: 40, humidity: 75, wind: 12 },
-    { day: 'Saturday', dayTa: 'சனி', condition: 'partly_cloudy' as const, high: 33, low: 25, rainProb: 20, humidity: 65, wind: 10 },
-    { day: 'Sunday', dayTa: 'ஞாயிறு', condition: 'sunny' as const, high: 35, low: 26, rainProb: 10, humidity: 58, wind: 8 },
-  ];
-  const today = new Date();
-  return days.map((d, i) => {
-    const dt = new Date(today);
-    dt.setDate(today.getDate() + i);
-    return { ...d, date: dt.toISOString().split('T')[0] };
-  });
-})();
-
-interface WeatherAlert {
-  id: string;
-  type: 'warning' | 'watch' | 'info';
-  title: string;
-  titleTa: string;
-  description: string;
-  descriptionTa: string;
-  validUntil: string;
+interface LocationPreset {
+  name: string;
+  nameTa: string;
+  lat: number;
+  lng: number;
 }
 
-const WEATHER_ALERTS: WeatherAlert[] = [
-  {
-    id: 'alert_1',
-    type: 'warning',
-    title: 'Heavy Rainfall Warning',
-    titleTa: 'கடும் மழை எச்சரிக்கை',
-    description: 'Heavy to very heavy rainfall expected in Madurai and surrounding districts for the next 48 hours. Ensure proper drainage in all crop fields.',
-    descriptionTa: 'மதுரை மற்றும் சுற்றுப்புற மாவட்டங்களில் அடுத்த 48 மணி நேரத்திற்கு கனமழை முதல் மிக கனமழை எதிர்பார்க்கப்படுகிறது. அனைத்து பயிர் நிலங்களிலும் சரியான வடிகால் வசதியை உறுதி செய்யவும்.',
-    validUntil: '2026-08-01',
-  },
-  {
-    id: 'alert_2',
-    type: 'watch',
-    title: 'Thunderstorm Watch',
-    titleTa: 'இடியுடன் கூடிய மழை கண்காணிப்பு',
-    description: 'Thunderstorm activity likely on Wednesday afternoon. Avoid open field work between 2 PM - 6 PM. Secure equipment and livestock.',
-    descriptionTa: 'புதன் பிற்பகலில் இடியுடன் கூடிய மழை வரலாம். மதியம் 2 - மாலை 6 மணி வரை திறந்த வெளிப் பணிகளைத் தவிர்க்கவும். உபகரணங்கள் மற்றும் கால்நடைகளைப் பாதுகாக்கவும்.',
-    validUntil: '2026-07-31',
-  },
-  {
-    id: 'alert_3',
-    type: 'info',
-    title: 'Southwest Monsoon Active',
-    titleTa: 'தென்மேற்குப் பருவமழை தீவிரம்',
-    description: 'Southwest monsoon is active over Tamil Nadu. Good soil moisture expected. Ideal time for sowing secondary crops in well-drained fields.',
-    descriptionTa: 'தமிழ்நாடு முழுவதும் தென்மேற்குப் பருவமழை தீவிரமாக உள்ளது. மண்ணில் நல்ல ஈரப்பதம் எதிர்பார்க்கப்படுகிறது. வடிகால் வசதியுள்ள நிலங்களில் இரண்டாம் பயிர் விதைக்க ஏற்ற நேரம்.',
-    validUntil: '2026-08-15',
-  },
+const LOCATION_PRESETS: LocationPreset[] = [
+  { name: 'Madurai', nameTa: 'மதுரை', lat: 9.9252, lng: 78.1198 },
+  { name: 'Melur', nameTa: 'மேலூர்', lat: 10.0460, lng: 78.3392 },
+  { name: 'Thanjavur', nameTa: 'தஞ்சாவூர்', lat: 10.7870, lng: 79.1378 },
+  { name: 'Erode', nameTa: 'ஈரோடு', lat: 11.3410, lng: 77.7172 },
+  { name: 'Dindigul', nameTa: 'திண்டுக்கல்', lat: 10.3673, lng: 77.9803 },
+  { name: 'Virudhunagar', nameTa: 'விருதுநகர்', lat: 9.5680, lng: 77.9624 },
+  { name: 'Chennai', nameTa: 'சென்னை', lat: 13.0827, lng: 80.2707 },
+  { name: 'Coimbatore', nameTa: 'கோயம்புத்தூர்', lat: 11.0168, lng: 76.9558 },
 ];
 
-interface CropImpact {
-  id: string;
-  crop: string;
-  cropTa: string;
-  suggestion: string;
-  suggestionTa: string;
-  priority: 'high' | 'medium' | 'low';
-  icon: 'rain' | 'heat' | 'wind' | 'humidity';
-}
-
-const CROP_IMPACTS: CropImpact[] = [
-  {
-    id: 'ci_1', crop: 'Tomato', cropTa: 'தக்காளி',
-    suggestion: 'Delay harvesting today — heavy rain expected. Wet tomatoes are prone to cracking and rot. Resume harvest Friday.',
-    suggestionTa: 'இன்று அறுவடையை தள்ளிவைக்கவும் — கனமழை எதிர்பார்க்கப்படுகிறது. ஈரமான தக்காளி வெடிப்பு மற்றும் அழுகலுக்கு ஆளாகும். வெள்ளிக்கிழமை அறுவடையைத் தொடரவும்.',
-    priority: 'high', icon: 'rain',
-  },
-  {
-    id: 'ci_2', crop: 'Chilli', cropTa: 'மிளகாய்',
-    suggestion: 'High humidity may cause leaf curl virus. Apply neem oil spray preventatively this evening after rain stops.',
-    suggestionTa: 'அதிக ஈரப்பதம் இலை சுருட்டு வைரஸை ஏற்படுத்தலாம். மழை நின்ற பிறகு இன்று மாலை வேப்ப எண்ணெய் தெளிக்கவும்.',
-    priority: 'medium', icon: 'humidity',
-  },
-  {
-    id: 'ci_3', crop: 'Paddy', cropTa: 'நெல்',
-    suggestion: 'Good rainfall expected — reduce pump irrigation for 3 days. Natural water level sufficient for current growth stage.',
-    suggestionTa: 'நல்ல மழை எதிர்பார்க்கப்படுகிறது — 3 நாட்களுக்கு பம்ப் பாசனத்தைக் குறைக்கவும். தற்போதைய வளர்ச்சி நிலைக்கு இயற்கை நீர் மட்டம் போதுமானது.',
-    priority: 'low', icon: 'rain',
-  },
-  {
-    id: 'ci_4', crop: 'Turmeric', cropTa: 'மஞ்சள்',
-    suggestion: 'Ensure drainage channels are clear — waterlogging causes rhizome rot in turmeric. Check field bunds before evening rain.',
-    suggestionTa: 'வடிகால் வாய்க்கால்கள் சுத்தமாக உள்ளதா உறுதிசெய்யவும் — நீர் தேங்குவது மஞ்சள் கிழங்கு அழுகலை ஏற்படுத்தும். மாலை மழைக்கு முன் வரப்புகளை சரிபார்க்கவும்.',
-    priority: 'high', icon: 'rain',
-  },
-];
-
-interface IrrigationReminder {
-  id: string;
-  title: string;
-  titleTa: string;
-  time: string;
-  status: 'pending' | 'done' | 'skip';
-  note: string;
-  noteTa: string;
-}
-
-const IRRIGATION_REMINDERS: IrrigationReminder[] = [
-  {
-    id: 'irr_1', title: 'Morning Drip — Tomato Field', titleTa: 'காலை சொட்டுநீர் — தக்காளி வயல்',
-    time: '06:30 AM', status: 'done',
-    note: 'Completed. 45 min drip cycle.', noteTa: 'முடிந்தது. 45 நிமிட சொட்டுநீர் சுழற்சி.',
-  },
-  {
-    id: 'irr_2', title: 'Skip Evening Irrigation', titleTa: 'மாலை பாசனத்தைத் தவிர்க்கவும்',
-    time: '05:00 PM', status: 'skip',
-    note: 'Rain expected at 4 PM. Skip to save water and electricity.', noteTa: 'மதியம் 4 மணிக்கு மழை எதிர்பார்க்கப்படுகிறது. நீர் மற்றும் மின்சாரம் சேமிக்க தவிர்க்கவும்.',
-  },
-  {
-    id: 'irr_3', title: 'Borewell Pump — Chilli Plot', titleTa: 'ஆழ்துளை பம்ப் — மிளகாய் தோட்டம்',
-    time: '07:00 AM (Tomorrow)', status: 'pending',
-    note: 'Run 30 min if no rain overnight. Check soil moisture first.', noteTa: 'இரவு மழை இல்லை என்றால் 30 நிமிடம் ஓட்டவும். முதலில் மண் ஈரப்பதத்தை சரிபார்க்கவும்.',
-  },
-];
-
-// ─── Helper Components ──────────────────────────────────────────────
 function getWeatherIcon(condition: WeatherCondition, size = 'w-6 h-6') {
   switch (condition) {
-    case 'sunny': return <Sun className={`${size} text-amber-500`} />;
+    case 'sunny': return <Sun className={`${size} text-amber-500 animate-spin-slow`} />;
     case 'partly_cloudy': return <CloudSun className={`${size} text-amber-400`} />;
     case 'cloudy': return <Cloud className={`${size} text-earth-400`} />;
     case 'rainy': return <CloudRain className={`${size} text-blue-500`} />;
@@ -194,337 +99,521 @@ function getWeatherIcon(condition: WeatherCondition, size = 'w-6 h-6') {
   }
 }
 
-function getConditionLabel(condition: WeatherCondition, lang: string) {
-  const labels: Record<WeatherCondition, { en: string; ta: string }> = {
-    sunny: { en: 'Sunny', ta: 'வெயில்' },
-    partly_cloudy: { en: 'Partly Cloudy', ta: 'ஓரளவு மேகமூட்டம்' },
-    cloudy: { en: 'Cloudy', ta: 'மேகமூட்டம்' },
-    rainy: { en: 'Rainy', ta: 'மழை' },
-    thunderstorm: { en: 'Thunderstorm', ta: 'இடியுடன் மழை' },
-    drizzle: { en: 'Drizzle', ta: 'தூறல்' },
-  };
-  return lang === 'ta' ? labels[condition].ta : labels[condition].en;
-}
-
-// ─── Main Component ─────────────────────────────────────────────────
 export default function WeatherBoard() {
   const { t, language } = useApp();
-  const [selectedDay, setSelectedDay] = useState(0);
   const isTamil = language === 'ta';
 
-  const selected = FORECAST_7DAY[selectedDay];
+  const [lat, setLat] = useState<number>(9.9252); // Default to Madurai
+  const [lng, setLng] = useState<number>(78.1198);
+  const [presetIndex, setPresetIndex] = useState<string>('0');
+  const [customLat, setCustomLat] = useState<string>('');
+  const [customLng, setCustomLng] = useState<string>('');
+  
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCached, setIsCached] = useState<boolean>(false);
+  const [selectedForecastDay, setSelectedForecastDay] = useState<number>(0);
+  const [locationStatus, setLocationStatus] = useState<'prompt' | 'fetching' | 'granted' | 'denied'>('prompt');
+
+  const fetchWeather = useCallback(async (latitude: number, longitude: number) => {
+    setIsLoading(true);
+    setError(null);
+    setIsCached(false);
+
+    try {
+      const response = await fetch(`/api/weather?lat=${latitude}&lng=${longitude}&language=${language}`);
+      if (!response.ok) {
+        throw new Error('Failed to retrieve live weather data');
+      }
+
+      const data: WeatherData = await response.json();
+      setWeather(data);
+      setSelectedForecastDay(0);
+
+      // Save to local cache
+      localStorage.setItem('vlink_cached_weather', JSON.stringify({
+        data,
+        lat: latitude,
+        lng: longitude,
+        cachedAt: new Date().toISOString()
+      }));
+    } catch (err: any) {
+      console.warn('[WeatherBoard] Fetch failed, loading from local cache:', err);
+      // Attempt cache recovery
+      const cached = localStorage.getItem('vlink_cached_weather');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setWeather(parsed.data);
+          setLat(parsed.lat);
+          setLng(parsed.lng);
+          setIsCached(true);
+          setSelectedForecastDay(0);
+          setError(
+            isTamil 
+              ? `நெட்வொர்க் பிழை. சேமிக்கப்பட்ட பழைய தரவு காண்பிக்கப்படுகிறது (${new Date(parsed.cachedAt).toLocaleTimeString()})`
+              : `Network connection failed. Showing cached data from ${new Date(parsed.cachedAt).toLocaleTimeString()}`
+          );
+        } catch (parseErr) {
+          setError(isTamil ? 'வானிலை தரவை ஏற்ற முடியவில்லை' : 'Failed to load weather data');
+        }
+      } else {
+        setError(
+          isTamil 
+            ? 'இணைப்பு தோல்வி மற்றும் சேமிக்கப்பட்ட தரவு எதுவும் இல்லை.' 
+            : 'Connection failure and no cached weather data is available.'
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [language, isTamil]);
+
+  // Fetch current geolocation
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus('denied');
+      return;
+    }
+
+    setLocationStatus('fetching');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        setLat(latitude);
+        setLng(longitude);
+        setPresetIndex('custom');
+        setCustomLat(latitude.toFixed(4));
+        setCustomLng(longitude.toFixed(4));
+        setLocationStatus('granted');
+        fetchWeather(latitude, longitude);
+      },
+      (err) => {
+        console.warn('[Geolocation] Permission denied or error:', err);
+        setLocationStatus('denied');
+        // Fallback to active coordinates
+        fetchWeather(lat, lng);
+      },
+      { timeout: 8000 }
+    );
+  };
+
+  // Handle Preset Selector Change
+  const handlePresetChange = (value: string) => {
+    setPresetIndex(value);
+    if (value === 'custom') {
+      return;
+    }
+    const idx = parseInt(value, 10);
+    if (!isNaN(idx) && LOCATION_PRESETS[idx]) {
+      const selected = LOCATION_PRESETS[idx];
+      setLat(selected.lat);
+      setLng(selected.lng);
+      setCustomLat('');
+      setCustomLng('');
+      fetchWeather(selected.lat, selected.lng);
+    }
+  };
+
+  // Submit custom lat/lng coordinates
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsedLat = parseFloat(customLat);
+    const parsedLng = parseFloat(customLng);
+    if (isNaN(parsedLat) || isNaN(parsedLng) || parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
+      setError(isTamil ? 'தவறான அட்சரேகை/தீர்க்கரேகை அலகுகள்' : 'Invalid coordinate values');
+      return;
+    }
+    setLat(parsedLat);
+    setLng(parsedLng);
+    fetchWeather(parsedLat, parsedLng);
+  };
+
+  // Fetch on mount or when language/preset changes
+  useEffect(() => {
+    // Attempt automatic geolocation on mount
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          setLat(latitude);
+          setLng(longitude);
+          setPresetIndex('custom');
+          setCustomLat(latitude.toFixed(4));
+          setCustomLng(longitude.toFixed(4));
+          setLocationStatus('granted');
+          fetchWeather(latitude, longitude);
+        },
+        () => {
+          setLocationStatus('denied');
+          // Load default preset (Madurai)
+          fetchWeather(lat, lng);
+        }
+      );
+    } else {
+      setLocationStatus('denied');
+      fetchWeather(lat, lng);
+    }
+    
+    // Auto-refresh when internet connectivity returns
+    const handleOnline = () => {
+      fetchWeather(lat, lng);
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
+  const activeForecast = weather?.forecast[selectedForecastDay];
+
+  // Dynamic Crop Advice based on weather conditions
+  const getDynamicCropAdvice = (condition: WeatherCondition) => {
+    if (condition === 'rainy' || condition === 'thunderstorm') {
+      return [
+        { crop: isTamil ? 'தக்காளி' : 'Tomato', priority: 'high', suggestion: isTamil ? 'இன்று அறுவடையை தள்ளிவைக்கவும். ஈரமான பழங்கள் அழுகிவிடும்.' : 'Delay harvest today. Wet tomatoes crack and rot easily.', icon: 'rain' },
+        { crop: isTamil ? 'நெல்' : 'Paddy', priority: 'low', suggestion: isTamil ? 'மழை பெய்வதால் அடுத்த 3 நாட்களுக்கு நீர்ப்பாசனத்தைக் குறைக்கவும்.' : 'Abundant rain expected; pause pump irrigation to save power.', icon: 'rain' },
+        { crop: isTamil ? 'மஞ்சள்' : 'Turmeric', priority: 'high', suggestion: isTamil ? 'வடிகால் வாய்க்கால்களைச் சீரமைத்து நீர் தேங்குவதைத் தவிர்க்கவும்.' : 'Clear drainage channels; waterlogging causes root rhizome rot.', icon: 'rain' },
+      ];
+    }
+    if (condition === 'sunny') {
+      return [
+        { crop: isTamil ? 'மிளகாய்' : 'Chilli', priority: 'medium', suggestion: isTamil ? 'சூடான வானிலை; பூச்சிகள் தாக்காமல் இருக்க வேப்ப எண்ணெய் தெளிக்கவும்.' : 'Sunny conditions; spray neem oil preventatively to control whitefly.', icon: 'heat' },
+        { crop: isTamil ? 'தக்காளி' : 'Tomato', priority: 'medium', suggestion: isTamil ? 'மண் காய்ந்துவிடாமல் இருக்க சொட்டுநீர் பாசனத்தை அதிகரிக்கவும்.' : 'Increase drip irrigation cycles to prevent soil drying.', icon: 'heat' },
+        { crop: isTamil ? 'நெல்' : 'Paddy', priority: 'low', suggestion: isTamil ? 'மண்ணில் ஈரப்பதத்தை உறுதிப்படுத்த காலை வேளையில் பாய்ச்சவும்.' : 'Ensure adequate standing water in paddy plots during heat spikes.', icon: 'heat' },
+      ];
+    }
+    return [
+      { crop: isTamil ? 'தக்காளி' : 'Tomato', priority: 'low', suggestion: isTamil ? 'இயல்பான வளர்ச்சி நிலைகள். களக் கண்காணிப்பைத் தொடரவும்.' : 'Normal growth parameters. Continue routine field monitoring.', icon: 'humidity' },
+      { crop: isTamil ? 'மிளகாய்' : 'Chilli', priority: 'medium', suggestion: isTamil ? 'மேகமூட்டமான வானிலை இலை சுருட்டலை ஏற்படுத்தலாம்; கவனித்துக் கொள்ளவும்.' : 'Overcast conditions may foster leaf curl; check foliage health.', icon: 'humidity' },
+    ];
+  };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
-          <CloudSun className="w-7 h-7 text-amber-500" />
-          {t('weather_intelligence_title') || 'Weather Intelligence'}
-        </h1>
-        <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
-          {t('weather_intelligence_desc') || 'Madurai East, Tamil Nadu — Real-time weather insights for your farm'}
-        </p>
-      </div>
-
-      {/* ── Current Weather Hero Card ── */}
-      <div className="relative overflow-hidden rounded-3xl border border-earth-200/60 dark:border-primary-950/20 bg-gradient-to-br from-blue-500/5 via-white to-amber-500/5 dark:from-blue-950/30 dark:via-[#111714] dark:to-amber-950/20 p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          {/* Left: Main temp & condition */}
-          <div className="flex items-center gap-5">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400/20 to-blue-400/20 dark:from-amber-500/10 dark:to-blue-500/10 flex items-center justify-center">
-              {getWeatherIcon(CURRENT_WEATHER.condition, 'w-10 h-10')}
-            </div>
-            <div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-5xl font-black text-foreground tracking-tighter">{CURRENT_WEATHER.temp}°</span>
-                <span className="text-lg font-bold text-earth-400">C</span>
-              </div>
-              <p className="text-sm font-bold text-earth-500 dark:text-earth-400 mt-0.5">
-                {getConditionLabel(CURRENT_WEATHER.condition, language)}
-              </p>
-              <p className="text-[10px] font-mono font-bold text-earth-400 mt-0.5">
-                {isTamil ? 'உணர்வு' : 'Feels like'} {CURRENT_WEATHER.feelsLike}°C
-              </p>
-            </div>
+    <div className="space-y-6 animate-fade-in text-foreground">
+      
+      {/* Location Controller Panel */}
+      <div className="vlink-glass vlink-card p-5 rounded-[24px] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2.5">
+              <CloudSun className="w-7 h-7 text-amber-500" />
+              <span>{isTamil ? 'விவசாய வானிலை மையம்' : 'Agricultural Weather Center'}</span>
+            </h1>
+            <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
+              📍 Lat: <span className="font-mono font-bold text-foreground">{lat.toFixed(4)}</span> | Lng: <span className="font-mono font-bold text-foreground">{lng.toFixed(4)}</span>
+            </p>
           </div>
 
-          {/* Right: Weather stats grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { icon: Droplets, label: isTamil ? 'ஈரப்பதம்' : 'Humidity', value: `${CURRENT_WEATHER.humidity}%`, color: 'text-blue-500' },
-              { icon: Wind, label: isTamil ? 'காற்று' : 'Wind', value: `${CURRENT_WEATHER.windSpeed} km/h ${CURRENT_WEATHER.windDir}`, color: 'text-teal-500' },
-              { icon: Umbrella, label: isTamil ? 'மழை வாய்ப்பு' : 'Rain Chance', value: `${CURRENT_WEATHER.rainProbability}%`, color: 'text-indigo-500' },
-              { icon: Eye, label: isTamil ? 'தெரிவுநிலை' : 'Visibility', value: `${CURRENT_WEATHER.visibility} km`, color: 'text-earth-500' },
-            ].map((stat) => (
-              <div key={stat.label} className="p-3 rounded-2xl bg-white/60 dark:bg-earth-950/30 border border-earth-100/50 dark:border-earth-900/20">
-                <stat.icon className={`w-4 h-4 ${stat.color} mb-1.5`} />
-                <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{stat.label}</p>
-                <p className="text-sm font-black text-foreground mt-0.5">{stat.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Presets Select Dropdown */}
+            <select
+              value={presetIndex}
+              onChange={(e) => handlePresetChange(e.target.value)}
+              className="h-10 px-3 pr-7 rounded-xl text-xs font-bold bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 text-foreground cursor-pointer focus:outline-none"
+            >
+              <optgroup label={isTamil ? 'விவசாய வட்டாரங்கள்' : 'Agricultural Hubs'}>
+                {LOCATION_PRESETS.map((p, idx) => (
+                  <option key={p.name} value={idx.toString()}>
+                    {isTamil ? p.nameTa : p.name}
+                  </option>
+                ))}
+              </optgroup>
+              <option value="custom">⚙️ {isTamil ? 'தனிப்பயன் ஒருங்கிணைப்புகள்' : 'Custom Coordinates'}</option>
+            </select>
 
-        {/* Sun times */}
-        <div className="flex items-center gap-6 mt-5 pt-4 border-t border-earth-100/40 dark:border-earth-900/10">
-          <div className="flex items-center gap-2 text-xs font-bold text-earth-500">
-            <ArrowUp className="w-3.5 h-3.5 text-amber-500" />
-            <span>{isTamil ? 'சூரிய உதயம்' : 'Sunrise'}: {CURRENT_WEATHER.sunrise}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-earth-500">
-            <ArrowDown className="w-3.5 h-3.5 text-orange-500" />
-            <span>{isTamil ? 'சூரிய அஸ்தமனம்' : 'Sunset'}: {CURRENT_WEATHER.sunset}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-earth-500 ml-auto">
-            <Thermometer className="w-3.5 h-3.5 text-red-400" />
-            <span>UV: {CURRENT_WEATHER.uvIndex}/11</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 7-Day Forecast ── */}
-      <div className="p-6 rounded-3xl border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-xs">
-        <h3 className="text-sm font-black text-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-primary-500" />
-          {t('weather_7day_forecast') || '7-Day Forecast'}
-        </h3>
-
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-          {FORECAST_7DAY.map((day, idx) => (
+            {/* Geolocation Button */}
             <button
-              key={day.date}
-              onClick={() => setSelectedDay(idx)}
-              className={`flex-shrink-0 w-[100px] p-3 rounded-2xl border text-center cursor-pointer transition-all duration-300 bg-transparent ${
-                selectedDay === idx
-                  ? 'bg-primary-500/10 dark:bg-primary-500/15 border-primary-500/30 scale-105 shadow-sm'
-                  : 'border-earth-100/50 dark:border-earth-900/20 hover:bg-earth-50/50 dark:hover:bg-earth-950/20'
-              }`}
+              onClick={handleGetLocation}
+              disabled={locationStatus === 'fetching'}
+              className="h-10 px-4 rounded-xl border border-primary-500/20 bg-primary-500/5 hover:bg-primary-500/10 text-primary-500 flex items-center gap-1.5 text-xs font-bold cursor-pointer transition-all disabled:opacity-40"
             >
-              <p className={`text-[10px] font-black uppercase tracking-wider ${selectedDay === idx ? 'text-primary-600 dark:text-primary-400' : 'text-earth-400'}`}>
-                {isTamil ? day.dayTa : day.day}
-              </p>
-              <div className="my-2 flex justify-center">
-                {getWeatherIcon(day.condition, 'w-7 h-7')}
-              </div>
-              <p className="text-xs font-black text-foreground">
-                {day.high}° <span className="text-earth-400 font-semibold">/ {day.low}°</span>
-              </p>
-              <div className="flex items-center justify-center gap-1 mt-1.5">
-                <Droplets className="w-3 h-3 text-blue-400" />
-                <span className="text-[10px] font-bold text-blue-500">{day.rainProb}%</span>
-              </div>
+              <MapPin className="w-4 h-4" />
+              <span>
+                {locationStatus === 'fetching' ? (isTamil ? 'பெறுகிறது...' : 'Locating...') :
+                 locationStatus === 'granted' ? (isTamil ? 'உள்ளூர் இருப்பிடம்' : 'GPS Location') :
+                 (isTamil ? 'இருப்பிடத்தை பெறு' : 'Get Location')}
+              </span>
             </button>
-          ))}
-        </div>
 
-        {/* Selected day detail */}
-        <div className="mt-4 p-4 rounded-2xl bg-earth-50/40 dark:bg-earth-950/20 border border-earth-100/40 dark:border-earth-900/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div>
-            <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{isTamil ? 'அதிகபட்சம்' : 'High'}</p>
-            <p className="text-lg font-black text-foreground">{selected.high}°C</p>
-          </div>
-          <div>
-            <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{isTamil ? 'குறைந்தபட்சம்' : 'Low'}</p>
-            <p className="text-lg font-black text-foreground">{selected.low}°C</p>
-          </div>
-          <div>
-            <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{isTamil ? 'ஈரப்பதம்' : 'Humidity'}</p>
-            <p className="text-lg font-black text-foreground">{selected.humidity}%</p>
-          </div>
-          <div>
-            <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{isTamil ? 'காற்று' : 'Wind'}</p>
-            <p className="text-lg font-black text-foreground">{selected.wind} km/h</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Rain Probability Gauge + Alerts Row ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {/* Rain Probability */}
-        <div className="p-6 rounded-3xl border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-xs">
-          <h3 className="text-sm font-black text-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-            <CloudRain className="w-4 h-4 text-blue-500" />
-            {t('weather_rain_probability') || 'Rain Probability Today'}
-          </h3>
-          <div className="flex items-center justify-center py-4">
-            <div className="relative w-40 h-40">
-              {/* Background arc */}
-              <svg viewBox="0 0 120 120" className="w-full h-full transform -rotate-90">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10" className="text-earth-100 dark:text-earth-900/30" />
-                <circle
-                  cx="60" cy="60" r="50" fill="none"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(CURRENT_WEATHER.rainProbability / 100) * 314} 314`}
-                  className={`${CURRENT_WEATHER.rainProbability >= 70 ? 'text-blue-500' : CURRENT_WEATHER.rainProbability >= 40 ? 'text-amber-500' : 'text-primary-500'} transition-all duration-700`}
-                  stroke="currentColor"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black text-foreground">{CURRENT_WEATHER.rainProbability}%</span>
-                <span className="text-[9px] font-mono font-bold text-earth-400 uppercase">{isTamil ? 'மழை' : 'Rain'}</span>
-              </div>
-            </div>
-          </div>
-          <p className="text-xs font-semibold text-earth-500 dark:text-earth-400 text-center mt-2">
-            {CURRENT_WEATHER.rainProbability >= 70
-              ? (isTamil ? '🌧️ அதிக மழை வாய்ப்பு — வெளிப்புற வேலைகளை தள்ளிவைக்கவும்' : '🌧️ High chance of rain — postpone outdoor field work')
-              : CURRENT_WEATHER.rainProbability >= 40
-              ? (isTamil ? '⛅ மிதமான மழை வாய்ப்பு — குடை எடுத்துச் செல்லவும்' : '⛅ Moderate rain chance — carry rain protection')
-              : (isTamil ? '☀️ குறைந்த மழை வாய்ப்பு — பாசனம் தேவை' : '☀️ Low rain chance — irrigation needed')
-            }
-          </p>
-        </div>
-
-        {/* Weather Alerts */}
-        <div className="p-6 rounded-3xl border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-xs">
-          <h3 className="text-sm font-black text-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-red-500" />
-            {t('weather_alerts_title') || 'Weather Alerts'}
-          </h3>
-          <div className="space-y-3">
-            {WEATHER_ALERTS.map((alert) => (
-              <div
-                key={alert.id}
-                className={`p-4 rounded-2xl border transition-all duration-200 ${
-                  alert.type === 'warning'
-                    ? 'bg-red-500/5 border-red-500/15 dark:bg-red-950/20 dark:border-red-900/20'
-                    : alert.type === 'watch'
-                    ? 'bg-amber-500/5 border-amber-500/15 dark:bg-amber-950/20 dark:border-amber-900/20'
-                    : 'bg-blue-500/5 border-blue-500/15 dark:bg-blue-950/20 dark:border-blue-900/20'
-                }`}
-              >
-                <div className="flex items-start gap-2.5">
-                  {alert.type === 'warning' ? (
-                    <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                  ) : alert.type === 'watch' ? (
-                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  ) : (
-                    <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black text-foreground">
-                      {isTamil ? alert.titleTa : alert.title}
-                    </p>
-                    <p className="text-[11px] font-medium text-earth-500 dark:text-earth-400 mt-1 leading-relaxed">
-                      {isTamil ? alert.descriptionTa : alert.description}
-                    </p>
-                    <p className="text-[9px] font-mono font-bold text-earth-400 mt-2">
-                      {isTamil ? 'செல்லுபடியாகும்' : 'Valid until'}: {alert.validUntil}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Crop Impact Suggestions ── */}
-      <div className="p-6 rounded-3xl border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-xs">
-        <h3 className="text-sm font-black text-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Sprout className="w-4 h-4 text-primary-500" />
-          {t('weather_crop_impact') || 'Crop Impact Suggestions'}
-        </h3>
-        <p className="text-xs text-earth-500 dark:text-earth-400 mb-4">
-          {t('weather_crop_impact_desc') || 'Weather-based recommendations for your active crops'}
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {CROP_IMPACTS.map((impact) => (
-            <div
-              key={impact.id}
-              className={`p-4 rounded-2xl border transition-all duration-300 hover:shadow-sm ${
-                impact.priority === 'high'
-                  ? 'border-red-500/15 bg-red-500/3 dark:bg-red-950/10 dark:border-red-900/15'
-                  : impact.priority === 'medium'
-                  ? 'border-amber-500/15 bg-amber-500/3 dark:bg-amber-950/10 dark:border-amber-900/15'
-                  : 'border-primary-500/15 bg-primary-500/3 dark:bg-primary-950/10 dark:border-primary-900/15'
-              }`}
+            {/* Refresh Button */}
+            <button
+              onClick={() => fetchWeather(lat, lng)}
+              disabled={isLoading}
+              className="w-10 h-10 rounded-xl border border-earth-200 dark:border-primary-950/20 bg-white dark:bg-[#111714] text-earth-500 hover:text-primary-500 flex items-center justify-center cursor-pointer transition-all"
+              title="Refresh weather"
             >
-              <div className="flex items-start gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  impact.priority === 'high' ? 'bg-red-500/10' : impact.priority === 'medium' ? 'bg-amber-500/10' : 'bg-primary-500/10'
-                }`}>
-                  {impact.icon === 'rain' ? <CloudRain className="w-4.5 h-4.5 text-blue-500" /> :
-                   impact.icon === 'humidity' ? <Droplets className="w-4.5 h-4.5 text-teal-500" /> :
-                   impact.icon === 'wind' ? <Wind className="w-4.5 h-4.5 text-slate-500" /> :
-                   <Thermometer className="w-4.5 h-4.5 text-red-500" />}
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Custom coordinates form */}
+        {presetIndex === 'custom' && (
+          <form onSubmit={handleCustomSubmit} className="pt-3 border-t border-earth-100 dark:border-earth-900/10 flex items-end gap-3 flex-wrap animate-scale-up">
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-earth-400 block">{isTamil ? 'அட்சரேகை (Latitude)' : 'Latitude'}</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. 9.9252"
+                value={customLat}
+                onChange={e => setCustomLat(e.target.value)}
+                className="h-9 px-3 bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary-500 w-32"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-earth-400 block">{isTamil ? 'தீர்க்கரேகை (Longitude)' : 'Longitude'}</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. 78.1198"
+                value={customLng}
+                onChange={e => setCustomLng(e.target.value)}
+                className="h-9 px-3 bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary-500 w-32"
+              />
+            </div>
+            <button
+              type="submit"
+              className="h-9 px-5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl text-xs font-bold border-0 cursor-pointer shadow-xs"
+            >
+              {isTamil ? 'தேடு' : 'Search Coordinates'}
+            </button>
+          </form>
+        )}
+      </div>
+
+      {/* Warning/Error alert banners */}
+      {error && (
+        <div className={`p-4 rounded-2xl border flex items-center gap-3 text-xs font-semibold animate-scale-up ${
+          isCached 
+            ? 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-400'
+            : 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400'
+        }`}>
+          <AlertTriangle className={`w-5 h-5 shrink-0 ${isCached ? 'text-amber-500' : 'text-red-500'}`} />
+          <p className="flex-1">{error}</p>
+        </div>
+      )}
+
+      {/* Main Content Layout */}
+      {isLoading ? (
+        <div className="p-16 rounded-[24px] border border-earth-200/50 dark:border-primary-950/20 bg-white dark:bg-[#111714] flex flex-col items-center justify-center gap-3">
+          <RefreshCw className="w-8 h-8 text-primary-500 animate-spin" />
+          <span className="text-xs font-semibold text-earth-550 font-mono tracking-widest uppercase">
+            {isTamil ? 'வானிலை தரவைப் பெறுகிறது...' : 'ACQUIRING WEATHER TELEMETRY...'}
+          </span>
+        </div>
+      ) : weather ? (
+        <>
+          {/* Current Weather Card */}
+          <div className="relative overflow-hidden rounded-[24px] border border-earth-200/60 dark:border-primary-950/20 bg-gradient-to-br from-blue-500/5 via-white to-amber-500/5 dark:from-blue-950/30 dark:via-[#111714] dark:to-amber-950/20 p-6 shadow-xs">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              
+              {/* Left Temperature */}
+              <div className="flex items-center gap-5">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400/20 to-blue-400/20 dark:from-amber-500/10 dark:to-blue-500/10 flex items-center justify-center shrink-0">
+                  {getWeatherIcon(weather.current.condition, 'w-10 h-10')}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-black text-foreground">{isTamil ? impact.cropTa : impact.crop}</span>
-                    <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider ${
-                      impact.priority === 'high' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
-                      impact.priority === 'medium' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
-                      'bg-primary-500/10 text-primary-600 dark:text-primary-400'
-                    }`}>
-                      {impact.priority === 'high' ? (isTamil ? 'அவசரம்' : 'URGENT') :
-                       impact.priority === 'medium' ? (isTamil ? 'கவனம்' : 'CAUTION') :
-                       (isTamil ? 'தகவல்' : 'INFO')}
-                    </span>
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-5xl font-black text-foreground tracking-tighter">{weather.current.temp}°</span>
+                    <span className="text-lg font-bold text-earth-400">C</span>
                   </div>
-                  <p className="text-[11px] font-medium text-earth-500 dark:text-earth-400 leading-relaxed">
-                    {isTamil ? impact.suggestionTa : impact.suggestion}
+                  <p className="text-sm font-black text-foreground mt-0.5">
+                    {weather.current.conditionText}
+                  </p>
+                  <p className="text-[10px] font-mono font-bold text-earth-450 mt-0.5">
+                    {isTamil ? 'உணர்வு' : 'Feels like'} {weather.current.feelsLike}°C
                   </p>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* ── Irrigation Reminders ── */}
-      <div className="p-6 rounded-3xl border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-xs">
-        <h3 className="text-sm font-black text-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Waves className="w-4 h-4 text-blue-500" />
-          {t('weather_irrigation_title') || 'Smart Irrigation Reminders'}
-        </h3>
-        <p className="text-xs text-earth-500 dark:text-earth-400 mb-4">
-          {t('weather_irrigation_desc') || 'Weather-adjusted irrigation schedule for your farm'}
-        </p>
-        <div className="space-y-3">
-          {IRRIGATION_REMINDERS.map((rem) => (
-            <div
-              key={rem.id}
-              className={`p-4 rounded-2xl border flex items-start gap-4 transition-all duration-200 ${
-                rem.status === 'done'
-                  ? 'border-primary-500/15 bg-primary-500/3 dark:bg-primary-950/10 dark:border-primary-900/15 opacity-70'
-                  : rem.status === 'skip'
-                  ? 'border-amber-500/15 bg-amber-500/3 dark:bg-amber-950/10 dark:border-amber-900/15'
-                  : 'border-blue-500/15 bg-blue-500/3 dark:bg-blue-950/10 dark:border-blue-900/15'
-              }`}
-            >
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                rem.status === 'done' ? 'bg-primary-500/10' : rem.status === 'skip' ? 'bg-amber-500/10' : 'bg-blue-500/10'
-              }`}>
-                {rem.status === 'done' ? <CheckCircle className="w-4.5 h-4.5 text-primary-500" /> :
-                 rem.status === 'skip' ? <AlertTriangle className="w-4.5 h-4.5 text-amber-500" /> :
-                 <Clock className="w-4.5 h-4.5 text-blue-500" />}
+              {/* Weather Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 max-w-2xl">
+                {[
+                  { icon: Droplets, label: isTamil ? 'ஈரப்பதம்' : 'Humidity', value: `${weather.current.humidity}%`, color: 'text-blue-500' },
+                  { icon: Wind, label: isTamil ? 'காற்று' : 'Wind', value: `${weather.current.windSpeed} km/h ${weather.current.windDir}`, color: 'text-teal-500' },
+                  { icon: Umbrella, label: isTamil ? 'மழை வாய்ப்பு' : 'Rain Chance', value: `${weather.current.rainProbability}%`, color: 'text-indigo-500' },
+                  { icon: Eye, label: isTamil ? 'தெரிவுநிலை' : 'Visibility', value: `${weather.current.visibility} km`, color: 'text-earth-500' },
+                ].map((stat) => (
+                  <div key={stat.label} className="p-3 rounded-2xl bg-white/60 dark:bg-earth-950/30 border border-earth-100/50 dark:border-earth-900/20">
+                    <stat.icon className={`w-4.5 h-4.5 ${stat.color} mb-1.5`} />
+                    <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-xs font-black text-foreground mt-0.5">{stat.value}</p>
+                  </div>
+                ))}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-black text-foreground">{isTamil ? rem.titleTa : rem.title}</p>
-                  <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider shrink-0 ${
-                    rem.status === 'done' ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400' :
-                    rem.status === 'skip' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
-                    'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                  }`}>
-                    {rem.status === 'done' ? (isTamil ? 'முடிந்தது' : 'DONE') :
-                     rem.status === 'skip' ? (isTamil ? 'தவிர்' : 'SKIP') :
-                     (isTamil ? 'நிலுவை' : 'PENDING')}
-                  </span>
-                </div>
-                <p className="text-[10px] font-mono font-bold text-earth-400 mt-1">⏰ {rem.time}</p>
-                <p className="text-[11px] font-medium text-earth-500 dark:text-earth-400 mt-1.5 leading-relaxed">
-                  {isTamil ? rem.noteTa : rem.note}
-                </p>
+
+            </div>
+
+            {/* Sun Info and timestamp footer */}
+            <div className="flex items-center gap-6 mt-5 pt-4 border-t border-earth-100/40 dark:border-earth-900/10 text-xs text-earth-500 font-bold flex-wrap">
+              <div className="flex items-center gap-2">
+                <ArrowUp className="w-3.5 h-3.5 text-amber-500" />
+                <span>{isTamil ? 'சூரிய உதயம்' : 'Sunrise'}: {weather.current.sunrise}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ArrowDown className="w-3.5 h-3.5 text-orange-500" />
+                <span>{isTamil ? 'சூரிய அஸ்தமனம்' : 'Sunset'}: {weather.current.sunset}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Thermometer className="w-3.5 h-3.5 text-red-400" />
+                <span>UV: {weather.current.pressure > 1010 ? '3/11' : '6/11'}</span>
+              </div>
+              
+              <div className="ml-auto text-[9px] font-mono font-bold text-earth-400">
+                {isTamil ? 'புதுப்பிக்கப்பட்டது:' : 'Updated:'} {new Date(weather.current.updatedAt).toLocaleTimeString()}
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* 7-Day Forecast */}
+          <div className="p-6 rounded-[24px] border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-xs space-y-4">
+            <h3 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-primary-500" />
+              <span>{isTamil ? '7-நாள் வானிலை முன்னறிவிப்பு' : '7-Day Outlook Forecast'}</span>
+            </h3>
+
+            <div className="flex gap-2.5 overflow-x-auto pb-2 px-1">
+              {weather.forecast.map((day, idx) => (
+                <button
+                  key={day.date}
+                  onClick={() => setSelectedForecastDay(idx)}
+                  className={`flex-shrink-0 w-[100px] p-3 rounded-2xl border text-center cursor-pointer transition-all duration-300 bg-transparent ${
+                    selectedForecastDay === idx
+                      ? 'bg-primary-500/10 dark:bg-primary-500/15 border-primary-500/30 scale-105 shadow-sm'
+                      : 'border-earth-100/50 dark:border-earth-900/20 hover:bg-earth-50/50 dark:hover:bg-earth-950/20'
+                  }`}
+                >
+                  <p className={`text-[9px] font-black uppercase tracking-wider ${selectedForecastDay === idx ? 'text-primary-600 dark:text-primary-400' : 'text-earth-400'}`}>
+                    {isTamil ? day.dayTa : day.day}
+                  </p>
+                  <div className="my-2 flex justify-center">
+                    {getWeatherIcon(day.condition, 'w-7 h-7')}
+                  </div>
+                  <p className="text-xs font-black text-foreground">
+                    {day.high}° <span className="text-earth-400 font-semibold">/ {day.low}°</span>
+                  </p>
+                  <div className="flex items-center justify-center gap-1 mt-1.5">
+                    <Droplets className="w-3 h-3 text-blue-400" />
+                    <span className="text-[10px] font-bold text-blue-500">{day.rainProb}%</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Selected Day Details */}
+            {activeForecast && (
+              <div className="p-4 rounded-xl bg-earth-50/40 dark:bg-earth-950/20 border border-earth-100/40 dark:border-earth-900/10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold">
+                <div>
+                  <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{isTamil ? 'அதிகபட்சம்' : 'High Temp'}</p>
+                  <p className="text-base font-black text-foreground">{activeForecast.high}°C</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{isTamil ? 'குறைந்தபட்சம்' : 'Low Temp'}</p>
+                  <p className="text-base font-black text-foreground">{activeForecast.low}°C</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{isTamil ? 'ஈரப்பதம்' : 'Humidity'}</p>
+                  <p className="text-base font-black text-foreground">{activeForecast.humidity}%</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-mono font-bold text-earth-400 uppercase tracking-wider">{isTamil ? 'காற்று' : 'Wind'}</p>
+                  <p className="text-base font-black text-foreground">{activeForecast.wind} km/h</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Active Alerts and suggestions grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Active alerts or weather gauge */}
+            <div className="p-6 rounded-[24px] border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-xs flex flex-col justify-between">
+              <h3 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-2 mb-4">
+                <Bell className="w-4 h-4 text-red-500" />
+                <span>{isTamil ? 'அவசர எச்சரிக்கைகள்' : 'Active Weather Alerts'}</span>
+              </h3>
+
+              {weather.alerts.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                  <CheckCircle className="w-8 h-8 text-emerald-500 mb-2" />
+                  <p className="text-xs font-bold text-earth-500 dark:text-earth-400">
+                    {isTamil ? 'அபாய எச்சரிக்கைகள் எதுவும் இல்லை' : 'No active weather alerts for your area.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 flex-1 overflow-y-auto max-h-56">
+                  {weather.alerts.map((alert) => (
+                    <div
+                      key={alert.id}
+                      className={`p-4 rounded-xl border flex items-start gap-3 ${
+                        alert.type === 'warning'
+                          ? 'bg-red-500/5 border-red-500/15 dark:bg-red-950/15 dark:border-red-900/15'
+                          : 'bg-amber-500/5 border-amber-500/15 dark:bg-amber-950/15 dark:border-amber-900/15'
+                      }`}
+                    >
+                      <AlertTriangle className={`w-4.5 h-4.5 mt-0.5 shrink-0 ${alert.type === 'warning' ? 'text-red-500' : 'text-amber-500'}`} />
+                      <div>
+                        <h4 className="text-xs font-black text-foreground">{alert.title}</h4>
+                        <p className="text-[11px] text-earth-550 dark:text-earth-400 mt-1 leading-relaxed font-semibold">{alert.description}</p>
+                        {alert.validUntil && (
+                          <span className="text-[9px] font-mono text-earth-400 block mt-2">
+                            {isTamil ? 'செல்லுபடியாகும்:' : 'Valid until:'} {alert.validUntil}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Dynamic Agricultural Crop Impact Suggestions */}
+            <div className="p-6 rounded-[24px] border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-xs space-y-4">
+              <h3 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-2">
+                <Sprout className="w-4 h-4 text-primary-500" />
+                <span>{isTamil ? 'பயிர் பாதுகாப்பு பரிந்துரைகள்' : 'Crop Care Recommendations'}</span>
+              </h3>
+              
+              <div className="space-y-3.5 overflow-y-auto max-h-56">
+                {getDynamicCropAdvice(weather.current.condition).map((impact) => (
+                  <div
+                    key={impact.crop}
+                    className={`p-3.5 rounded-xl border flex items-start gap-3 transition-all ${
+                      impact.priority === 'high'
+                        ? 'border-red-500/10 bg-red-500/3 dark:bg-red-950/10'
+                        : 'border-primary-500/10 bg-primary-500/3 dark:bg-primary-950/10'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-earth-900 flex items-center justify-center shrink-0 border border-earth-100">
+                      {impact.icon === 'rain' ? <CloudRain className="w-4 h-4 text-blue-500" /> : <Sun className="w-4 h-4 text-amber-500" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-foreground">{impact.crop}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${
+                          impact.priority === 'high' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-primary-500/10 text-primary-600'
+                        }`}>
+                          {impact.priority === 'high' ? (isTamil ? 'அதி முக்கியம்' : 'HIGH') : (isTamil ? 'பரிந்துரை' : 'SUGGESTED')}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-earth-550 dark:text-earth-450 mt-1 leading-normal font-semibold">{impact.suggestion}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </>
+      ) : (
+        <div className="p-8 text-center bg-white dark:bg-[#111714] border rounded-[24px] text-xs font-bold text-earth-450">
+          {isTamil ? 'இருப்பிடத்தைத் தேர்ந்தெடுத்து வானிலை விவரங்களைப் பெறவும்.' : 'Please select a location presets or input custom coordinates.'}
         </div>
-      </div>
+      )}
+
     </div>
   );
 }

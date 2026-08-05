@@ -23,7 +23,7 @@ export default function AdminBoard() {
   const { 
     products, deleteProduct, orders, cancelOrder,
     rentalItems, deleteRentalItem, rentalBookings,
-    laborJobs, t
+    laborJobs, t, language
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'users' | 'products' | 'orders' | 'rentals' | 'labor' | 'analytics'>('analytics');
@@ -70,10 +70,12 @@ export default function AdminBoard() {
       <div>
         <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2 animate-fade-in">
           <ShieldAlert className="w-6 h-6 text-primary-500" />
-          <span>{t('admin_tab') || 'Admin Control Panel'}</span>
+          <span>{language === 'ta' ? 'நிர்வாகக் கட்டுப்பாட்டு குழு' : 'Admin Control Panel'}</span>
         </h1>
         <p className="text-xs text-earth-500 dark:text-earth-400 mt-1 animate-fade-in">
-          Monitor users database, moderate active product boards, inspect agreements escrow, and download analytics.
+          {language === 'ta' 
+            ? 'பயனர் தரவுத்தளத்தை கண்காணிக்கவும், தயாரிப்பு பலகைகளை நிர்வகிக்கவும், எஸ்க்ரோ ஒப்பந்தங்களை ஆய்வு செய்யவும், பகுப்பாய்வுகளை பதிவிறக்கவும்.'
+            : 'Monitor users database, moderate active product boards, inspect agreements escrow, and download analytics.'}
         </p>
       </div>
 
@@ -87,7 +89,7 @@ export default function AdminBoard() {
               : 'border-transparent text-earth-500 hover:text-foreground'
           }`}
         >
-          System Analytics
+          {language === 'ta' ? 'அமைப்பு பகுப்பாய்வு' : 'System Analytics'}
         </button>
         <button
           onClick={() => setActiveSubTab('users')}
@@ -97,7 +99,7 @@ export default function AdminBoard() {
               : 'border-transparent text-earth-500 hover:text-foreground'
           }`}
         >
-          User Registry ({usersMock.length})
+          {language === 'ta' ? 'பயனர்கள் பதிவு' : 'User Registry'} ({usersMock.length})
         </button>
         <button
           onClick={() => setActiveSubTab('products')}
@@ -107,7 +109,7 @@ export default function AdminBoard() {
               : 'border-transparent text-earth-500 hover:text-foreground'
           }`}
         >
-          Product Moderation ({products.length})
+          {language === 'ta' ? 'தயாரிப்பு கட்டுப்பாடு' : 'Product Moderation'} ({products.length})
         </button>
         <button
           onClick={() => setActiveSubTab('orders')}
@@ -117,7 +119,7 @@ export default function AdminBoard() {
               : 'border-transparent text-earth-500 hover:text-foreground'
           }`}
         >
-          Orders & Escrow ({orders.length})
+          {language === 'ta' ? 'ஆர்டர்கள் மற்றும் எஸ்க்ரோ' : 'Orders & Escrow'} ({orders.length})
         </button>
         <button
           onClick={() => setActiveSubTab('rentals')}
@@ -127,7 +129,7 @@ export default function AdminBoard() {
               : 'border-transparent text-earth-500 hover:text-foreground'
           }`}
         >
-          Equipment Fleet ({rentalItems.length})
+          {language === 'ta' ? 'இயந்திரங்களின் தொகுப்பு' : 'Equipment Fleet'} ({rentalItems.length})
         </button>
         <button
           onClick={() => setActiveSubTab('labor')}
@@ -137,7 +139,7 @@ export default function AdminBoard() {
               : 'border-transparent text-earth-500 hover:text-foreground'
           }`}
         >
-          Labor Jobs ({laborJobs.length})
+          {language === 'ta' ? 'தொழிலாளர் வேலைகள்' : 'Labor Jobs'} ({laborJobs.length})
         </button>
       </div>
 
@@ -146,59 +148,65 @@ export default function AdminBoard() {
         <div className="space-y-6 animate-fade-in">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatisticsCard
-              title="System Active Users"
+              title={language === 'ta' ? 'செயலில் உள்ள பயனர்கள்' : 'System Active Users'}
               value={usersMock.length}
               icon={Users}
               color="blue"
-              description="Registered farmers & buyers"
+              description={language === 'ta' ? 'பதிவுசெய்யப்பட்ட விவசாயிகள் & வாங்குபவர்கள்' : 'Registered farmers & buyers'}
             />
             <StatisticsCard
-              title="Ecosystem Crop Volume"
+              title={language === 'ta' ? 'மொத்த பயிர் அளவு' : 'Ecosystem Crop Volume'}
               value={`${totalVolumeKg.toLocaleString()} kg`}
               icon={ShoppingBag}
               color="emerald"
-              description="Active produce stock"
+              description={language === 'ta' ? 'செயலில் உள்ள பயிர் இருப்பு' : 'Active produce stock'}
             />
             <StatisticsCard
-              title="Direct Escrow Value"
+              title={language === 'ta' ? 'நேரடி எஸ்க்ரோ மதிப்பு' : 'Direct Escrow Value'}
               value={`₹${totalValuation.toLocaleString()}`}
               icon={TrendingUp}
               color="amber"
-              description="Settled B2B order value"
+              description={language === 'ta' ? 'நிறைவேற்றப்பட்ட ஆர்டர்களின் மதிப்பு' : 'Settled B2B order value'}
             />
             <StatisticsCard
-              title="Active Fleet Listings"
+              title={language === 'ta' ? 'செயலில் உள்ள இயந்திரங்கள்' : 'Active Fleet Listings'}
               value={rentalItems.length}
               icon={Wrench}
               color="stone"
-              description="Cooperative tractors & tools"
+              description={language === 'ta' ? 'கூட்டுறவு டிராக்டர்கள் & கருவிகள்' : 'Cooperative tractors & tools'}
             />
           </div>
 
           <div className="bg-white dark:bg-[#111714] p-6 rounded-3xl border border-earth-200 dark:border-earth-900/30 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-earth-100 dark:border-earth-900/10 pb-3">
               <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
-                Platform Activity Reports
+                {language === 'ta' ? 'தளத்தின் செயல்பாட்டு அறிக்கைகள்' : 'Platform Activity Reports'}
               </h3>
               <button
                 onClick={() => alert('Report download initiated.')}
                 className="py-1.5 px-3 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer border-0 shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export CSV Report</span>
+                <span>{language === 'ta' ? 'அறிக்கையை பதிவிறக்கு' : 'Export CSV Report'}</span>
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-4 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-150 rounded-2xl">
-                <span className="text-[10px] text-earth-450 font-bold uppercase tracking-wider block">Cooperative Volume Ratio</span>
+                <span className="text-[10px] text-earth-455 font-bold uppercase tracking-wider block">
+                  {language === 'ta' ? 'கூட்டுறவு அளவு விகிதம்' : 'Cooperative Volume Ratio'}
+                </span>
                 <span className="text-xl font-black text-foreground block mt-1">82% Madurai East Hub</span>
                 <span className="text-[9px] text-earth-400 block mt-1">Leading districts: Madurai, Thanjavur, Erode.</span>
               </div>
               <div className="p-4 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-150 rounded-2xl">
-                <span className="text-[10px] text-earth-450 font-bold uppercase tracking-wider block">Average Farm Wage Index</span>
-                <span className="text-xl font-black text-foreground block mt-1">₹475 / day</span>
-                <span className="text-[9px] text-earth-400 block mt-1">Computed from active weeding & harvesting jobs.</span>
+                <span className="text-[10px] text-earth-455 font-bold uppercase tracking-wider block">
+                  {language === 'ta' ? 'சராசரி விவசாய கூலி குறியீடு' : 'Average Farm Wage Index'}
+                </span>
+                <span className="text-xl font-black text-foreground block mt-1 font-mono">₹475 / day</span>
+                <span className="text-[9px] text-earth-400 block mt-1">
+                  {language === 'ta' ? 'செயலில் உள்ள களை எடுப்பு மற்றும் அறுவடை பணிகளில் இருந்து கணக்கிடப்பட்டது.' : 'Computed from active weeding & harvesting jobs.'}
+                </span>
               </div>
             </div>
           </div>
@@ -213,7 +221,7 @@ export default function AdminBoard() {
               <Search className="w-4 h-4 text-earth-400 absolute left-3 top-3.5" />
               <input
                 type="text"
-                placeholder="Search registered members by name, email, or role..."
+                placeholder={language === 'ta' ? 'பெயர், மின்னஞ்சல் அல்லது பாத்திரத்தின் மூலம் தேடுங்கள்...' : 'Search registered members by name, email, or role...'}
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
                 className="w-full h-11 pl-9 pr-4 bg-earth-50/30 dark:bg-earth-950/10 border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary-500 placeholder-earth-400"
@@ -225,14 +233,14 @@ export default function AdminBoard() {
             <table className="w-full border-collapse text-xs text-left">
               <thead>
                 <tr className="border-b border-earth-150 text-earth-400 font-bold">
-                  <th className="py-3 px-2">Member ID</th>
-                  <th className="py-3 px-2">Full Name</th>
-                  <th className="py-3 px-2">Email</th>
-                  <th className="py-3 px-2">Platform Role</th>
-                  <th className="py-3 px-2">Village Location</th>
-                  <th className="py-3 px-2">Date joined</th>
-                  <th className="py-3 px-2">Account Status</th>
-                  <th className="py-3 px-2 text-right">Actions</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'உறுப்பினர் ஐடி' : 'Member ID'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'முழு பெயர்' : 'Full Name'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'மின்னஞ்சல்' : 'Email'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'பயனர் பாத்திரம்' : 'Platform Role'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'கிராமத்தின் அமைவிடம்' : 'Village Location'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'இணைந்த தேதி' : 'Date joined'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'கணக்கு நிலை' : 'Account Status'}</th>
+                  <th className="py-3 px-2 text-right">{language === 'ta' ? 'செயல்கள்' : 'Actions'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -266,7 +274,7 @@ export default function AdminBoard() {
                             : 'border-emerald-500/15 text-emerald-600 hover:bg-emerald-500/5'
                         }`}
                       >
-                        {u.status === 'active' ? 'Suspend' : 'Activate'}
+                        {u.status === 'active' ? (language === 'ta' ? 'இடைநீக்கம்' : 'Suspend') : (language === 'ta' ? 'செயல்படுத்து' : 'Activate')}
                       </button>
                     </td>
                   </tr>
@@ -285,7 +293,7 @@ export default function AdminBoard() {
               <Search className="w-4 h-4 text-earth-400 absolute left-3 top-3.5" />
               <input
                 type="text"
-                placeholder="Search active produce listings..."
+                placeholder={language === 'ta' ? 'செயலில் உள்ள பயிர் பட்டியலைத் தேடுங்கள்...' : 'Search active produce listings...'}
                 value={prodSearch}
                 onChange={(e) => setProdSearch(e.target.value)}
                 className="w-full h-11 pl-9 pr-4 bg-earth-50/30 dark:bg-earth-950/10 border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary-500 placeholder-earth-400"
@@ -304,7 +312,7 @@ export default function AdminBoard() {
                   />
                   <div className="min-w-0">
                     <h4 className="font-black text-xs text-foreground truncate">{p.name}</h4>
-                    <p className="text-[9px] text-earth-450 font-bold mt-1">
+                    <p className="text-[9px] text-earth-455 font-bold mt-1">
                       Farmer: {p.farmerName} • Stock: {p.stockKg} kg
                     </p>
                     <p className="text-[10px] text-primary-500 font-black mt-0.5">
@@ -316,7 +324,7 @@ export default function AdminBoard() {
                 <button
                   onClick={() => deleteProduct(p.id)}
                   className="p-2 border border-red-500/10 hover:bg-red-500/5 text-red-500 rounded-xl cursor-pointer"
-                  title="Remove Listing"
+                  title={language === 'ta' ? 'பட்டியலை நீக்கு' : 'Remove Listing'}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -333,13 +341,13 @@ export default function AdminBoard() {
             <table className="w-full border-collapse text-xs text-left">
               <thead>
                 <tr className="border-b border-earth-150 text-earth-400 font-bold">
-                  <th className="py-3 px-2">Order ID</th>
-                  <th className="py-3 px-2">Produce Item</th>
-                  <th className="py-3 px-2">Buyer Name</th>
-                  <th className="py-3 px-2">Quantity</th>
-                  <th className="py-3 px-2">Valuation</th>
-                  <th className="py-3 px-2">Fulfillment Status</th>
-                  <th className="py-3 px-2 text-right">Actions</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'ஆர்டர் ஐடி' : 'Order ID'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'பயிர் வகை' : 'Produce Item'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'வாங்குபவர் பெயர்' : 'Buyer Name'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'அளவு' : 'Quantity'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'மதிப்பு' : 'Valuation'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'நிறைவேற்ற நிலை' : 'Fulfillment Status'}</th>
+                  <th className="py-3 px-2 text-right">{language === 'ta' ? 'செயல்கள்' : 'Actions'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -366,7 +374,7 @@ export default function AdminBoard() {
                           onClick={() => cancelOrder(o.id)}
                           className="py-1 px-2.5 rounded-lg border border-red-500/10 text-red-500 hover:bg-red-500/5 font-bold text-[10px] cursor-pointer"
                         >
-                          Cancel Order
+                          {language === 'ta' ? 'ஆர்டரை ரத்துசெய்' : 'Cancel Order'}
                         </button>
                       )}
                     </td>
@@ -392,7 +400,7 @@ export default function AdminBoard() {
                   />
                   <div className="min-w-0">
                     <h4 className="font-black text-xs text-foreground truncate">{item.name}</h4>
-                    <p className="text-[9px] text-earth-450 font-bold mt-1">
+                    <p className="text-[9px] text-earth-455 font-bold mt-1">
                       Owner: {item.vendorName} • {item.village}
                     </p>
                     <p className="text-[10px] text-primary-500 font-black mt-0.5">
@@ -404,7 +412,7 @@ export default function AdminBoard() {
                 <button
                   onClick={() => deleteRentalItem(item.id)}
                   className="p-2 border border-red-500/10 hover:bg-red-500/5 text-red-500 rounded-xl cursor-pointer"
-                  title="Remove Listing"
+                  title={language === 'ta' ? 'பட்டியலை நீக்கு' : 'Remove Listing'}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -421,12 +429,12 @@ export default function AdminBoard() {
             <table className="w-full border-collapse text-xs text-left">
               <thead>
                 <tr className="border-b border-earth-150 text-earth-400 font-bold">
-                  <th className="py-3 px-2">Job ID</th>
-                  <th className="py-3 px-2">Job Title</th>
-                  <th className="py-3 px-2">Farmer Employer</th>
-                  <th className="py-3 px-2">Wages Rate</th>
-                  <th className="py-3 px-2">Hiring Limit</th>
-                  <th className="py-3 px-2">Status</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'பணி ஐடி' : 'Job ID'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'பணி தலைப்பு' : 'Job Title'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'விவசாய முதலாளி' : 'Farmer Employer'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'கூலி விகிதம்' : 'Wages Rate'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'ஆட்கள் தேவை வரம்பு' : 'Hiring Limit'}</th>
+                  <th className="py-3 px-2">{language === 'ta' ? 'நிலை' : 'Status'}</th>
                 </tr>
               </thead>
               <tbody>

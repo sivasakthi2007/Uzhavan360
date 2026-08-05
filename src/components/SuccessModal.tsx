@@ -2,6 +2,8 @@
 
 import { Check } from 'lucide-react';
 
+import { useApp } from '@/context/AppContext';
+
 interface SuccessModalProps {
   isOpen: boolean;
   title: string;
@@ -14,10 +16,13 @@ export default function SuccessModal({
   isOpen,
   title,
   description,
-  actionText = 'Awesome',
+  actionText,
   onActionClick
 }: SuccessModalProps) {
+  const { language } = useApp();
   if (!isOpen) return null;
+
+  const displayActionText = actionText || (language === 'ta' ? 'அருமை' : 'Awesome');
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
@@ -43,7 +48,7 @@ export default function SuccessModal({
           onClick={onActionClick}
           className="w-full h-11 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs shadow-md transition-all duration-200 cursor-pointer border-0"
         >
-          {actionText}
+          {displayActionText}
         </button>
       </div>
     </div>

@@ -18,7 +18,7 @@ export default function EquipmentDetails({
   onClose,
   onBookNow
 }: EquipmentDetailsProps) {
-  const { rentalItems, addReviewToEquipment, userName } = useApp();
+  const { rentalItems, addReviewToEquipment, userName, language } = useApp();
   
   // Local state for booking period selection
   const [startDate, setStartDate] = useState('');
@@ -65,7 +65,7 @@ export default function EquipmentDetails({
         <div className="h-16 px-6 border-b border-earth-150 dark:border-earth-900/40 bg-white dark:bg-[#111714] flex items-center justify-between sticky top-0 z-20">
           <div>
             <span className="text-[10px] font-bold text-primary-500 uppercase tracking-widest block">
-              Equipment Specifications
+              {language === 'ta' ? 'உபகரண விவரக்குறிப்புகள்' : 'Equipment Specifications'}
             </span>
             <h3 className="text-sm font-black text-foreground uppercase tracking-wider truncate max-w-sm">
               {item.name}
@@ -92,7 +92,7 @@ export default function EquipmentDetails({
             {item.status === 'rented' && (
               <div className="absolute inset-0 bg-black/55 backdrop-blur-xs flex items-center justify-center">
                 <span className="px-5 py-2.5 rounded-xl border border-red-500/20 bg-red-950/80 text-red-400 font-bold text-xs uppercase tracking-widest">
-                  Currently Rented
+                  {language === 'ta' ? 'தற்போது வாடகைக்கு விடப்பட்டுள்ளது' : 'Currently Rented'}
                 </span>
               </div>
             )}
@@ -111,7 +111,7 @@ export default function EquipmentDetails({
                 </span>
                 <span className="flex items-center gap-1 bg-accent-50 dark:bg-amber-950/20 text-accent-700 dark:text-amber-400 px-3 py-1 rounded-full">
                   <Star className="w-3 h-3 fill-accent-500 text-accent-500" />
-                  <span>{item.ownerRating} ({item.reviewCount} Reviews)</span>
+                  <span>{item.ownerRating} ({item.reviewCount} {language === 'ta' ? 'மதிப்புரைகள்' : 'Reviews'})</span>
                 </span>
               </div>
               <p className="text-xs text-earth-500 dark:text-earth-400 leading-relaxed font-semibold pt-2">
@@ -122,15 +122,17 @@ export default function EquipmentDetails({
             {/* Owner Details Card */}
             <div className="p-4 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] flex flex-col justify-between shadow-xs">
               <div className="space-y-1">
-                <span className="text-[9px] text-earth-400 font-bold uppercase tracking-wider block">Equipment Owner</span>
+                <span className="text-[9px] text-earth-400 font-bold uppercase tracking-wider block">{language === 'ta' ? 'உபகரண உரிமையாளர்' : 'Equipment Owner'}</span>
                 <span className="text-xs font-black text-foreground block">{item.vendorName}</span>
-                <span className="text-[10px] text-earth-400 block font-semibold">★ Verified Operator</span>
+                <span className="text-[10px] text-earth-400 block font-semibold">★ {language === 'ta' ? 'சரிபார்க்கப்பட்ட ஆபரேட்டர்' : 'Verified Operator'}</span>
               </div>
               
               <div className="pt-3 mt-3 border-t border-earth-100 dark:border-earth-900/20">
                 {contactMode ? (
                   <div className="text-[11px] font-black text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/20 p-2.5 rounded-xl border border-primary-500/10 text-center animate-fade-in">
-                    {contactMode === 'call' ? 'Call: +91 94432 10980' : 'Message: Support request sent!'}
+                    {contactMode === 'call' 
+                      ? (language === 'ta' ? 'அழைப்பு: +91 94432 10980' : 'Call: +91 94432 10980') 
+                      : (language === 'ta' ? 'செய்தி: ஆதரவு கோரிக்கை அனுப்பப்பட்டது!' : 'Message: Support request sent!')}
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5">
@@ -139,14 +141,14 @@ export default function EquipmentDetails({
                       className="flex-1 py-2 px-2.5 rounded-xl bg-earth-100 dark:bg-earth-900 hover:bg-earth-200 dark:hover:bg-earth-850 text-earth-700 dark:text-earth-300 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer border-0"
                     >
                       <Phone className="w-3 h-3" />
-                      <span>Call</span>
+                      <span>{language === 'ta' ? 'அழைக்கவும்' : 'Call'}</span>
                     </button>
                     <button
                       onClick={() => setContactMode('chat')}
                       className="flex-1 py-2 px-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs flex items-center justify-center gap-1 cursor-pointer border-0"
                     >
                       <MessageSquare className="w-3 h-3" />
-                      <span>Chat</span>
+                      <span>{language === 'ta' ? 'அரட்டை' : 'Chat'}</span>
                     </button>
                   </div>
                 )}
@@ -157,7 +159,7 @@ export default function EquipmentDetails({
           {/* Specifications Table */}
           <div className="space-y-3">
             <h4 className="text-xs font-black text-foreground uppercase tracking-widest">
-              Technical Specifications
+              {language === 'ta' ? 'தொழில்நுட்ப விவரக்குறிப்புகள்' : 'Technical Specifications'}
             </h4>
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(item.specs).map(([key, value]) => (
@@ -172,7 +174,7 @@ export default function EquipmentDetails({
           {/* Pricing Details */}
           <div className="space-y-3">
             <h4 className="text-xs font-black text-foreground uppercase tracking-widest">
-              Rental Charges
+              {language === 'ta' ? 'வாடகை கட்டணம்' : 'Rental Charges'}
             </h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 shadow-xs flex items-center gap-3">
@@ -180,8 +182,8 @@ export default function EquipmentDetails({
                   <Truck className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[9px] text-earth-400 font-bold block uppercase tracking-wider">Daily Lease</span>
-                  <span className="text-lg font-black text-foreground font-mono">₹{item.pricePerDay}<span className="text-xs font-semibold text-earth-400">/day</span></span>
+                  <span className="text-[9px] text-earth-400 font-bold block uppercase tracking-wider">{language === 'ta' ? 'தினசரி வாடகை' : 'Daily Lease'}</span>
+                  <span className="text-lg font-black text-foreground font-mono">₹{item.pricePerDay}<span className="text-xs font-semibold text-earth-400">/{language === 'ta' ? 'நாள்' : 'day'}</span></span>
                 </div>
               </div>
 
@@ -190,8 +192,8 @@ export default function EquipmentDetails({
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[9px] text-earth-400 font-bold block uppercase tracking-wider">Hourly Lease</span>
-                  <span className="text-lg font-black text-foreground font-mono">₹{item.pricePerHour}<span className="text-xs font-semibold text-earth-400">/hr</span></span>
+                  <span className="text-[9px] text-earth-400 font-bold block uppercase tracking-wider">{language === 'ta' ? 'மணிநேர வாடகை' : 'Hourly Lease'}</span>
+                  <span className="text-lg font-black text-foreground font-mono">₹{item.pricePerHour}<span className="text-xs font-semibold text-earth-400">/{language === 'ta' ? 'மணி' : 'hr'}</span></span>
                 </div>
               </div>
             </div>
@@ -225,7 +227,7 @@ export default function EquipmentDetails({
           {similarItems.length > 0 && (
             <div className="space-y-4">
               <h4 className="text-xs font-black text-foreground uppercase tracking-widest">
-                Similar Equipment Nearby
+                {language === 'ta' ? 'அருகிலுள்ள ஒத்த உபகரணங்கள்' : 'Similar Equipment Nearby'}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {similarItems.map((sim) => (
@@ -256,7 +258,7 @@ export default function EquipmentDetails({
               {totalDays > 0 ? (
                 <div>
                   <span className="text-[10px] text-earth-400 font-bold block uppercase tracking-wider">
-                    Total for {totalDays} Day{totalDays > 1 ? 's' : ''}
+                    {language === 'ta' ? `${totalDays} நாட்களுக்கான மொத்தம்` : `Total for ${totalDays} Day${totalDays > 1 ? 's' : ''}`}
                   </span>
                   <span className="text-xl font-black text-primary-600 dark:text-primary-400 font-mono">
                     ₹{totalCost.toLocaleString()}
@@ -265,10 +267,10 @@ export default function EquipmentDetails({
               ) : (
                 <div>
                   <span className="text-[10px] text-earth-400 font-bold block uppercase tracking-wider">
-                    Select Dates Above
+                    {language === 'ta' ? 'தேதிகளைத் தேர்ந்தெடுக்கவும்' : 'Select Dates Above'}
                   </span>
                   <span className="text-xs font-semibold text-earth-500 dark:text-earth-400">
-                    To compute total lease
+                    {language === 'ta' ? 'வாடகையைக் கணக்கிட' : 'To compute total lease'}
                   </span>
                 </div>
               )}
@@ -283,7 +285,7 @@ export default function EquipmentDetails({
                   : 'bg-primary-500 hover:bg-primary-600 text-white hover:scale-102'
               }`}
             >
-              <span>Confirm Lease</span>
+              <span>{language === 'ta' ? 'வாடகையை உறுதிசெய்' : 'Confirm Lease'}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

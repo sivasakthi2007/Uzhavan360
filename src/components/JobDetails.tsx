@@ -16,7 +16,7 @@ export default function JobDetails({
   onClose,
   onApply
 }: JobDetailsProps) {
-  const { laborJobs, activeRole, hireLaborWorker, toggleSaveJob, userName, user } = useApp();
+  const { laborJobs, activeRole, hireLaborWorker, toggleSaveJob, userName, user, language } = useApp();
   const [contactMode, setContactMode] = useState<string | null>(null);
 
   const job = laborJobs.find(j => j.id === jobId);
@@ -32,6 +32,23 @@ export default function JobDetails({
     { id: 'w1', name: 'Karuppiah Swamy', rating: 4.8, experience: '5 years', skills: ['Harvesting', 'Pruning'], village: 'Melur, Madurai' },
     { id: 'w2', name: 'Muthu Selvan', rating: 4.6, experience: '3 years', skills: ['Ploughing', 'Sowing'], village: 'Vadipatti, Madurai' }
   ];
+
+  const getLocalizedCategory = (cat: string) => {
+    if (language !== 'ta') return cat;
+    switch (cat) {
+      case 'Land Preparation': return 'உழவு / நில தயாரிப்பு';
+      case 'Planting': return 'நடவு / விதைப்பு';
+      case 'Weeding': return 'களை எடுத்தல்';
+      case 'Fertilizer Application': return 'உரமிடுதல்';
+      case 'Irrigation': return 'நீர் பாசனம்';
+      case 'Pesticide Spraying': return 'மருந்து தெளித்தல்';
+      case 'Harvesting': return 'அறுவடை';
+      case 'Packaging': return 'மூட்டை கட்டுதல் / பேக்கேஜிங்';
+      case 'Loading & Unloading': return 'ஏற்றுதல் / இறக்குதல்';
+      case 'Other Farm Work': return 'இதர விவசாய வேலை';
+      default: return cat;
+    }
+  };
 
   const handleHire = () => {
     hireLaborWorker(job.id);
@@ -49,7 +66,7 @@ export default function JobDetails({
         <div className="h-16 px-6 border-b border-earth-150 dark:border-earth-900/40 bg-white dark:bg-[#111714] flex items-center justify-between sticky top-0 z-20">
           <div>
             <span className="text-[10px] font-bold text-primary-500 uppercase tracking-widest block">
-              Job Requirements
+              {language === 'ta' ? 'பணித் தேவைகள்' : 'Job Requirements'}
             </span>
             <h3 className="text-sm font-black text-foreground uppercase tracking-wider truncate max-w-sm">
               {job.title}
@@ -73,7 +90,7 @@ export default function JobDetails({
                   {job.title}
                 </h2>
                 <span className="text-xs font-semibold text-primary-500 block">
-                  Employer: {job.farmerName}
+                  {language === 'ta' ? `வேலை வழங்குபவர்: ${job.farmerName}` : `Employer: ${job.farmerName}`}
                 </span>
               </div>
               
@@ -85,7 +102,9 @@ export default function JobDetails({
                       ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                       : 'bg-earth-50 dark:bg-earth-900 text-earth-400 hover:text-foreground'
                   }`}
-                  title={job.saved ? 'Unsave Job' : 'Save Job'}
+                  title={job.saved 
+                    ? (language === 'ta' ? 'சேமிப்பை நீக்கு' : 'Unsave Job') 
+                    : (language === 'ta' ? 'சேமி' : 'Save Job')}
                 >
                   <Bookmark className={`w-5 h-5 ${job.saved ? 'fill-amber-500' : ''}`} />
                 </button>
@@ -99,23 +118,23 @@ export default function JobDetails({
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-primary-500 shrink-0" />
-                <span>Starts: {job.date}</span>
+                <span>{language === 'ta' ? `தொடக்கம்: ${job.date}` : `Starts: ${job.date}`}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-primary-500 shrink-0" />
-                <span>Duration: {job.duration}</span>
+                <span>{language === 'ta' ? `கால அளவு: ${job.duration}` : `Duration: ${job.duration}`}</span>
               </div>
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-primary-500 shrink-0" />
-                <span>Needs {job.workersNeeded} Workers</span>
+                <span>{language === 'ta' ? `${job.workersNeeded} ஆட்கள் தேவை` : `Needs ${job.workersNeeded} Workers`}</span>
               </div>
             </div>
 
             <div className="pt-4 border-t border-earth-100 dark:border-earth-900/30 flex items-center justify-between">
               <div>
-                <span className="text-[10px] text-earth-400 uppercase font-mono block">Compensation</span>
+                <span className="text-[10px] text-earth-400 uppercase font-mono block">{language === 'ta' ? 'ஊதியம்' : 'Compensation'}</span>
                 <span className="text-xl font-black text-primary-600 dark:text-primary-400 font-mono mt-0.5 block">
-                  ₹{job.wages} <span className="text-xs font-semibold text-earth-450 dark:text-earth-550">/ day</span>
+                  ₹{job.wages} <span className="text-xs font-semibold text-earth-450 dark:text-earth-550">/{language === 'ta' ? 'நாள்' : 'day'}</span>
                 </span>
               </div>
               
@@ -124,7 +143,9 @@ export default function JobDetails({
                 job.status === 'applied' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
                 'bg-stone-100 text-stone-600 dark:bg-stone-900 dark:text-stone-400'
               }`}>
-                {job.status === 'open' ? 'Hiring Open' : job.status === 'applied' ? 'Applied' : 'Position Filled'}
+                {job.status === 'open' ? (language === 'ta' ? 'ஆட்கள் தேவை' : 'Hiring Open') : 
+                 job.status === 'applied' ? (language === 'ta' ? 'விண்ணப்பிக்கப்பட்டது' : 'Applied') : 
+                 (language === 'ta' ? 'பணியமர்த்தப்பட்டது' : 'Position Filled')}
               </span>
             </div>
           </div>
@@ -132,7 +153,7 @@ export default function JobDetails({
           {/* Job Description */}
           <div className="space-y-2">
             <h4 className="text-xs font-black text-foreground uppercase tracking-widest">
-              Job Description
+              {language === 'ta' ? 'வேலை விவரம்' : 'Job Description'}
             </h4>
             <p className="text-xs text-earth-500 dark:text-earth-400 leading-relaxed font-semibold p-4 rounded-2xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714]">
               {job.description}
@@ -142,7 +163,7 @@ export default function JobDetails({
           {/* Required Skills */}
           <div className="space-y-2">
             <h4 className="text-xs font-black text-foreground uppercase tracking-widest">
-              Required Skills
+              {language === 'ta' ? 'தேவைப்படும் திறன்கள்' : 'Required Skills'}
             </h4>
             <div className="flex flex-wrap gap-2">
               {job.skills.map((skill) => (
@@ -160,13 +181,15 @@ export default function JobDetails({
           {/* Contact Employer */}
           <div className="p-4 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] flex items-center justify-between">
             <div>
-              <span className="text-[10px] text-earth-400 font-bold uppercase tracking-wider block">Employer Contact</span>
+              <span className="text-[10px] text-earth-400 font-bold uppercase tracking-wider block">{language === 'ta' ? 'தொடர்புக்கு' : 'Employer Contact'}</span>
               <span className="text-xs font-black text-foreground mt-0.5 block">{job.farmerName}</span>
             </div>
             
             {contactMode ? (
               <div className="text-[11px] font-black text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/20 px-3 py-1.5 rounded-xl border border-primary-500/10 text-center animate-fade-in">
-                {contactMode === 'call' ? 'Call: +91 98456 78120' : 'In-App Message Sent!'}
+                {contactMode === 'call' 
+                  ? (language === 'ta' ? 'அழைப்பு: +91 98456 78120' : 'Call: +91 98456 78120') 
+                  : (language === 'ta' ? 'செய்தி அனுப்பப்பட்டது!' : 'In-App Message Sent!')}
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -191,16 +214,16 @@ export default function JobDetails({
             <div className="space-y-3.5">
               <div className="flex items-center justify-between border-b border-earth-150 dark:border-earth-900/40 pb-2">
                 <h4 className="text-xs font-black text-foreground uppercase tracking-widest">
-                  Applicants Registry ({mockApplicants.length})
+                  {language === 'ta' ? `விண்ணப்பதாரர்களின் பதிவு (${mockApplicants.length})` : `Applicants Registry (${mockApplicants.length})`}
                 </h4>
                 <span className="text-[10px] text-earth-400 font-bold uppercase tracking-wider">
-                  Hiring status: {job.status}
+                  {language === 'ta' ? `பணியமர்த்தல் நிலை: ${job.status}` : `Hiring status: ${job.status}`}
                 </span>
               </div>
 
               {job.status === 'accepted' ? (
                 <div className="p-4 text-center rounded-2xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-800 dark:text-emerald-400 text-xs font-bold">
-                  ✓ Candidate hired successfully! Wage will settle on job completion.
+                  {language === 'ta' ? '✓ நபர் வெற்றிகரமாக பணியமர்த்தப்பட்டார்! பணி முடிந்ததும் கூலி வழங்கப்படும்.' : '✓ Candidate hired successfully! Wage will settle on job completion.'}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -214,7 +237,9 @@ export default function JobDetails({
                           </span>
                         </div>
                         <p className="text-[10px] text-earth-400 font-bold mt-1">
-                          Experience: {appl.experience} • Village: {appl.village}
+                          {language === 'ta'
+                            ? `அனுபவம்: ${appl.experience} • கிராமம்: ${appl.village}`
+                            : `Experience: ${appl.experience} • Village: ${appl.village}`}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-2">
                           {appl.skills.map(s => (
@@ -229,7 +254,7 @@ export default function JobDetails({
                         onClick={handleHire}
                         className="py-1.5 px-3 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs cursor-pointer border-0 shadow-sm self-end md:self-center"
                       >
-                        Hire Worker
+                        {language === 'ta' ? 'பணியமர்த்து' : 'Hire Worker'}
                       </button>
                     </div>
                   ))}
@@ -244,7 +269,7 @@ export default function JobDetails({
         {isLabor && job.status === 'open' && (
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-earth-150 dark:border-earth-900/40 bg-white/95 dark:bg-[#111714]/95 backdrop-blur-md flex items-center justify-between gap-4 z-20 shadow-lg animate-fade-in">
             <div>
-              <span className="text-[9px] text-earth-400 font-bold block uppercase tracking-wider">Estimated Total</span>
+              <span className="text-[9px] text-earth-400 font-bold block uppercase tracking-wider">{language === 'ta' ? 'மதிப்பிடப்பட்ட மொத்தம்' : 'Estimated Total'}</span>
               <span className="text-base font-black text-foreground font-mono">
                 ₹{(job.wages * parseInt(job.duration || '1')).toLocaleString()}
               </span>
@@ -254,7 +279,7 @@ export default function JobDetails({
               onClick={() => onApply(job.id)}
               className="px-8 py-3 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-sm shadow-md transition-all duration-200 cursor-pointer border-0 flex items-center gap-1"
             >
-              <span>Apply for Position</span>
+              <span>{language === 'ta' ? 'வேலைக்கு விண்ணப்பி' : 'Apply for Position'}</span>
             </button>
           </div>
         )}

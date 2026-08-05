@@ -28,6 +28,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initialize auth — restore any persisted session
     async function initAuth() {
       try {
+        if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+          const demoUser = {
+            id: 'farmer_1',
+            email: 'farmer_1@vlink.com',
+            user_metadata: {
+              full_name: 'Ramanathan Swamy',
+              role: 'farmer'
+            }
+          };
+          setUser(demoUser);
+          setSession({ user: demoUser, access_token: 'demo-token' });
+          setLoading(false);
+          return;
+        }
         const { data: { session: activeSession } } = await getSession();
         if (activeSession) {
           setSession(activeSession);

@@ -10,10 +10,17 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const router = useRouter();
 
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+      return;
+    }
     if (!loading && !user) {
       router.replace('/signup');
     }
   }, [user, loading, router]);
+
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (

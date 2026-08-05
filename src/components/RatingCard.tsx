@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Star } from 'lucide-react';
 
+import { useApp } from '@/context/AppContext';
+
 interface Review {
   id: string;
   reviewerName: string;
@@ -24,12 +26,15 @@ export default function RatingCard({
   reviewCount,
   reviews,
   onSubmitReview,
-  title = 'Reviews & Feedback'
+  title
 }: RatingCardProps) {
+  const { language } = useApp();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const displayTitle = title || (language === 'ta' ? 'மதிப்புரைகள் & கருத்துகள்' : 'Reviews & Feedback');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,13 +67,13 @@ export default function RatingCard({
       {/* Header and Average */}
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-black text-foreground uppercase tracking-wider">{title}</h4>
+          <h4 className="text-sm font-black text-foreground uppercase tracking-wider">{displayTitle}</h4>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="text-2xl font-black text-foreground">{averageRating}</span>
             <div className="space-y-0.5">
               {renderStars(averageRating, "w-4 h-4")}
               <span className="text-[10px] text-earth-400 block font-bold">
-                based on {reviewCount} ratings
+                {language === 'ta' ? `${reviewCount} மதிப்பீடுகளின் அடிப்படையில்` : `based on ${reviewCount} ratings`}
               </span>
             </div>
           </div>
@@ -79,7 +84,9 @@ export default function RatingCard({
             onClick={() => setIsFormOpen(!isFormOpen)}
             className="px-4 py-2 rounded-xl border border-primary-500/20 hover:bg-primary-500/5 text-primary-500 font-bold text-xs cursor-pointer transition-all"
           >
-            {isFormOpen ? 'Close Review' : 'Write Review'}
+            {isFormOpen 
+              ? (language === 'ta' ? 'கருத்தை மூடு' : 'Close Review') 
+              : (language === 'ta' ? 'கருத்து எழுதவும்' : 'Write Review')}
           </button>
         )}
       </div>
@@ -89,7 +96,7 @@ export default function RatingCard({
         <form onSubmit={handleSubmit} className="p-4 rounded-2xl bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200/55 dark:border-earth-900/30 space-y-4 animate-fade-in">
           <div className="space-y-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-earth-500 dark:text-earth-400 block">
-              Your Rating
+              {language === 'ta' ? 'உங்கள் மதிப்பீடு' : 'Your Rating'}
             </label>
             <div className="flex items-center gap-1.5">
               {Array.from({ length: 5 }).map((_, i) => {
@@ -118,14 +125,14 @@ export default function RatingCard({
 
           <div className="space-y-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-earth-500 dark:text-earth-400 block">
-              Comment
+              {language === 'ta' ? 'கருத்துரை' : 'Comment'}
             </label>
             <textarea
               required
               rows={3}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Tell other farmers about your experience..."
+              placeholder={language === 'ta' ? 'உங்கள் அனுபவத்தை மற்ற விவசாயிகளுடன் பகிர்ந்து கொள்ளுங்கள்...' : 'Tell other farmers about your experience...'}
               className="w-full p-3 bg-white dark:bg-earth-950/40 border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-primary-500 resize-none"
             />
           </div>
@@ -134,7 +141,7 @@ export default function RatingCard({
             type="submit"
             className="w-full py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs shadow-md transition-all border-0"
           >
-            Submit Feedback
+            {language === 'ta' ? 'கருத்தை சமர்ப்பிக்கவும்' : 'Submit Feedback'}
           </button>
         </form>
       )}
@@ -143,7 +150,7 @@ export default function RatingCard({
       <div className="space-y-4 pt-2">
         {reviews.length === 0 ? (
           <div className="text-center py-6 text-earth-400 text-xs font-bold border-t border-earth-100 dark:border-earth-900/30">
-            No reviews yet. Be the first to share your feedback!
+            {language === 'ta' ? 'இன்னும் மதிப்புரைகள் இல்லை. உங்கள் கருத்தை முதலில் பகிர்ந்து கொள்ளுங்கள்!' : 'No reviews yet. Be the first to share your feedback!'}
           </div>
         ) : (
           <div className="divide-y divide-earth-100 dark:divide-earth-900/20 max-h-72 overflow-y-auto pr-1">

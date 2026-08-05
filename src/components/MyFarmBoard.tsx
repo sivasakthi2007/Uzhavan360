@@ -637,6 +637,42 @@ export default function MyFarmBoard() {
                       />
                     </div>
                   </div>
+
+                  {/* Pre-booking Toggle */}
+                  <div className="pt-4 border-t border-earth-100 dark:border-earth-900/25 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                          <span className="text-lg">🍅</span>
+                          <span>{activeFarm.primary_crop} ({activeFarm.prebook_quantity || 500} kg)</span>
+                        </span>
+                        <span className="text-[10px] text-earth-450 block font-semibold">
+                          {language === 'ta' 
+                            ? `அறுவடை: ${Math.max(10, Math.round((new Date(activeFarm.expected_harvest_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} நாட்களில்` 
+                            : `Harvest: in ${Math.max(10, Math.round((new Date(activeFarm.expected_harvest_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days`}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          updateFarm(activeFarm.id, {
+                            prebook_available: !activeFarm.prebook_available,
+                            prebook_quantity: activeFarm.prebook_quantity || 500,
+                            prebook_price: activeFarm.prebook_price || 30
+                          });
+                        }}
+                        className={`h-9 px-4 rounded-xl text-xs font-bold transition-all border-0 cursor-pointer ${
+                          activeFarm.prebook_available
+                            ? 'bg-emerald-500 text-white shadow-xs font-black'
+                            : 'bg-primary-500 text-white hover:bg-primary-600'
+                        }`}
+                      >
+                        {activeFarm.prebook_available
+                          ? (language === 'ta' ? '✓ முன்பதிவுக்கு வைக்கப்பட்டுள்ளது' : '✓ Listed for Pre-booking')
+                          : (language === 'ta' ? 'முன்பதிவுக்கு வைக்க' : 'Put for Pre-booking')
+                        }
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 

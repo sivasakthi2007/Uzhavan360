@@ -11,7 +11,11 @@ export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/signup');
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+      router.replace('/dashboard');
+    } else {
+      router.replace('/signup');
+    }
   }, [router]);
 
   // Sandbox Mode Indicator
@@ -31,7 +35,7 @@ export default function LandingPage() {
             <Leaf className="w-5 h-5" />
           </div>
           <div>
-            <span className="font-display font-black text-xl tracking-tight text-foreground block">V-LINK</span>
+            <span className="font-display font-black text-xl tracking-tight text-foreground block">UZHAVAN360</span>
             <span className="text-[9px] block font-mono text-primary-500 font-extrabold uppercase tracking-widest -mt-0.5">{t('platform_name')}</span>
           </div>
         </div>
@@ -104,7 +108,7 @@ export default function LandingPage() {
             href="#features"
             className="w-full sm:w-auto h-12 flex items-center justify-center gap-2 px-8 rounded-xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-primary-950/20 text-xs font-bold text-foreground hover:bg-earth-50 dark:hover:bg-earth-900/40 transition-all duration-300 cursor-pointer no-underline"
           >
-            <span>Learn More</span>
+            <span>{language === 'ta' ? 'மேலும் அறிக' : 'Learn More'}</span>
           </a>
         </div>
 
@@ -113,10 +117,14 @@ export default function LandingPage() {
           <div className="mt-14 w-full max-w-2xl p-6 rounded-[24px] border border-primary-500/10 bg-white/50 dark:bg-[#111714]/40 backdrop-blur-md space-y-4">
             <div className="flex items-center justify-center gap-2">
               <span className="w-2 h-2 rounded-full bg-primary-500 animate-ping"></span>
-              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-primary-600 dark:text-primary-400">Sandbox Quick Access</span>
+              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-primary-600 dark:text-primary-400">
+                {language === 'ta' ? 'சாண்ட்பாக்ஸ் நேரடி அணுகல்' : 'Sandbox Quick Access'}
+              </span>
             </div>
-            <p className="text-[11px] text-earth-500 dark:text-earth-400 max-w-md mx-auto">
-              You are currently running in **Offline Sandbox Mode**. Click a role preset below to log in instantly.
+            <p className="text-[11px] text-earth-500 dark:text-earth-400 max-w-md mx-auto font-semibold">
+              {language === 'ta'
+                ? 'நீங்கள் தற்போது ஆஃப்லைன் சாண்ட்பாக்ஸ் முறையில் இயங்குகிறீர்கள். உடனடியாக உள்நுழைய கீழே உள்ள பாத்திரங்களில் ஒன்றை கிளிக் செய்க.'
+                : 'You are currently running in **Offline Sandbox Mode**. Click a role preset below to log in instantly.'}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Link
@@ -124,28 +132,28 @@ export default function LandingPage() {
                 className="p-3 rounded-2xl bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 hover:border-primary-500/40 text-center text-xs font-black text-foreground hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col items-center gap-1.5"
               >
                 <span className="text-xl">👨‍🌾</span>
-                <span>Farmer (farmer_1)</span>
+                <span>{language === 'ta' ? 'விவசாயி' : 'Farmer'} (farmer_1)</span>
               </Link>
               <Link
                 href="/signup?prefill=buyer_1@vlink.com"
                 className="p-3 rounded-2xl bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 hover:border-primary-500/40 text-center text-xs font-black text-foreground hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col items-center gap-1.5"
               >
                 <span className="text-xl">🤝</span>
-                <span>Buyer (buyer_1)</span>
+                <span>{language === 'ta' ? 'வாங்குபவர்' : 'Buyer'} (buyer_1)</span>
               </Link>
               <Link
                 href="/signup?prefill=labor_1@vlink.com"
                 className="p-3 rounded-2xl bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 hover:border-primary-500/40 text-center text-xs font-black text-foreground hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col items-center gap-1.5"
               >
                 <span className="text-xl">👷</span>
-                <span>Labour (labor_1)</span>
+                <span>{language === 'ta' ? 'தொழிலாளர்' : 'Labour'} (labor_1)</span>
               </Link>
               <Link
                 href="/signup?prefill=admin@vlink.com"
                 className="p-3 rounded-2xl bg-white dark:bg-[#151c19] border border-earth-200 dark:border-primary-950/20 hover:border-primary-500/40 text-center text-xs font-black text-foreground hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col items-center gap-1.5"
               >
                 <span className="text-xl">🛡️</span>
-                <span>Admin</span>
+                <span>{language === 'ta' ? 'நிர்வாகி' : 'Admin'}</span>
               </Link>
             </div>
           </div>
@@ -156,8 +164,12 @@ export default function LandingPage() {
       <section id="features" className="px-6 py-20 bg-white/40 dark:bg-[#111714]/20 border-t border-earth-200/50 dark:border-primary-950/20 relative z-10">
         <div className="max-w-5xl mx-auto">
           <div className="text-center space-y-2 mb-12">
-            <span className="text-[9px] font-mono font-black uppercase text-primary-500 tracking-widest">Platform capabilities</span>
-            <h2 className="text-3xl font-display font-black text-foreground tracking-tight">Everything you need to grow</h2>
+            <span className="text-[9px] font-mono font-black uppercase text-primary-500 tracking-widest">
+              {language === 'ta' ? 'தளத்தின் திறன்கள்' : 'Platform capabilities'}
+            </span>
+            <h2 className="text-3xl font-display font-black text-foreground tracking-tight">
+              {language === 'ta' ? 'நீங்கள் வளர தேவையான அனைத்தும்' : 'Everything you need to grow'}
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -219,7 +231,9 @@ export default function LandingPage() {
           <span className="font-display font-black text-foreground">V-LINK</span>
         </div>
         <p className="text-xs text-earth-450 font-bold uppercase tracking-wider">
-          © 2026 V-Link Agriculture Platform. Built to support Indian farming communities.
+          {language === 'ta'
+            ? '© 2026 வி-லிங்க் விவசாயத் தளம். இந்திய விவசாய சமூகங்களுக்கு ஆதரவளிக்க உருவாக்கப்பட்டது.'
+            : '© 2026 V-Link Agriculture Platform. Built to support Indian farming communities.'}
         </p>
       </footer>
     </div>

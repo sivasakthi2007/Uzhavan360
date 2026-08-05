@@ -41,6 +41,23 @@ export interface Farm {
   sowing_date: string;
   expected_harvest_date: string;
   created_at?: string;
+  prebook_available?: boolean;
+  prebook_price?: number;
+  prebook_quantity?: number;
+}
+
+export interface BuyerRequirement {
+  id: string;
+  crop: string;
+  quantity: number;
+  requiredDate: string;
+  location: string;
+  buyerId: string;
+  buyerName: string;
+  status: 'open' | 'matched';
+  matchedFarmerId?: string;
+  matchedFarmerName?: string;
+  createdAt: string;
 }
 
 export interface FarmExpense {
@@ -96,6 +113,8 @@ export interface Product {
   village?: string;
   taluk?: string;
   district?: string;
+  farmerContact?: string;
+  shareContactConsent?: boolean;
 }
 
 export interface Order {
@@ -311,14 +330,14 @@ const SEED_SCHEME_APPLICATIONS: SchemeApplication[] = [
 ];
 
 const SEED_PRODUCTS: Product[] = [
-  { id: 'prod_1', name: 'Organic Tomatoes', category: 'Vegetables', pricePerKg: 32, stockKg: 840, location: 'Madurai East, TN', farmerName: 'Ramanathan Swamy', farmerId: 'farmer_1', image: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=400&auto=format&fit=crop&q=80', targetChannel: 'b2c', createdAt: '2026-07-01T10:00:00Z', distanceKm: 4.2, farmerRating: 4.8, isVerifiedFarmer: true, isRecommended: true, salesCount: 350, isNew: false, isTrending: true, village: 'Othakadai', district: 'Madurai' },
-  { id: 'prod_2', name: 'Red Onions', category: 'Vegetables', pricePerKg: 28, stockKg: 1200, location: 'Dindigul, TN', farmerName: 'Lakshmi Devi', farmerId: 'farmer_2', image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400&auto=format&fit=crop&q=80', targetChannel: 'hotel', createdAt: '2026-07-02T11:30:00Z', distanceKm: 28.5, farmerRating: 4.5, isVerifiedFarmer: true, isRecommended: true, salesCount: 180, isNew: true, isTrending: false, village: 'Palani', district: 'Dindigul' },
-  { id: 'prod_3', name: 'Green Chillies', category: 'Vegetables', pricePerKg: 45, stockKg: 360, location: 'Virudhunagar, TN', farmerName: 'Murugan Vel', farmerId: 'farmer_3', image: 'https://images.unsplash.com/photo-1588891557711-3635694de1c0?w=400&auto=format&fit=crop&q=80', targetChannel: 'retail', createdAt: '2026-06-30T09:00:00Z', distanceKm: 12.1, farmerRating: 4.2, isVerifiedFarmer: false, isRecommended: false, salesCount: 95, isNew: false, isTrending: false, village: 'Sattur', district: 'Virudhunagar' },
-  { id: 'prod_4', name: 'Alphonso Mangoes', category: 'Fruits', pricePerKg: 120, stockKg: 500, location: 'Ratnagiri, MH', farmerName: 'Shankar Patil', farmerId: 'farmer_4', image: 'https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400&auto=format&fit=crop&q=80', targetChannel: 'b2c', createdAt: '2026-07-02T16:00:00Z', distanceKm: 45.0, farmerRating: 4.9, isVerifiedFarmer: true, isRecommended: true, salesCount: 420, isNew: true, isTrending: true, village: 'Guhagar', district: 'Ratnagiri' },
-  { id: 'prod_5', name: 'Basmati Paddy Rice', category: 'Grains', pricePerKg: 55, stockKg: 2000, location: 'Thanjavur, TN', farmerName: 'Anbu Selvan', farmerId: 'farmer_5', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&auto=format&fit=crop&q=80', targetChannel: 'hotel', createdAt: '2026-06-28T08:15:00Z', distanceKm: 5.5, farmerRating: 4.7, isVerifiedFarmer: true, isRecommended: true, salesCount: 510, isNew: false, isTrending: true, village: 'Kumbakonam', district: 'Thanjavur' },
-  { id: 'prod_6', name: 'Turmeric Fingers', category: 'Spices', pricePerKg: 95, stockKg: 600, location: 'Erode, TN', farmerName: 'Kavitha Raman', farmerId: 'farmer_6', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&auto=format&fit=crop&q=80', targetChannel: 'retail', createdAt: '2026-06-29T14:45:00Z', distanceKm: 14.3, farmerRating: 4.0, isVerifiedFarmer: false, isRecommended: false, salesCount: 80, isNew: false, isTrending: false, village: 'Gobichettipalayam', district: 'Erode' },
-  { id: 'prod_7', name: 'Fresh Drumsticks', category: 'Vegetables', pricePerKg: 38, stockKg: 450, location: 'Madurai West, TN', farmerName: 'Ramanathan Swamy', farmerId: 'farmer_1', image: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=400&auto=format&fit=crop&q=80', targetChannel: 'marriage', createdAt: '2026-07-03T07:30:00Z', distanceKm: 6.8, farmerRating: 4.8, isVerifiedFarmer: true, isRecommended: false, salesCount: 150, isNew: true, isTrending: false, village: 'Thiruparankundram', district: 'Madurai' },
-  { id: 'prod_8', name: 'Cluster Beans (Kothavarangai)', category: 'Vegetables', pricePerKg: 42, stockKg: 0, location: 'Sivagangai, TN', farmerName: 'Priya Narayanan', farmerId: 'farmer_7', image: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=400&auto=format&fit=crop&q=80', targetChannel: 'b2c', createdAt: '2026-07-01T15:20:00Z', distanceKm: 22.0, farmerRating: 4.6, isVerifiedFarmer: true, isRecommended: false, salesCount: 110, isNew: false, isTrending: false, village: 'Karaikudi', district: 'Sivagangai' },
+  { id: 'prod_1', name: 'Organic Tomatoes', category: 'Vegetables', pricePerKg: 32, stockKg: 840, location: 'Madurai East, TN', farmerName: 'Ramanathan Swamy', farmerId: 'farmer_1', image: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=400&auto=format&fit=crop&q=80', targetChannel: 'b2c', createdAt: '2026-07-01T10:00:00Z', distanceKm: 4.2, farmerRating: 4.8, isVerifiedFarmer: true, isRecommended: true, salesCount: 350, isNew: false, isTrending: true, village: 'Othakadai', district: 'Madurai', farmerContact: '+91 94432 10987', shareContactConsent: true },
+  { id: 'prod_2', name: 'Red Onions', category: 'Vegetables', pricePerKg: 28, stockKg: 1200, location: 'Dindigul, TN', farmerName: 'Lakshmi Devi', farmerId: 'farmer_2', image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400&auto=format&fit=crop&q=80', targetChannel: 'hotel', createdAt: '2026-07-02T11:30:00Z', distanceKm: 28.5, farmerRating: 4.5, isVerifiedFarmer: true, isRecommended: true, salesCount: 180, isNew: true, isTrending: false, village: 'Palani', district: 'Dindigul', farmerContact: '+91 98421 23456', shareContactConsent: true },
+  { id: 'prod_3', name: 'Green Chillies', category: 'Vegetables', pricePerKg: 45, stockKg: 360, location: 'Virudhunagar, TN', farmerName: 'Murugan Vel', farmerId: 'farmer_3', image: 'https://images.unsplash.com/photo-1588891557711-3635694de1c0?w=400&auto=format&fit=crop&q=80', targetChannel: 'retail', createdAt: '2026-06-30T09:00:00Z', distanceKm: 12.1, farmerRating: 4.2, isVerifiedFarmer: false, isRecommended: false, salesCount: 95, isNew: false, isTrending: false, village: 'Sattur', district: 'Virudhunagar', farmerContact: '+91 97654 32109', shareContactConsent: false },
+  { id: 'prod_4', name: 'Alphonso Mangoes', category: 'Fruits', pricePerKg: 120, stockKg: 500, location: 'Ratnagiri, MH', farmerName: 'Shankar Patil', farmerId: 'farmer_4', image: 'https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400&auto=format&fit=crop&q=80', targetChannel: 'b2c', createdAt: '2026-07-02T16:00:00Z', distanceKm: 45.0, farmerRating: 4.9, isVerifiedFarmer: true, isRecommended: true, salesCount: 420, isNew: true, isTrending: true, village: 'Guhagar', district: 'Ratnagiri', farmerContact: '+91 91234 56789', shareContactConsent: true },
+  { id: 'prod_5', name: 'Basmati Paddy Rice', category: 'Grains', pricePerKg: 55, stockKg: 2000, location: 'Thanjavur, TN', farmerName: 'Anbu Selvan', farmerId: 'farmer_5', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&auto=format&fit=crop&q=80', targetChannel: 'hotel', createdAt: '2026-06-28T08:15:00Z', distanceKm: 5.5, farmerRating: 4.7, isVerifiedFarmer: true, isRecommended: true, salesCount: 510, isNew: false, isTrending: true, village: 'Kumbakonam', district: 'Thanjavur', farmerContact: '+91 94876 54321', shareContactConsent: true },
+  { id: 'prod_6', name: 'Turmeric Fingers', category: 'Spices', pricePerKg: 95, stockKg: 600, location: 'Erode, TN', farmerName: 'Kavitha Raman', farmerId: 'farmer_6', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&auto=format&fit=crop&q=80', targetChannel: 'retail', createdAt: '2026-06-29T14:45:00Z', distanceKm: 14.3, farmerRating: 4.0, isVerifiedFarmer: false, isRecommended: false, salesCount: 80, isNew: false, isTrending: false, village: 'Gobichettipalayam', district: 'Erode', farmerContact: '+91 95432 16789', shareContactConsent: true },
+  { id: 'prod_7', name: 'Fresh Drumsticks', category: 'Vegetables', pricePerKg: 38, stockKg: 450, location: 'Madurai West, TN', farmerName: 'Ramanathan Swamy', farmerId: 'farmer_1', image: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=400&auto=format&fit=crop&q=80', targetChannel: 'marriage', createdAt: '2026-07-03T07:30:00Z', distanceKm: 6.8, farmerRating: 4.8, isVerifiedFarmer: true, isRecommended: false, salesCount: 150, isNew: true, isTrending: false, village: 'Thiruparankundram', district: 'Madurai', farmerContact: '+91 94432 10987', shareContactConsent: true },
+  { id: 'prod_8', name: 'Cluster Beans (Kothavarangai)', category: 'Vegetables', pricePerKg: 42, stockKg: 0, location: 'Sivagangai, TN', farmerName: 'Priya Narayanan', farmerId: 'farmer_7', image: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=400&auto=format&fit=crop&q=80', targetChannel: 'b2c', createdAt: '2026-07-01T15:20:00Z', distanceKm: 22.0, farmerRating: 4.6, isVerifiedFarmer: true, isRecommended: false, salesCount: 110, isNew: false, isTrending: false, village: 'Karaikudi', district: 'Sivagangai', farmerContact: '+91 98765 43210', shareContactConsent: true },
 ];
 
 const SEED_ORDERS: Order[] = [
@@ -618,6 +637,7 @@ interface AppContextProps {
   rentalBookings: RentalBooking[];
   chatMessages: ChatMessage[];
   marketPrices: MarketPrice[];
+  marketPricesError: boolean;
   govSchemes: GovScheme[];
   isOffline: boolean;
   syncData: () => Promise<void>;
@@ -693,6 +713,11 @@ interface AppContextProps {
   // Schemes
   schemeApplications: SchemeApplication[];
   applyForScheme: (schemeId: string, schemeName: string) => Promise<void>;
+
+  // Buyer Requirements
+  buyerRequirements: BuyerRequirement[];
+  addBuyerRequirement: (crop: string, quantity: number, requiredDate: string, location: string) => void;
+  matchBuyerRequirement: (requirementId: string) => void;
 }
 
 // ─── Context ────────────────────────────────────────────────────────
@@ -899,8 +924,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [rentalItems, setRentalItems] = useState<RentalItem[]>([...SEED_RENTAL_ITEMS]);
   const [rentalBookings, setRentalBookings] = useState<RentalBooking[]>([...SEED_RENTAL_BOOKINGS]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([...SEED_CHAT_MESSAGES]);
+  const [buyerRequirements, setBuyerRequirements] = useState<BuyerRequirement[]>([
+    {
+      id: 'req_1',
+      crop: 'Rice (நெல்)',
+      quantity: 200,
+      requiredDate: '2026-08-25',
+      location: 'Madurai East (மதுரை கிழக்கு)',
+      buyerId: 'buyer_1',
+      buyerName: 'Gourmet Grand Hotel',
+      status: 'open',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'req_2',
+      crop: 'Tomato (தக்காளி)',
+      quantity: 500,
+      requiredDate: '2026-08-15',
+      location: 'Melur (மேலூர்)',
+      buyerId: 'buyer_2',
+      buyerName: 'Raza Grocers',
+      status: 'open',
+      createdAt: new Date().toISOString()
+    }
+  ]);
 
   const [marketPrices, setMarketPrices] = useState<MarketPrice[]>([]);
+  const [marketPricesError, setMarketPricesError] = useState(false);
   const [govSchemes, setGovSchemes] = useState<GovScheme[]>([]);
   const [isOffline, setIsOffline] = useState(false);
 
@@ -910,10 +960,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsOffline(!online);
 
     if (!online) {
-      const cachedMarket = localStorage.getItem('vlink_cache_market');
+      const cachedMarket = localStorage.getItem('uzhavan360_live_market_prices');
       const cachedSchemes = localStorage.getItem('vlink_cache_schemes');
-      if (cachedMarket) setMarketPrices(JSON.parse(cachedMarket));
-      else setMarketPrices([...DEFAULT_MARKET_PRICES]);
+      if (cachedMarket) {
+        setMarketPrices(JSON.parse(cachedMarket));
+        setMarketPricesError(false);
+      } else {
+        setMarketPrices([]);
+        setMarketPricesError(true);
+      }
 
       if (cachedSchemes) setGovSchemes(JSON.parse(cachedSchemes));
       else setGovSchemes([...DEFAULT_GOV_SCHEMES]);
@@ -921,28 +976,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     try {
-      const apiKey = process.env.NEXT_PUBLIC_DATA_GOV_IN_API_KEY;
-      if (!apiKey) {
-        throw new Error('API key for data.gov.in not configured. Using cached data.');
+      const res = await fetch('/api/market-prices');
+      if (!res.ok) {
+        throw new Error('API route returned error status');
       }
-
-      // If we had API endpoints:
-      // const res = await fetch(`https://api.data.gov.in/resource/...&api-key=${apiKey}`);
-      // const data = await res.json();
-      throw new Error('Using fallback local cache database.');
+      const data = await res.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      if (!data.records || data.records.length === 0) {
+        throw new Error('No records returned from API');
+      }
+      setMarketPrices(data.records);
+      setMarketPricesError(false);
+      localStorage.setItem('uzhavan360_live_market_prices', JSON.stringify(data.records));
     } catch (err) {
-      console.warn('[V-Link] API Sync Error:', err);
-      const cachedMarket = localStorage.getItem('vlink_cache_market');
+      console.warn('[V-Link] Government API Fetch failed:', err);
+      const cachedMarket = localStorage.getItem('uzhavan360_live_market_prices');
+      if (cachedMarket) {
+        setMarketPrices(JSON.parse(cachedMarket));
+        setMarketPricesError(false);
+      } else {
+        setMarketPrices([]);
+        setMarketPricesError(true);
+      }
+    }
+
+    try {
       const cachedSchemes = localStorage.getItem('vlink_cache_schemes');
-
-      const finalMarket = cachedMarket ? JSON.parse(cachedMarket) : [...DEFAULT_MARKET_PRICES];
       const finalSchemes = cachedSchemes ? JSON.parse(cachedSchemes) : [...DEFAULT_GOV_SCHEMES];
-
-      setMarketPrices(finalMarket);
       setGovSchemes(finalSchemes);
-
-      if (!cachedMarket) localStorage.setItem('vlink_cache_market', JSON.stringify(finalMarket));
       if (!cachedSchemes) localStorage.setItem('vlink_cache_schemes', JSON.stringify(finalSchemes));
+    } catch (err) {
+      setGovSchemes([...DEFAULT_GOV_SCHEMES]);
     }
   }, []);
 
@@ -1336,6 +1402,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     addToast(language === 'ta' ? 'திட்ட விண்ணப்பம் சமர்ப்பிக்கப்பட்டது!' : 'Scheme application submitted successfully!', 'success');
+  };
+
+  // ── Buyer Requirements Actions ──
+  const addBuyerRequirement = (crop: string, quantity: number, requiredDate: string, location: string) => {
+    const newRequirement: BuyerRequirement = {
+      id: `req_${Date.now()}`,
+      crop,
+      quantity,
+      requiredDate,
+      location,
+      buyerId: appUser?.id || 'buyer_1',
+      buyerName: userName,
+      status: 'open',
+      createdAt: new Date().toISOString()
+    };
+    setBuyerRequirements(prev => [newRequirement, ...prev]);
+    addToast(language === 'ta' ? 'தேவை வெற்றிகரமாகப் பதிவு செய்யப்பட்டது!' : 'Buyer requirement posted successfully!', 'success');
+  };
+
+  const matchBuyerRequirement = (requirementId: string) => {
+    setBuyerRequirements(prev =>
+      prev.map(req =>
+        req.id === requirementId
+          ? {
+              ...req,
+              status: 'matched' as const,
+              matchedFarmerId: appUser?.id || 'farmer_1',
+              matchedFarmerName: userName
+            }
+          : req
+      )
+    );
+    addToast(language === 'ta' ? 'விருப்பம் அனுப்பப்பட்டது! வாங்குபவர் உங்களைத் தொடர்புகொள்வார்.' : 'Interest sent! The buyer will contact you.', 'success');
   };
 
   // Load scan history and farm data when appUser changes
@@ -1985,6 +2084,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toasts,
     addToast,
     marketPrices,
+    marketPricesError,
     govSchemes,
     isOffline,
     syncData,
@@ -2037,6 +2137,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deleteFarmIncome,
     schemeApplications,
     applyForScheme,
+    buyerRequirements,
+    addBuyerRequirement,
+    matchBuyerRequirement,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

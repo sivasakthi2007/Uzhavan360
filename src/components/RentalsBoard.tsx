@@ -21,7 +21,7 @@ export default function RentalsBoard() {
   const { 
     rentalItems, rentalBookings, addRentalItem, bookEquipment, 
     cancelRentalBooking, acceptRentalBooking, startRentalBooking, 
-    completeRentalBooking, deleteRentalItem, updateRentalItem, wallets, userName, t, user
+    completeRentalBooking, deleteRentalItem, updateRentalItem, wallets, userName, t, user, language
   } = useApp();
 
   // Mode: 'renter' (farmer looking for gear) vs 'owner' (equipment fleet supplier)
@@ -66,6 +66,31 @@ export default function RentalsBoard() {
   }, [rentalItems]);
 
   // Categories list for tabs
+  const getLocalizedCategory = (cat: string) => {
+    if (language !== 'ta') {
+      if (cat === 'all') return 'All Equipment';
+      if (cat === 'tractor') return 'Tractors';
+      if (cat === 'harvester') return 'Harvesters';
+      if (cat === 'rotavator') return 'Rotavators';
+      if (cat === 'tiller') return 'Tillers';
+      if (cat === 'pump') return 'Water Pumps';
+      if (cat === 'sprayer') return 'Sprayers';
+      return cat;
+    }
+    switch (cat) {
+      case 'all': return 'அனைத்து கருவிகள்';
+      case 'tractor': return 'டிராக்டர்கள்';
+      case 'harvester': return 'அறுவடை இயந்திரங்கள்';
+      case 'rotavator': return 'ரோட்டவேட்டர்கள்';
+      case 'tiller': return 'டில்லர்கள்';
+      case 'pump': return 'நீர் பம்புகள்';
+      case 'sprayer': return 'தெளிப்பான்கள்';
+      case 'vehicle': return 'வாகனம்';
+      case 'tool': return 'கருவி';
+      default: return cat;
+    }
+  };
+
   const categories = [
     { id: 'all', label: 'All Equipment' },
     { id: 'tractor', label: 'Tractors' },
@@ -199,10 +224,12 @@ export default function RentalsBoard() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
             <Wrench className="w-6 h-6 text-primary-500" />
-            <span>Farm Equipment Rental</span>
+            <span>{language === 'ta' ? 'விவசாயக் கருவி வாடகை' : 'Farm Equipment Rental'}</span>
           </h1>
           <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
-            Rent high quality farming equipment or list your machinery to generate rental earnings.
+            {language === 'ta'
+              ? 'உயர்தர விவசாயக் கருவிகளை வாடகைக்கு எடுக்கவும் அல்லது உங்கள் இயந்திரங்களை வாடகைக்கு விட்டு வருமானம் ஈட்டவும்.'
+              : 'Rent high quality farming equipment or list your machinery to generate rental earnings.'}
           </p>
         </div>
 
@@ -261,7 +288,7 @@ export default function RentalsBoard() {
               description={t('upcoming_bookings_desc')}
             />
             <StatisticsCard
-              title="Ecosystem Wallet"
+              title={language === 'ta' ? 'பணப்பை' : 'Ecosystem Wallet'}
               value={`₹${wallets.farmer.toLocaleString()}`}
               icon={IndianRupee}
               color="stone"
@@ -329,7 +356,7 @@ export default function RentalsBoard() {
             <div className="border-t border-earth-100 dark:border-earth-900/40 pt-4 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <div className="flex items-center gap-1.5 text-[9px] font-bold text-earth-400 uppercase tracking-wider shrink-0 mr-2">
                 <Filter className="w-3.5 h-3.5" />
-                <span>Categories:</span>
+                <span>{language === 'ta' ? 'வகைகள்:' : 'Categories:'}</span>
               </div>
               {categories.map((cat) => (
                 <button
@@ -341,7 +368,7 @@ export default function RentalsBoard() {
                       : 'bg-transparent border-earth-200 dark:border-earth-800 text-earth-600 dark:text-earth-400 hover:border-primary-500/40 hover:text-foreground'
                   }`}
                 >
-                  {cat.label}
+                  {getLocalizedCategory(cat.id)}
                 </button>
               ))}
             </div>
@@ -350,15 +377,15 @@ export default function RentalsBoard() {
           {/* Listings Grid */}
           <div className="space-y-4">
             <h2 className="text-sm font-black text-foreground uppercase tracking-widest">
-              Available Listings ({searchedGear.length})
+              {language === 'ta' ? `கிடைக்கும் கருவிகள் (${searchedGear.length})` : `Available Listings (${searchedGear.length})`}
             </h2>
 
             {searchedGear.length === 0 ? (
               <EmptyState
                 icon={Wrench}
-                title="No Farming Machinery Found"
-                description="We couldn't find any rental equipment matching your filters. Try resetting or adjusting filters."
-                actionText="Reset Filters"
+                title={language === 'ta' ? 'விவசாய இயந்திரங்கள் எதுவும் இல்லை' : 'No Farming Machinery Found'}
+                description={language === 'ta' ? 'வடிகட்டிகளுக்குப் பொருத்தமான வாடகைக் கருவிகள் எதுவும் கிடைக்கவில்லை. வடிகட்டிகளை மாற்றி முயற்சிக்கவும்.' : "We couldn't find any rental equipment matching your filters. Try resetting or adjusting filters."}
+                actionText={language === 'ta' ? 'வடிகட்டிகளை மீட்டமை' : 'Reset Filters'}
                 onActionClick={() => {
                   setSearchQuery('');
                   setSelectedType('all');
@@ -384,12 +411,12 @@ export default function RentalsBoard() {
           <div className="space-y-4 pt-6">
             <h2 className="text-sm font-black text-foreground uppercase tracking-widest flex items-center gap-2">
               <History className="w-4.5 h-4.5 text-primary-500" />
-              <span>Your Lease Bookings History</span>
+              <span>{language === 'ta' ? 'வாடகை முன்பதிவு வரலாறு' : 'Your Lease Bookings History'}</span>
             </h2>
 
             {renterBookings.length === 0 ? (
               <div className="p-8 text-center rounded-3xl border border-dashed border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] text-earth-400 text-xs font-bold">
-                No rental bookings placed yet. Find a machinery above to confirm lease.
+                {language === 'ta' ? 'முன்பதிவுகள் எதுவும் இன்னும் செய்யப்படவில்லை. வாடகைக்கு எடுக்க மேலே உள்ள இயந்திரங்களைக் கண்டறியவும்.' : 'No rental bookings placed yet. Find a machinery above to confirm lease.'}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -416,46 +443,46 @@ export default function RentalsBoard() {
           {/* Owner Dashboard Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatisticsCard
-              title="Active fleet listed"
+              title={language === 'ta' ? 'பதிவிடப்பட்ட கருவிகள்' : 'Active fleet listed'}
               value={ownerStats.activeFleet}
               icon={Wrench}
               color="emerald"
-              description="Gear published to market"
+              description={language === 'ta' ? 'சந்தையில் வெளியிடப்பட்டவை' : 'Gear published to market'}
             />
             <StatisticsCard
-              title="Deployments"
+              title={language === 'ta' ? 'செயலில் உள்ள வாடகை' : 'Deployments'}
               value={ownerStats.activeRentals}
               icon={Truck}
               color="blue"
-              description="Currently earning rental lease"
+              description={language === 'ta' ? 'தற்போது வாடகை வருமானம் தருபவை' : 'Currently earning rental lease'}
             />
             <StatisticsCard
-              title="Open Requests"
+              title={language === 'ta' ? 'புதிய கோரிக்கைகள்' : 'Open Requests'}
               value={ownerStats.upcomingBookings}
               icon={CalendarIcon}
               color="amber"
-              description="Awaiting your approval"
+              description={language === 'ta' ? 'உங்கள் ஒப்புதலுக்காக காத்திருப்பவை' : 'Awaiting your approval'}
             />
             <StatisticsCard
-              title="Your Rental Income"
+              title={language === 'ta' ? 'வாடகை வருமானம்' : 'Your Rental Income'}
               value={`₹${ownerStats.totalEarnings.toLocaleString()}`}
               icon={TrendingUp}
               color="stone"
-              description="Settled to your wallet wallet"
+              description={language === 'ta' ? 'உங்கள் பணப்பையில் செலுத்தப்பட்டது' : 'Settled to your wallet'}
             />
           </div>
 
           {/* Action Row */}
           <div className="flex justify-between items-center border-b border-earth-150 dark:border-earth-900/40 pb-4">
             <h2 className="text-sm font-black text-foreground uppercase tracking-widest">
-              Manage Your Listed Gear ({ownerListings.length})
+              {language === 'ta' ? `கருவிகளை நிர்வகிக்கவும் (${ownerListings.length})` : `Manage Your Listed Gear (${ownerListings.length})`}
             </h2>
             <button
               onClick={() => setShowAddForm(true)}
               className="py-2.5 px-4 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer border-0 shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              <span>List Machinery</span>
+              <span>{language === 'ta' ? 'இயந்திரங்களை பதிவிடு' : 'List Machinery'}</span>
             </button>
           </div>
 
@@ -463,9 +490,9 @@ export default function RentalsBoard() {
           {ownerListings.length === 0 ? (
             <EmptyState
               icon={Wrench}
-              title="List Your Farm Machinery"
-              description="Earn lease income by listing your idle tractors, harvesters, or pump tools. Accessible to thousands of nearby farmers."
-              actionText="Publish Your First Gear"
+              title={language === 'ta' ? 'உங்கள் விவசாய இயந்திரங்களை பதிவிடுங்கள்' : 'List Your Farm Machinery'}
+              description={language === 'ta' ? 'உங்கள் டிராக்டர்கள், அறுவடை இயந்திரங்கள் அல்லது பம்புகளை பதிவிடுவதன் மூலம் வாடகை வருமானம் ஈட்டவும். அருகில் உள்ள ஆயிரக்கணக்கான விவசாயிகள் வாடகைக்கு எடுக்கலாம்.' : 'Earn lease income by listing your idle tractors, harvesters, or pump tools. Accessible to thousands of nearby farmers.'}
+              actionText={language === 'ta' ? 'உங்கள் முதல் கருவியை பதிவிடவும்' : 'Publish Your First Gear'}
               onActionClick={() => setShowAddForm(true)}
             />
           ) : (

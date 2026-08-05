@@ -343,13 +343,11 @@ function SignupContent() {
 
                     <button
                       type="submit"
-                      disabled={isLoading || isPhoneInput}
+                      disabled={isLoading}
                       className="w-full h-12 bg-primary-500 hover:bg-primary-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary-500/10 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 border-0 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
                       {isLoading ? (
                         <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                      ) : isPhoneInput ? (
-                        <span>{language === 'ta' ? 'தொலைபேசி OTP விரைவில் கிடைக்கும்' : 'Phone OTP - Coming Soon'}</span>
                       ) : (
                         <>
                           <span>{t('send_otp')}</span>
@@ -531,20 +529,25 @@ function SignupContent() {
 
       {/* Footer */}
       <footer className="py-8 border-t border-earth-200/50 dark:border-primary-950/20 text-center text-[9px] font-mono font-black uppercase tracking-wider text-earth-450 bg-white dark:bg-[#0c120f] transition-all">
-        Secure agricultural login · V-Link Rural Infrastructure Systems
+        {language === 'ta'
+          ? 'பாதுகாப்பான விவசாய உள்நுழைவு · வி-லிங்க் கிராமப்புற உள்கட்டமைப்பு அமைப்புகள்'
+          : 'Secure agricultural login · V-Link Rural Infrastructure Systems'}
       </footer>
     </div>
   );
 }
 
 export default function SignupPage() {
+  const { language } = useApp();
   return (
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#f7f9f6] dark:bg-[#070b09] flex items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <Leaf className="w-8 h-8 text-primary-500 animate-bounce" />
-            <span className="text-xs font-semibold text-earth-500">Loading signup portal...</span>
+            <span className="text-xs font-semibold text-earth-500">
+              {language === 'ta' ? 'விண்ணப்பத் தளம் ஏற்றப்படுகிறது...' : 'Loading signup portal...'}
+            </span>
           </div>
         </div>
       }
