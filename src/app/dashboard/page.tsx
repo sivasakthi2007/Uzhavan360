@@ -775,11 +775,11 @@ function DashboardContent() {
             {activeTab === 'prebookings' && (
               <div className="space-y-6 animate-fade-in text-foreground">
                 <div>
-                  <h1 className="text-2xl font-black tracking-tight">{language === 'ta' ? 'முன்பதிவுகள் & எஸ்க்ரோ' : 'My Pre-Bookings & Escrow'}</h1>
+                  <h1 className="text-2xl font-black tracking-tight">{language === 'ta' ? 'என் முன்பதிவுகள் & பேமெண்ட்' : 'My Bookings & Payments'}</h1>
                   <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
                     {language === 'ta'
-                      ? 'கொள்முதல் ஒப்பந்தங்கள் மற்றும் எஸ்க்ரோவில் உள்ள முன்பதிவு தொகைகள்.'
-                      : 'Track active crop booking contracts, secure 10% escrow clearing, and update statuses.'}
+                      ? 'உங்கள் booking ஒப்பந்தங்கள் மற்றும் secure payment நிலவரம் — வாங்குபவர் delivery confirm செய்யும் வரை payment பாதுகாப்பாக hold ஆகும்.'
+                      : 'Track your crop booking contracts and secure payment status — payment is safely held until the agreed delivery is confirmed.'}
                   </p>
                 </div>
 
@@ -835,7 +835,7 @@ function DashboardContent() {
                                 <span className="font-bold text-foreground">{ord.quantity} kg</span>
                               </div>
                               <div>
-                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Escrow Secured (10%)</span>
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Advance Secured (10%)</span>
                                 <span className="font-mono font-bold text-primary-600 dark:text-primary-400">₹{escrowAmt}</span>
                               </div>
                               <div className="col-span-2">
@@ -1122,35 +1122,51 @@ function DashboardContent() {
                     </div>
                   </Link>
 
-                  {/* Card 3: Pre-booking Offer */}
+                  {/* Card 3: Create Pre-Booking Offer */}
                   <Link
                     href="/dashboard?tab=market&sub=prebooking"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-indigo-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <Plus className="w-5 h-5" />
+                    <div className="flex items-start justify-between">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <Plus className="w-5 h-5" />
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        {language === 'ta' ? 'புதிது உருவாக்கு' : 'CREATE NEW'}
+                      </span>
                     </div>
                     <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'அறுவடைக்கு முந்தைய ஒப்பந்தம்' : 'Pre-booking Offer'}</h3>
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'முன்பதிவு ஆஃபர் உருவாக்கு' : 'Create Pre-Booking Offer'}</h3>
                       <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'அறுவடைக்கு முன் 10% முன்பணத்துடன் பதிவு செய்ய.' : 'Lock prices before harvest with secured 10% advance deposit.'}
+                        {language === 'ta' ? 'அறுவடைக்கு முன்னாடி உங்கள் பயிரை buyer-க்கு offer பண்ணுங்க. Quantity, harvest date & price set பண்ணுங்க.' : 'Offer your upcoming harvest to buyers before it is ready. Set quantity, expected harvest date & price.'}
                       </p>
+                      <span className="mt-2 inline-flex items-center text-[9px] font-black text-indigo-500 group-hover:gap-1.5 transition-all">
+                        {language === 'ta' ? 'ஆஃபர் உருவாக்கு →' : 'Create Offer →'}
+                      </span>
                     </div>
                   </Link>
 
-                  {/* Card 4: My Pre-bookings List */}
+                  {/* Card 4: My Bookings & Payments */}
                   <Link
                     href="/dashboard?tab=prebookings"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
+                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-purple-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <Package className="w-5 h-5" />
+                    <div className="flex items-start justify-between">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <Package className="w-5 h-5" />
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                        {language === 'ta' ? 'கண்காணி' : 'TRACK'}
+                      </span>
                     </div>
                     <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'என் ஒப்பந்தங்கள் & எஸ்க்ரோ' : 'My Pre-Bookings & Escrow'}</h3>
+                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'என் முன்பதிவுகள் & பேமெண்ட்' : 'My Bookings & Payments'}</h3>
                       <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'முன்பதிவு ஒப்பந்தங்கள் மற்றும் எஸ்க்ரோ நிலவரம்.' : 'Track your active pre-bookings and secure escrow balances.'}
+                        {language === 'ta' ? 'ஏற்கனவே உருவாக்கிய / ஏற்ற bookings-ஐ பாருங்க. Booking status & secure payment status-ஐ track பண்ணுங்க.' : 'View bookings you created or accepted. Track booking status and secure payment status.'}
                       </p>
+                      <span className="mt-2 inline-flex items-center text-[9px] font-black text-purple-500 group-hover:gap-1.5 transition-all">
+                        {language === 'ta' ? 'என் முன்பதிவுகள் பார் →' : 'View My Bookings →'}
+                      </span>
                     </div>
                   </Link>
 
