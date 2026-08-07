@@ -30,6 +30,18 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
     closed: { label: t('status_closed') || 'Closed', bg: 'bg-stone-100 dark:bg-[#232a26]', text: 'text-stone-850 dark:text-stone-300', dot: 'bg-stone-500' },
     completed: { label: t('status_completed') || 'Completed', bg: 'bg-emerald-50 dark:bg-emerald-950/20', text: 'text-emerald-800 dark:text-emerald-400', dot: 'bg-emerald-500' },
     cancelled: { label: t('status_cancelled') || 'Cancelled', bg: 'bg-red-50 dark:bg-red-950/20', text: 'text-red-800 dark:text-red-400', dot: 'bg-red-500' },
+
+    // Payments
+    payment_pending: { label: t('payment_pending') || 'Payment Pending', bg: 'bg-amber-50 dark:bg-amber-950/20', text: 'text-amber-800 dark:text-amber-400', dot: 'bg-amber-500' },
+    'payment pending': { label: t('payment_pending') || 'Payment Pending', bg: 'bg-amber-50 dark:bg-amber-950/20', text: 'text-amber-800 dark:text-amber-400', dot: 'bg-amber-500' },
+    payment_processing: { label: t('payment_processing') || 'Payment Processing', bg: 'bg-blue-50 dark:bg-blue-950/20', text: 'text-blue-800 dark:text-blue-400', dot: 'bg-blue-500' },
+    'payment processing': { label: t('payment_processing') || 'Payment Processing', bg: 'bg-blue-50 dark:bg-blue-950/20', text: 'text-blue-800 dark:text-blue-400', dot: 'bg-blue-500' },
+    payment_completed: { label: t('payment_completed') || 'Payment Completed', bg: 'bg-emerald-50 dark:bg-emerald-950/20', text: 'text-emerald-800 dark:text-emerald-400', dot: 'bg-emerald-500' },
+    'payment completed': { label: t('payment_completed') || 'Payment Completed', bg: 'bg-emerald-50 dark:bg-emerald-950/20', text: 'text-emerald-800 dark:text-emerald-400', dot: 'bg-emerald-500' },
+    payment_delayed: { label: t('payment_delayed') || 'Payment Delayed', bg: 'bg-orange-50 dark:bg-orange-950/20', text: 'text-orange-850 dark:text-orange-400', dot: 'bg-orange-500' },
+    'payment delayed': { label: t('payment_delayed') || 'Payment Delayed', bg: 'bg-orange-50 dark:bg-orange-950/20', text: 'text-orange-850 dark:text-orange-400', dot: 'bg-orange-500' },
+    payment_failed: { label: t('payment_failed') || 'Payment Failed', bg: 'bg-red-50 dark:bg-red-950/20', text: 'text-red-800 dark:text-red-400', dot: 'bg-red-500' },
+    'payment failed': { label: t('payment_failed') || 'Payment Failed', bg: 'bg-red-50 dark:bg-red-950/20', text: 'text-red-800 dark:text-red-400', dot: 'bg-red-500' },
   };
 
   const config = configs[status.toLowerCase()] || {

@@ -56,6 +56,13 @@ export default function MyFarmBoard() {
   const [incPrice, setIncPrice] = useState<number>(0);
   const [incDate, setIncDate] = useState(new Date().toISOString().split('T')[0]);
 
+  // Expected Profit Calculator States
+  const [calcYield, setCalcYield] = useState<number>(1000);
+  const [calcPrice, setCalcPrice] = useState<number>(30);
+  const [calcTransport, setCalcTransport] = useState<number>(1500);
+  const [calcLoading, setCalcLoading] = useState<number>(500);
+  const [calcOtherExpenses, setCalcOtherExpenses] = useState<number>(3000);
+
   // GPS fetch helper
   const handleFetchGps = () => {
     if (!navigator.geolocation) {
@@ -861,6 +868,107 @@ export default function MyFarmBoard() {
                     <ArrowDownLeft className="w-4 h-4" />
                     <span>{t('add_income')}</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Expected Profit Calculator Card */}
+              <div className="p-6 border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-sm rounded-[24px] space-y-5">
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-earth-400">
+                    {t('profit_calc_title')}
+                  </h3>
+                  <p className="text-[10px] text-earth-500 dark:text-earth-400 mt-1 font-semibold">
+                    {t('profit_calc_desc')}
+                  </p>
+                </div>
+
+                <div className="space-y-3.5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-earth-450 block">
+                        {t('expected_yield_lbl')}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={calcYield}
+                        onChange={(e) => setCalcYield(Number(e.target.value) || 0)}
+                        className="w-full h-9 px-3 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none focus:border-primary-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-earth-450 block">
+                        {t('expected_price_lbl')}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={calcPrice}
+                        onChange={(e) => setCalcPrice(Number(e.target.value) || 0)}
+                        className="w-full h-9 px-3 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none focus:border-primary-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold uppercase tracking-wider text-earth-450 block truncate">
+                        {t('est_transport_cost_lbl')}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={calcTransport}
+                        onChange={(e) => setCalcTransport(Number(e.target.value) || 0)}
+                        className="w-full h-9 px-2 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none focus:border-primary-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold uppercase tracking-wider text-earth-450 block truncate">
+                        {t('est_loading_cost_lbl')}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={calcLoading}
+                        onChange={(e) => setCalcLoading(Number(e.target.value) || 0)}
+                        className="w-full h-9 px-2 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none focus:border-primary-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold uppercase tracking-wider text-earth-450 block truncate">
+                        {t('other_expenses_lbl')}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={calcOtherExpenses}
+                        onChange={(e) => setCalcOtherExpenses(Number(e.target.value) || 0)}
+                        className="w-full h-9 px-2 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none focus:border-primary-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-earth-50/50 dark:bg-earth-950/20 border border-earth-150/40 dark:border-earth-900/10 space-y-2">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-earth-500">{t('expected_revenue_lbl')}:</span>
+                      <span className="text-foreground">₹{calcYield * calcPrice}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-earth-500">{t('total_est_expenses_lbl')}:</span>
+                      <span className="text-red-500">₹{calcTransport + calcLoading + calcOtherExpenses}</span>
+                    </div>
+                    <div className="border-t border-earth-100 dark:border-earth-900/15 pt-2 flex justify-between items-center">
+                      <span className="text-xs font-black text-foreground">{t('expected_profit_lbl')}:</span>
+                      <span className={`text-base font-black ${(calcYield * calcPrice) - (calcTransport + calcLoading + calcOtherExpenses) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        ₹{(calcYield * calcPrice) - (calcTransport + calcLoading + calcOtherExpenses)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-[9px] text-earth-450 leading-relaxed bg-earth-50/30 dark:bg-earth-950/10 p-2.5 rounded-xl border border-earth-100 dark:border-earth-900/10">
+                    {t('profit_disclaimer')}
+                  </p>
                 </div>
               </div>
 

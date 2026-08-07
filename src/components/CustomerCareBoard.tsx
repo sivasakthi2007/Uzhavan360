@@ -488,9 +488,9 @@ export default function CustomerCareBoard() {
     <div className="space-y-4 animate-fade-in">
       {[
         {
-          icon: Phone, color: 'bg-emerald-500/10 text-emerald-500', labelEn: 'Phone Support', labelTa: 'தொலைபேசி ஆதரவு',
-          valueEn: '1800-VLINK-HELP (Toll Free)', valueTa: '1800-VLINK-HELP (இலவச அழைப்பு)',
-          descEn: 'Mon-Sat, 7 AM - 9 PM IST', descTa: 'திங்கள்-சனி, காலை 7 - இரவு 9',
+          icon: Phone, color: 'bg-primary-500/10 text-primary-600 dark:text-primary-400', labelEn: 'Kisan Call Centre (KCC) — Govt Helpline', labelTa: 'கிசான் அழைப்பு மையம் (KCC) — அரசு உதவி எண்',
+          valueEn: '1800-180-1551 (Toll-Free) / 1551', valueTa: '1800-180-1551 (இலவச அழைப்பு) / 1551',
+          descEn: '✓ Verified official Ministry of Agriculture helpline for all crop advisory services.', descTa: '✓ வேளாண் அமைச்சகத்தின் சரிபார்க்கப்பட்ட அதிகாரப்பூர்வ பயிர் ஆலோசனை சேவை.',
         },
         {
           icon: Mail, color: 'bg-blue-500/10 text-blue-500', labelEn: 'Email Support', labelTa: 'மின்னஞ்சல் ஆதரவு',

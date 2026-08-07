@@ -23,9 +23,9 @@ export default function BottomNav() {
   const allNavItems = [
     { name: language === 'ta' ? 'முகப்பு' : 'Home', icon: Home, path: '/dashboard?tab=home', tabKey: 'home', highlightKeys: ['home', 'crop-discovery'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
     { name: language === 'ta' ? 'என் பண்ணை' : 'My Farm', icon: Sprout, path: '/dashboard?tab=myfarm', tabKey: 'myfarm', highlightKeys: ['myfarm'], roles: ['farmer'] },
-    { name: language === 'ta' ? 'வாங்கு/விற்று' : 'Buy/Sell', icon: ShoppingBag, path: '/dashboard?tab=buysell', tabKey: 'buysell', highlightKeys: ['buysell', 'market', 'rentals', 'labor'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
+    { name: language === 'ta' ? 'வாங்கு/விற்று' : 'Buy/Sell', icon: ShoppingBag, path: '/dashboard?tab=buysell', tabKey: 'buysell', highlightKeys: ['buysell', 'market', 'prebookings', 'orders'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
     { name: language === 'ta' ? 'உதவியாளர்' : 'AI Assistant', icon: Bot, path: '/dashboard?tab=assistant', tabKey: 'assistant', highlightKeys: ['assistant'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
-    { name: language === 'ta' ? 'இதர' : 'More', icon: Menu, path: '/dashboard?tab=more', tabKey: 'more', highlightKeys: ['more', 'orders', 'translator', 'weather', 'wallet', 'profile', 'schemes', 'support', 'admin'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
+    { name: language === 'ta' ? 'இதர' : 'More', icon: Menu, path: '/dashboard?tab=more', tabKey: 'more', highlightKeys: ['more', 'translator', 'weather', 'wallet', 'profile', 'schemes', 'support', 'admin', 'labor', 'rentals', 'intel'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
   ];
 
   // Filter items matching current active role workspace

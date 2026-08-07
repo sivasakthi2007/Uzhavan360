@@ -126,6 +126,8 @@ export interface Order {
   buyerType: BuyerType;
   quantity: number;
   totalPrice: number;
+  logisticsFare?: number;
+  loadingCost?: number;
   status: 'pending' | 'accepted' | 'completed' | 'cancelled';
   farmerId: string;
   createdAt: string;
@@ -962,6 +964,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [govSchemes, setGovSchemes] = useState<GovScheme[]>([]);
   const [isOffline, setIsOffline] = useState(false);
 
+  // ── Offline Queue Helpers ──
+  const enqueueOfflineAction = useCallback((actionType: string, payload: any) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const queueStr = localStorage.getItem('vlink_offline_queue');
+      const queue = queueStr ? JSON.parse(queueStr) : [];
+      
+      const newAction = {
+        id: `act_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        actionType,
+        payload,
+        timestamp: new Date().toISOString()
+      };
+      
+      queue.push(newAction);
+      localStorage.setItem('vlink_offline_queue', JSON.stringify(queue));
+      console.log(`[Offline Queue] Enqueued action ${actionType}:`, newAction);
+      addToast(
+        language === 'ta'
+          ? 'இணையம் இல்லை: மாற்றம் உள்ளூரில் சேமிக்கப்பட்டது. இணையம் வந்ததும் ஒத்திசைக்கப்படும்.'
+          : 'Offline: Changes saved locally. Will sync when online.',
+        'info'
+      );
+    } catch (err) {
+      console.error('[Offline Queue] Failed to enqueue action:', err);
+    }
+  }, [language]);
+
   // Load / Sync cache logic
   const syncData = useCallback(async () => {
     const online = typeof window !== 'undefined' ? navigator.onLine : true;
@@ -981,6 +1011,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (cachedSchemes) setGovSchemes(JSON.parse(cachedSchemes));
       else setGovSchemes([...DEFAULT_GOV_SCHEMES]);
       return;
+    }
+
+    // Process offline queue if online
+    if (supabase) {
+      try {
+        const queueStr = localStorage.getItem('vlink_offline_queue');
+        if (queueStr) {
+          const queue = JSON.parse(queueStr);
+          if (queue.length > 0) {
+            console.log(`[Offline Sync] Processing ${queue.length} actions...`);
+            let successCount = 0;
+            for (const action of queue) {
+              try {
+                if (action.actionType === 'addFarm') {
+                  await supabase.from('farms').insert([action.payload]);
+                } else if (action.actionType === 'updateFarm') {
+                  await supabase.from('farms').update(action.payload.updates).eq('id', action.payload.id);
+                } else if (action.actionType === 'deleteFarm') {
+                  await supabase.from('farms').delete().eq('id', action.payload.id);
+                } else if (action.actionType === 'addFarmExpense') {
+                  await supabase.from('farm_expenses').insert([action.payload]);
+                } else if (action.actionType === 'deleteFarmExpense') {
+                  await supabase.from('farm_expenses').delete().eq('id', action.payload.id);
+                } else if (action.actionType === 'addFarmIncome') {
+                  await supabase.from('farm_income').insert([action.payload]);
+                } else if (action.actionType === 'deleteFarmIncome') {
+                  await supabase.from('farm_income').delete().eq('id', action.payload.id);
+                } else if (action.actionType === 'applyForScheme') {
+                  await supabase.from('scheme_applications').insert([action.payload]);
+                }
+                successCount++;
+              } catch (actionErr) {
+                console.error(`[Offline Sync] Action ${action.id} failed:`, actionErr);
+                break;
+              }
+            }
+
+            const remaining = queue.slice(successCount);
+            if (remaining.length > 0) {
+              localStorage.setItem('vlink_offline_queue', JSON.stringify(remaining));
+            } else {
+              localStorage.removeItem('vlink_offline_queue');
+              addToast(
+                language === 'ta'
+                  ? 'உள்ளூர் மாற்றங்கள் ஒத்திசைக்கப்பட்டன!'
+                  : 'Offline changes successfully synchronized!',
+                'success'
+              );
+            }
+          }
+        }
+      } catch (queueErr) {
+        console.error('[Offline Sync] Failed to process queue:', queueErr);
+      }
     }
 
     try {
@@ -1186,6 +1270,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       created_at: new Date().toISOString()
     };
 
+    let savedToCloud = false;
     try {
       if (!isOffline && supabase) {
         const { data, error } = await supabase
@@ -1195,10 +1280,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .single();
         if (!error && data) {
           newFarm.id = data.id;
+          savedToCloud = true;
         }
       }
     } catch (err) {
       console.error('[AppContext] Failed to save farm to Supabase:', err);
+    }
+
+    if (!savedToCloud) {
+      enqueueOfflineAction('addFarm', { ...farmData, user_id: uId, id: newFarm.id });
     }
 
     setFarms(prev => {
@@ -1213,15 +1303,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateFarm = async (farmId: string, updates: Partial<Farm>) => {
     const uId = appUser?.id || 'farmer_1';
+    let savedToCloud = false;
     try {
       if (!isOffline && supabase) {
-        await supabase
+        const { error } = await supabase
           .from('farms')
           .update(updates)
           .eq('id', farmId);
+        if (!error) savedToCloud = true;
       }
     } catch (err) {
       console.error('[AppContext] Failed to update farm in Supabase:', err);
+    }
+
+    if (!savedToCloud) {
+      enqueueOfflineAction('updateFarm', { id: farmId, updates });
     }
 
     setFarms(prev => {
@@ -1235,15 +1331,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteFarm = async (farmId: string) => {
     const uId = appUser?.id || 'farmer_1';
+    let savedToCloud = false;
     try {
       if (!isOffline && supabase) {
-        await supabase
+        const { error } = await supabase
           .from('farms')
           .delete()
           .eq('id', farmId);
+        if (!error) savedToCloud = true;
       }
     } catch (err) {
       console.error('[AppContext] Failed to delete farm in Supabase:', err);
+    }
+
+    if (!savedToCloud) {
+      enqueueOfflineAction('deleteFarm', { id: farmId });
     }
 
     setFarms(prev => {
@@ -1275,6 +1377,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       created_at: new Date().toISOString()
     };
 
+    let savedToCloud = false;
     try {
       if (!isOffline && supabase) {
         const { data, error } = await supabase
@@ -1284,10 +1387,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .single();
         if (!error && data) {
           newExpense.id = data.id;
+          savedToCloud = true;
         }
       }
     } catch (err) {
       console.error('[AppContext] Failed to save expense to Supabase:', err);
+    }
+
+    if (!savedToCloud) {
+      enqueueOfflineAction('addFarmExpense', { ...expenseData, id: newExpense.id });
     }
 
     setFarmExpenses(prev => {
@@ -1301,15 +1409,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteFarmExpense = async (expenseId: string) => {
     const uId = appUser?.id || 'farmer_1';
+    let savedToCloud = false;
     try {
       if (!isOffline && supabase) {
-        await supabase
+        const { error } = await supabase
           .from('farm_expenses')
           .delete()
           .eq('id', expenseId);
+        if (!error) savedToCloud = true;
       }
     } catch (err) {
       console.error('[AppContext] Failed to delete expense in Supabase:', err);
+    }
+
+    if (!savedToCloud) {
+      enqueueOfflineAction('deleteFarmExpense', { id: expenseId });
     }
 
     setFarmExpenses(prev => {
@@ -1330,6 +1444,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       created_at: new Date().toISOString()
     };
 
+    let savedToCloud = false;
     try {
       if (!isOffline && supabase) {
         const { data, error } = await supabase
@@ -1339,10 +1454,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .single();
         if (!error && data) {
           newIncome.id = data.id;
+          savedToCloud = true;
         }
       }
     } catch (err) {
       console.error('[AppContext] Failed to save income to Supabase:', err);
+    }
+
+    if (!savedToCloud) {
+      enqueueOfflineAction('addFarmIncome', { ...incomeData, id: newIncome.id });
     }
 
     setFarmIncomes(prev => {
@@ -1356,15 +1476,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteFarmIncome = async (incomeId: string) => {
     const uId = appUser?.id || 'farmer_1';
+    let savedToCloud = false;
     try {
       if (!isOffline && supabase) {
-        await supabase
+        const { error } = await supabase
           .from('farm_income')
           .delete()
           .eq('id', incomeId);
+        if (!error) savedToCloud = true;
       }
     } catch (err) {
       console.error('[AppContext] Failed to delete income in Supabase:', err);
+    }
+
+    if (!savedToCloud) {
+      enqueueOfflineAction('deleteFarmIncome', { id: incomeId });
     }
 
     setFarmIncomes(prev => {
@@ -1388,6 +1514,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       created_at: new Date().toISOString()
     };
 
+    let savedToCloud = false;
     try {
       if (!isOffline && supabase) {
         const { data, error } = await supabase
@@ -1397,10 +1524,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .single();
         if (!error && data) {
           newApp.id = data.id;
+          savedToCloud = true;
         }
       }
     } catch (err) {
       console.error('[AppContext] Failed to save scheme application in Supabase:', err);
+    }
+
+    if (!savedToCloud) {
+      enqueueOfflineAction('applyForScheme', { user_id: uId, scheme_id: schemeId, scheme_name: schemeName, id: newApp.id, status: 'pending', created_at: newApp.created_at });
     }
 
     setSchemeApplications(prev => {
@@ -1756,6 +1888,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!product) return;
 
     const totalPrice = product.pricePerKg * quantity;
+    const logisticsFare = Math.round(totalPrice * 0.05 + 150); // 5% + base 150 INR
+    const loadingCost = Math.round(quantity * 0.5); // ₹0.50 per kg loading fee
+    const totalDebit = totalPrice + logisticsFare + loadingCost;
     const orderId = `ORD-${String(orders.length + 1).padStart(3, '0')}`;
 
     // Create order
@@ -1768,6 +1903,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       buyerType: buyerType || 'customer',
       quantity,
       totalPrice: totalPrice,
+      logisticsFare,
+      loadingCost,
       status: 'pending',
       farmerId: product.farmerId,
       createdAt: new Date().toISOString(),
@@ -1780,17 +1917,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    // Adjust buyer wallet immediately (Escrow Lock)
+    // Adjust buyer wallet immediately (Escrow Lock including transport and loading fees)
     setWallets(prev => ({
       ...prev,
-      buyer: prev.buyer - totalPrice,
+      buyer: prev.buyer - totalDebit,
     }));
 
     // Add wallet debit transaction
     const now = new Date().toISOString();
     setWalletTransactions(prev => [
       ...prev,
-      { id: `TXN-${Date.now()}-d`, user_id: appUser?.id || 'buyer_1', amount: totalPrice, transaction_type: 'debit' as const, created_at: now },
+      { id: `TXN-${Date.now()}-d`, user_id: appUser?.id || 'buyer_1', amount: totalDebit, transaction_type: 'debit' as const, created_at: now },
     ]);
 
     setOrders(prev => [newOrder, ...prev]);
@@ -1811,7 +1948,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(o => o.id === orderId ? { ...o, status: 'completed' as const } : o)
     );
 
-    // Release escrow to farmer wallet
+    // Release escrow to farmer wallet (only direct produce price is paid to farmer, transport is cleared to delivery operator)
     setWallets(prev => ({
       ...prev,
       farmer: prev.farmer + order.totalPrice,
@@ -1840,17 +1977,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    // Refund buyer wallet
+    // Refund buyer wallet with full amount (produce + logistics + loading)
+    const refundAmount = order.totalPrice + (order.logisticsFare || 0) + (order.loadingCost || 0);
     setWallets(prev => ({
       ...prev,
-      buyer: prev.buyer + order.totalPrice,
+      buyer: prev.buyer + refundAmount,
     }));
 
     // Add wallet refund transaction for buyer
     const now = new Date().toISOString();
     setWalletTransactions(prev => [
       ...prev,
-      { id: `TXN-${Date.now()}-refund`, user_id: order.buyerId, amount: order.totalPrice, transaction_type: 'credit' as const, created_at: now },
+      { id: `TXN-${Date.now()}-refund`, user_id: order.buyerId, amount: refundAmount, transaction_type: 'credit' as const, created_at: now },
     ]);
   };
 

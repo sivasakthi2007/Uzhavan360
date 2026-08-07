@@ -29,6 +29,8 @@ export default function OrderModal({ product, isOpen, onClose, onConfirm }: Orde
 
   const orderValue = product.pricePerKg * quantity;
   const deliveryWage = Math.round(orderValue * 0.05 + 150); // 5% + base 150 INR
+  const loadingCost = Math.round(quantity * 0.5); // ₹0.50 per kg loading fee
+  const totalDebit = orderValue + deliveryWage + loadingCost;
 
   const handleQuantityChange = (val: number) => {
     if (val <= 0) {
@@ -158,9 +160,15 @@ export default function OrderModal({ product, isOpen, onClose, onConfirm }: Orde
             <div className="flex justify-between text-xs">
               <span className="text-earth-500 dark:text-earth-400 flex items-center gap-1">
                 <Truck className="w-3.5 h-3.5 text-earth-400" />
-                {t('logistics_fare')}
+                {t('logistics_fare') || 'Logistics Fare'}
               </span>
               <span className="font-semibold text-primary-600 dark:text-primary-400">+₹{deliveryWage.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-earth-500 dark:text-earth-400">
+                {t('loading_cost') || 'Loading Fees'}
+              </span>
+              <span className="font-semibold text-primary-600 dark:text-primary-400">+₹{loadingCost.toLocaleString('en-IN')}</span>
             </div>
             <div className="text-[9px] text-earth-400 bg-earth-50 dark:bg-earth-950/40 p-2 rounded-lg leading-normal flex items-start gap-1">
               <ShieldCheck className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
@@ -168,7 +176,7 @@ export default function OrderModal({ product, isOpen, onClose, onConfirm }: Orde
             </div>
             <div className="border-t border-earth-100 dark:border-earth-900/20 pt-2 flex justify-between items-baseline">
               <span className="text-sm font-bold text-foreground">{t('total_escrow_debit')}</span>
-              <span className="text-lg font-black text-primary-600 dark:text-primary-400">₹{(orderValue).toLocaleString('en-IN')}</span>
+              <span className="text-lg font-black text-primary-600 dark:text-primary-400">₹{(totalDebit).toLocaleString('en-IN')}</span>
             </div>
           </div>
 
