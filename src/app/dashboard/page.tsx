@@ -104,11 +104,27 @@ function DashboardContent() {
     wallets,
     walletTransactions,
     user,
-    language
+    language,
+    buyerRequirements,
+    matchBuyerRequirement
   } = useApp();
 
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'home';
+
+  // Sub-tab state for Buy/Sell workflow
+  const [buySellTab, setBuySellTab] = useState<'crops' | 'requirements' | 'prebookings' | 'orders'>('crops');
+
+  const subParam = searchParams.get('sub');
+  useEffect(() => {
+    if (activeTab === 'market') setBuySellTab('crops');
+    else if (activeTab === 'prebookings') setBuySellTab('prebookings');
+    else if (activeTab === 'orders') setBuySellTab('orders');
+
+    if (subParam === 'crops') setBuySellTab('crops');
+    else if (subParam === 'requirements') setBuySellTab('requirements');
+    else if (subParam === 'prebooking') setBuySellTab('prebookings');
+  }, [activeTab, subParam]);
 
   // State Management
   const [isSyncing, setIsSyncing] = useState(false);
@@ -257,175 +273,214 @@ function DashboardContent() {
             {/* 1. FARMER HOME TAB */}
             {/* ========================================================================= */}
             {activeTab === 'home' && (
-              <div className="space-y-6 animate-fade-in text-foreground">
-                {/* Greeting banner */}
-                <div className="p-6 rounded-3xl border border-primary-500/10 bg-gradient-to-br from-primary-500/10 to-primary-600/5 dark:from-primary-950/20 dark:to-primary-900/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl font-black tracking-tight">
-                      {language === 'ta' ? 'வணக்கம் 👋' : 'Welcome 👋'}
+              <div className="space-y-5 animate-fade-in text-foreground">
+
+                {/* Greeting + Connectivity */}
+                <div className="p-5 rounded-3xl border border-primary-500/10 bg-gradient-to-br from-primary-500/8 to-primary-600/3 dark:from-primary-950/20 dark:to-primary-900/5 flex items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-xl font-black tracking-tight">
+                      {language === 'ta' ? `வணக்கம், ${userName || 'விவசாயி'} 👋` : `Welcome, ${userName || 'Farmer Partner'} 👋`}
                     </h1>
-                    <p className="text-base font-black text-primary-700 dark:text-primary-400">
-                      {userName || 'Farmer Partner'}
-                    </p>
-                    <div className="flex items-center gap-1 text-xs text-earth-500 dark:text-earth-400 mt-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-primary-500" />
+                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-earth-500 dark:text-earth-400">
+                      <MapPin className="w-3 h-3 text-primary-500 shrink-0" />
                       <span>Madurai District, Tamil Nadu</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white dark:bg-[#111714] border border-earth-100 dark:border-primary-950/20 shadow-xs">
-                      {isOffline ? (
-                        <>
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                          <span className="text-xs font-black uppercase tracking-wider font-mono text-amber-600 dark:text-amber-400">
-                            {language === 'ta' ? 'உள்ளூர் தரவு' : 'Offline'}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-ping"></span>
-                          <span className="text-xs font-black uppercase tracking-wider font-mono text-primary-600 dark:text-primary-400">
-                            {language === 'ta' ? 'இணைக்கப்பட்டுள்ளது' : 'Live / Online'}
-                          </span>
-                        </>
-                      )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider font-mono ${
+                      isOffline
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        : 'bg-primary-500/10 text-primary-600 dark:text-primary-400'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isOffline ? 'bg-amber-500' : 'bg-primary-500 animate-ping'}`} />
+                      {isOffline
+                        ? (language === 'ta' ? 'உள்ளூர்' : 'Offline')
+                        : (language === 'ta' ? 'இணைக்கப்பட்டது' : 'Live')}
                     </div>
                     <button
                       onClick={handleSync}
                       disabled={isSyncing}
-                      className="h-10 px-4 rounded-2xl bg-white dark:bg-[#111714] hover:bg-earth-50 border border-earth-200 dark:border-primary-950/25 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-black transition-all shadow-xs"
+                      className="h-8 w-8 rounded-xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 flex items-center justify-center cursor-pointer hover:bg-earth-50 transition-all shadow-xs disabled:opacity-50"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 text-primary-500 ${isSyncing ? 'animate-spin' : ''}`} />
-                      <span>{language === 'ta' ? 'ஒத்திசை' : 'Sync'}</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Quick actions grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Link
-                    href="/dashboard?tab=myfarm"
-                    className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs hover:border-primary-500/20 hover:scale-102 transition-all flex flex-col items-center text-center gap-3 no-underline cursor-pointer group"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center transition-transform group-hover:scale-110">
-                      <Leaf className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-black text-foreground block">
-                        {language === 'ta' ? 'என் பண்ணை' : 'My Farm'}
-                      </span>
-                      <span className="text-[9px] text-earth-400 mt-0.5 block">
-                        {language === 'ta' ? 'பயிர்களை நிர்வகி' : 'Manage your crops'}
-                      </span>
-                    </div>
-                  </Link>
+                {/* Quick Navigation Strip */}
+                <div className="grid grid-cols-5 gap-2">
+                  {[
+                    { href: '/dashboard?tab=myfarm', icon: Leaf, label: language === 'ta' ? 'என் பண்ணை' : 'My Farm', color: 'text-primary-500 bg-primary-500/10' },
+                    { href: '/dashboard?tab=market', icon: ShoppingBag, label: language === 'ta' ? 'சந்தை' : 'Market', color: 'text-emerald-500 bg-emerald-500/10' },
+                    { href: '/dashboard?tab=buysell', icon: Package, label: language === 'ta' ? 'முன்பதிவு' : 'Pre-Book', color: 'text-indigo-500 bg-indigo-500/10' },
+                    { href: '/dashboard?tab=assistant', icon: Bot, label: language === 'ta' ? 'AI' : 'AI Chat', color: 'text-purple-500 bg-purple-500/10' },
+                    { href: '/dashboard?tab=more', icon: Users, label: language === 'ta' ? 'இதர' : 'More', color: 'text-amber-500 bg-amber-500/10' },
+                  ].map(({ href, icon: Icon, label, color }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 hover:border-primary-500/20 hover:shadow-xs transition-all no-underline cursor-pointer group"
+                    >
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${color}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-[9px] font-black text-foreground text-center leading-tight">{label}</span>
+                    </Link>
+                  ))}
+                </div>
 
+                {/* Mandi Price + Weather strip */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Mandi Price Row */}
                   <Link
                     href="/dashboard?tab=market"
-                    className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs hover:border-primary-500/20 hover:scale-102 transition-all flex flex-col items-center text-center gap-3 no-underline cursor-pointer group"
+                    className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 hover:border-primary-500/20 transition-all no-underline flex items-center gap-3 group"
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center transition-transform group-hover:scale-110">
-                      <ShoppingBag className="w-6 h-6" />
+                    <div className="w-9 h-9 rounded-xl bg-primary-500/10 text-primary-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <TrendingUp className="w-4 h-4" />
                     </div>
-                    <div>
-                      <span className="text-xs font-black text-foreground block">
-                        {language === 'ta' ? 'பயிர் சந்தை' : 'Find Crops'}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-earth-450 block">
+                        {language === 'ta' ? 'இன்றைய சந்தை விலை' : "Today's Mandi Price"}
                       </span>
-                      <span className="text-[9px] text-earth-400 mt-0.5 block">
-                        {language === 'ta' ? 'சந்தையில் விற்க' : 'Discover marketplaces'}
-                      </span>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {marketPrices.slice(0, 2).map((p, i) => (
+                          <span key={i} className="text-xs font-black text-foreground">
+                            {p.cropName} <span className="text-primary-600 dark:text-primary-400 font-mono">₹{p.modalPrice}/kg</span>
+                          </span>
+                        ))}
+                        {marketPrices.length === 0 && (
+                          <span className="text-xs text-earth-400 font-semibold">
+                            {language === 'ta' ? 'விலை கிடைக்கவில்லை' : 'Tap to view live prices'}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <span className="text-[10px] font-black text-primary-500 shrink-0">→</span>
                   </Link>
 
-                  <Link
-                    href="/dashboard?tab=prebookings"
-                    className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs hover:border-primary-500/20 hover:scale-102 transition-all flex flex-col items-center text-center gap-3 no-underline cursor-pointer group"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center transition-transform group-hover:scale-110">
-                      <Package className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-black text-foreground block">
-                        {language === 'ta' ? 'முன்-பதிவு' : 'Pre-Book'}
-                      </span>
-                      <span className="text-[9px] text-earth-400 mt-0.5 block">
-                        {language === 'ta' ? 'விற்பனை ஒப்பந்தங்கள்' : 'Contract agreements'}
-                      </span>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/dashboard?tab=labor"
-                    className="p-5 rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs hover:border-primary-500/20 hover:scale-102 transition-all flex flex-col items-center text-center gap-3 no-underline cursor-pointer group"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center transition-transform group-hover:scale-110">
-                      <Users className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-black text-foreground block">
-                        {language === 'ta' ? 'வேலைக்கு ஆட்கள்' : 'Find Labour'}
-                      </span>
-                      <span className="text-[9px] text-earth-400 mt-0.5 block">
-                        {language === 'ta' ? 'பண்ணை தொழிலாளர்கள்' : 'Hire local workforces'}
-                      </span>
-                    </div>
-                  </Link>
-                </div>
-
-                {/* Weather advisory banner */}
-                <div className="p-5 rounded-3xl border border-amber-500/25 bg-amber-500/5 dark:bg-amber-950/10 flex flex-col md:flex-row items-center gap-4">
-                  <CloudSun className="w-10 h-10 text-amber-500 shrink-0" />
-                  <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
-                      {language === 'ta' ? 'இன்றைய வானிலை ஆலோசனை' : 'Weather & Crop Advisory'}
-                    </h3>
-                    <p className="text-xs text-earth-500 dark:text-earth-400 mt-1 leading-relaxed">
-                      {language === 'ta'
-                        ? 'அடுத்த 24 மணிநேரத்தில் மிதமான மழைக்கு வாய்ப்பு உள்ளது. உங்கள் தக்காளி செடிகளுக்கு தேங்கிய நீரை வெளியேற்ற வடிகால் வசதி செய்யுங்கள்.'
-                        : 'Expect light showers in the evening. Keep tomato fields clear of standing water to avoid root damage.'}
-                    </p>
-                  </div>
+                  {/* Weather Strip */}
                   <Link
                     href="/dashboard?tab=weather"
-                    className="h-9 px-4 rounded-xl border border-amber-500/20 bg-white dark:bg-[#111714] hover:bg-earth-50 text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer no-underline shrink-0"
+                    className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-amber-500/20 hover:border-amber-500/40 transition-all no-underline flex items-center gap-3 group"
                   >
-                    {language === 'ta' ? 'மேலும் காண்க' : 'Open Weather'}
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <CloudSun className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 block">
+                        {language === 'ta' ? 'வானிலை' : 'Weather'}
+                      </span>
+                      <p className="text-xs text-earth-500 dark:text-earth-400 mt-0.5 font-semibold leading-tight">
+                        {language === 'ta'
+                          ? 'இன்று லேசான மழை சாத்தியம்.'
+                          : 'Light showers expected today.'}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-black text-amber-500 shrink-0">→</span>
                   </Link>
                 </div>
 
-                {/* Nearby Crops Section */}
-                <div className="space-y-4">
+                {/* Call Support (always visible, tap-to-call) */}
+                <a
+                  href="tel:18001801551"
+                  className="flex items-center gap-3 p-4 rounded-2xl bg-primary-500/5 border border-primary-500/20 hover:bg-primary-500/10 hover:border-primary-500/30 transition-all no-underline group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-primary-500/10 text-primary-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-xs font-black text-foreground block">
+                      {language === 'ta' ? 'உதவிக்கு அழைக்க — 1800-180-1551' : 'Call Support — 1800-180-1551 (Toll-Free)'}
+                    </span>
+                    <span className="text-[10px] text-earth-400 font-semibold">
+                      {language === 'ta' ? 'கட்டணமில்லாத கிசான் உதவி மையம்' : 'Kisan Help Centre, free 24×7'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-black text-primary-500 shrink-0">
+                    {language === 'ta' ? 'அழை →' : 'Call →'}
+                  </span>
+                </a>
+
+                {/* Context-Aware Next Action CTA */}
+                {(() => {
+                  const pendingOrders = orders.filter(o => o.status === 'pending');
+                  if (pendingOrders.length > 0) {
+                    return (
+                      <Link
+                        href="/dashboard?tab=prebookings"
+                        className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/25 hover:bg-amber-500/10 transition-all no-underline group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <AlertCircle className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-xs font-black text-foreground block">
+                            {language === 'ta'
+                              ? `${pendingOrders.length} booking நிலுவையில் உள்ளது — நடவடிக்கை தேவை`
+                              : `${pendingOrders.length} booking${pendingOrders.length > 1 ? 's' : ''} pending — action needed`}
+                          </span>
+                          <span className="text-[10px] text-earth-400 font-semibold">
+                            {language === 'ta' ? 'இப்போது confirm அல்லது reject செய்யுங்கள்.' : 'Accept or reject incoming pre-booking requests.'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-black text-amber-500 shrink-0">→</span>
+                      </Link>
+                    );
+                  }
+                  return (
+                    <Link
+                      href="/dashboard?tab=market&sub=prebooking"
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 hover:bg-indigo-500/8 transition-all no-underline group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-xs font-black text-foreground block">
+                          {language === 'ta'
+                            ? 'அறுவடைக்கு முன்னாடி Pre-booking offer உருவாக்குங்கள்'
+                            : 'Create a Pre-Booking offer for your upcoming harvest'}
+                        </span>
+                        <span className="text-[10px] text-earth-400 font-semibold">
+                          {language === 'ta' ? 'Price lock + 10% advance இப்போதே பெறுங்கள்.' : 'Lock your price early and secure a 10% advance.'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-black text-indigo-500 shrink-0">→</span>
+                    </Link>
+                  );
+                })()}
+
+                {/* Nearby Harvests */}
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-base font-black text-foreground">
-                        {language === 'ta' ? 'அருகிலுள்ள விளைபொருட்கள்' : 'Nearby Upcoming Harvests'}
+                      <h2 className="text-sm font-black text-foreground">
+                        {language === 'ta' ? 'அருகிலுள்ள அறுவடைகள்' : 'Nearby Upcoming Harvests'}
                       </h2>
-                      <p className="text-[11px] text-earth-400 mt-0.5">
-                        {language === 'ta' ? 'உங்களுக்கு அருகில் அறுவடை செய்யப்பட இருக்கும் பயிர்கள்' : 'Discover upcoming crop listings registered by local farms.'}
+                      <p className="text-[10px] text-earth-400 mt-0.5">
+                        {language === 'ta' ? 'உங்களுக்கு அருகில் பதிவு செய்யப்பட்ட பயிர்கள்' : 'Discover upcoming crop listings from local farms.'}
                       </p>
                     </div>
-                    <Link
-                      href="/dashboard?tab=market"
-                      className="text-xs font-black text-primary-500 hover:underline"
-                    >
+                    <Link href="/dashboard?tab=market" className="text-[11px] font-black text-primary-500 hover:underline shrink-0">
                       {language === 'ta' ? 'அனைத்தையும் பார்' : 'View Market →'}
                     </Link>
                   </div>
 
                   {products.length === 0 ? (
-                    <div className="p-8 text-center bg-white dark:bg-[#111714] rounded-3xl border border-earth-150 text-earth-450 text-xs font-semibold">
+                    <div className="p-8 text-center bg-white dark:bg-[#111714] rounded-2xl border border-earth-150 text-earth-450 text-xs font-semibold">
                       {language === 'ta' ? 'பயிர்கள் எதுவும் கிடைக்கவில்லை.' : 'No crop listings found.'}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {products.slice(0, 3).map((prod) => (
                         <div
                           key={prod.id}
-                          className="bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                          className="bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                         >
-                          <div className="p-5 space-y-3">
+                          <div className="p-4 space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary-500/10 text-primary-600 dark:text-primary-400">
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary-500/10 text-primary-600 dark:text-primary-400">
                                 {prod.category}
                               </span>
                               <span className="text-[10px] text-earth-400 font-bold font-mono">
@@ -433,25 +488,24 @@ function DashboardContent() {
                               </span>
                             </div>
                             <div>
-                              <h4 className="text-base font-black text-foreground">{prod.name}</h4>
-                              <p className="text-xs text-earth-400 mt-0.5">
+                              <h4 className="text-sm font-black text-foreground">{prod.name}</h4>
+                              <p className="text-[10px] text-earth-400 mt-0.5">
                                 {language === 'ta' ? 'விவசாயி' : 'Farmer'}: {prod.farmerName || 'Ramanathan'}
                               </p>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-xs pt-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                               <div>
                                 <span className="text-[9px] font-bold text-earth-400 uppercase block">Available</span>
                                 <span className="font-bold text-foreground">{prod.stockKg} {t('kg_unit')}</span>
                               </div>
                               <div>
-                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Expected Harvest</span>
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Harvest ETA</span>
                                 <span className="font-bold text-foreground">10-Aug-2026</span>
                               </div>
                             </div>
                           </div>
-
-                          <div className="p-5 pt-0 border-t border-earth-100 dark:border-earth-900/20 bg-earth-50/20 dark:bg-earth-950/10 flex items-center justify-between">
-                            <span className="text-base font-black text-primary-600 dark:text-primary-400 font-mono">
+                          <div className="px-4 py-3 border-t border-earth-100 dark:border-earth-900/20 flex items-center justify-between">
+                            <span className="text-sm font-black text-primary-600 dark:text-primary-400 font-mono">
                               ₹{prod.pricePerKg} <span className="text-[10px] text-earth-400 font-normal">/kg</span>
                             </span>
                             <button
@@ -459,9 +513,9 @@ function DashboardContent() {
                                 setSelectedProdForOrder(prod);
                                 setIsOrderModalOpen(true);
                               }}
-                              className="h-8 px-4 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs border-0"
+                              className="h-7 px-3 rounded-lg bg-primary-500 hover:bg-primary-600 text-white font-bold text-[10px] shrink-0 cursor-pointer shadow-xs border-0"
                             >
-                              {language === 'ta' ? 'முன்பதிவு செய்' : 'Pre-book'}
+                              {language === 'ta' ? 'முன்பதிவு' : 'Pre-book'}
                             </button>
                           </div>
                         </div>
@@ -470,63 +524,6 @@ function DashboardContent() {
                   )}
                 </div>
 
-                {/* More services section */}
-                <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-earth-450">
-                    {language === 'ta' ? 'இதர பயனுள்ள சேவைகள்' : 'More Services'}
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <Link
-                      href="/dashboard?tab=assistant"
-                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
-                    >
-                      <Bot className="w-5 h-5 text-primary-500" />
-                      <span className="text-xs font-bold text-foreground truncate w-full">
-                        {language === 'ta' ? 'AI உதவியாளர்' : 'AI Assistant'}
-                      </span>
-                    </Link>
-
-                    <Link
-                      href="/dashboard?tab=orders"
-                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
-                    >
-                      <ClipboardList className="w-5 h-5 text-primary-500" />
-                      <span className="text-xs font-bold text-foreground truncate w-full">
-                        {language === 'ta' ? 'என் ஆர்டர்கள்' : 'Orders & Escrow'}
-                      </span>
-                    </Link>
-
-                    <Link
-                      href="/dashboard?tab=wallet"
-                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
-                    >
-                      <Wallet className="w-5 h-5 text-primary-500" />
-                      <span className="text-xs font-bold text-foreground truncate w-full">
-                        {language === 'ta' ? 'பணப்பை' : 'My Wallet'}
-                      </span>
-                    </Link>
-
-                    <Link
-                      href="/dashboard?tab=schemes"
-                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
-                    >
-                      <BookOpen className="w-5 h-5 text-primary-500" />
-                      <span className="text-xs font-bold text-foreground truncate w-full">
-                        {language === 'ta' ? 'அரசு திட்டங்கள்' : 'Gov Schemes'}
-                      </span>
-                    </Link>
-
-                    <Link
-                      href="/dashboard?tab=support"
-                      className="p-4 rounded-2xl border border-earth-100 dark:border-earth-900/20 bg-white dark:bg-[#111714] text-center hover:border-primary-500/20 transition-all no-underline cursor-pointer flex flex-col items-center gap-2"
-                    >
-                      <Headset className="w-5 h-5 text-primary-500" />
-                      <span className="text-xs font-bold text-foreground truncate w-full">
-                        {language === 'ta' ? 'உதவி மையம்' : 'Support Care'}
-                      </span>
-                    </Link>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -1079,145 +1076,419 @@ function DashboardContent() {
               <TranslatorBoard />
             )}
 
-            {/* Buy/Sell Mobile & Desktop Dashboard */}
-            {activeTab === 'buysell' && (
+            {['buysell', 'market', 'prebookings', 'orders'].includes(activeTab) && (
               <div className="space-y-6 animate-fade-in text-foreground">
-                <div>
-                  <h1 className="text-2xl font-black tracking-tight">{language === 'ta' ? 'வாங்கு / விற்று (Buy/Sell)' : 'Buy & Sell Services'}</h1>
-                  <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
-                    {language === 'ta' ? 'விவசாய வர்த்தக சேவைகள் மற்றும் சந்தை தளம்.' : 'Grouped agricultural marketplace and trading services.'}
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h1 className="text-2xl font-black tracking-tight">{language === 'ta' ? 'வாங்கு / விற்று (Buy/Sell)' : 'Buy & Sell Services'}</h1>
+                    <p className="text-xs text-earth-500 dark:text-earth-400 mt-1">
+                      {language === 'ta' ? 'விவசாய வர்த்தக சேவைகள் மற்றும் சந்தை தளம்.' : 'Grouped agricultural marketplace and trading services.'}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Card 1: Crop Marketplace */}
-                  <Link
-                    href="/dashboard?tab=market&sub=crops"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <ShoppingBag className="w-5 h-5" />
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'பயிர் சந்தை' : 'Crop Market (Crops Available)'}</h3>
-                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'விளைபொருட்களை விற்க அல்லது கொள்முதல் செய்ய.' : 'Sell your registered crop produce or purchase from local inventory.'}
-                      </p>
-                    </div>
-                  </Link>
-
-                  {/* Card 2: Buyer Requirements */}
-                  <Link
-                    href="/dashboard?tab=market&sub=requirements"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <Leaf className="w-5 h-5" />
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'கொள்முதல் தேவைகள்' : 'Buyer Requirements'}</h3>
-                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'மொத்த கொள்முதல் செய்யும் நிறுவனங்களின் தேவைகள்.' : 'Browse active bulk purchase demands posted by verified corporate buyers.'}
-                      </p>
-                    </div>
-                  </Link>
-
-                  {/* Card 3: Create Pre-Booking Offer */}
-                  <Link
-                    href="/dashboard?tab=market&sub=prebooking"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-indigo-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <Plus className="w-5 h-5" />
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                        {language === 'ta' ? 'புதிது உருவாக்கு' : 'CREATE NEW'}
-                      </span>
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'முன்பதிவு ஆஃபர் உருவாக்கு' : 'Create Pre-Booking Offer'}</h3>
-                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'அறுவடைக்கு முன்னாடி உங்கள் பயிரை buyer-க்கு offer பண்ணுங்க. Quantity, harvest date & price set பண்ணுங்க.' : 'Offer your upcoming harvest to buyers before it is ready. Set quantity, expected harvest date & price.'}
-                      </p>
-                      <span className="mt-2 inline-flex items-center text-[9px] font-black text-indigo-500 group-hover:gap-1.5 transition-all">
-                        {language === 'ta' ? 'ஆஃபர் உருவாக்கு →' : 'Create Offer →'}
-                      </span>
-                    </div>
-                  </Link>
-
-                  {/* Card 4: My Bookings & Payments */}
-                  <Link
-                    href="/dashboard?tab=prebookings"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-purple-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <Package className="w-5 h-5" />
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                        {language === 'ta' ? 'கண்காணி' : 'TRACK'}
-                      </span>
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'என் முன்பதிவுகள் & பேமெண்ட்' : 'My Bookings & Payments'}</h3>
-                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'ஏற்கனவே உருவாக்கிய / ஏற்ற bookings-ஐ பாருங்க. Booking status & secure payment status-ஐ track பண்ணுங்க.' : 'View bookings you created or accepted. Track booking status and secure payment status.'}
-                      </p>
-                      <span className="mt-2 inline-flex items-center text-[9px] font-black text-purple-500 group-hover:gap-1.5 transition-all">
-                        {language === 'ta' ? 'என் முன்பதிவுகள் பார் →' : 'View My Bookings →'}
-                      </span>
-                    </div>
-                  </Link>
-
-                  {/* Card 5: Orders Tracking */}
-                  <Link
-                    href="/dashboard?tab=orders"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <ClipboardList className="w-5 h-5" />
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'ஆர்டர்கள் & கண்காணிப்பு' : 'Purchase Orders & Tracking'}</h3>
-                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'அறுவடைக்கு பிந்தைய விநியோகக் கண்காணிப்பு.' : 'Post-harvest dispatch tracking and logistics status updates.'}
-                      </p>
-                    </div>
-                  </Link>
-
-                  {/* Card 6: Equipment Rental */}
-                  <Link
-                    href="/dashboard?tab=rentals"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <Truck className="w-5 h-5" />
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'இயந்திர வாடகை' : 'Equipment Rental'}</h3>
-                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'டிராக்டர்கள் மற்றும் இதர கருவிகள் வாடகைக்கு.' : 'Rent agricultural machinery or list your machinery.'}
-                      </p>
-                    </div>
-                  </Link>
-
-                  {/* Card 7: Labour Exchange */}
-                  <Link
-                    href="/dashboard?tab=labor"
-                    className="p-5 rounded-[22px] bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex flex-col justify-between min-h-[140px] text-foreground group"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-xs font-black tracking-tight">{language === 'ta' ? 'வேலைவாய்ப்பு' : 'Labour Exchange'}</h3>
-                      <p className="text-[10px] text-earth-550 dark:text-earth-455 mt-1 leading-relaxed font-semibold">
-                        {language === 'ta' ? 'பயிர்த்தொழில் வேலைகள் மற்றும் பணியாளர்கள்.' : 'Find seasonal workforce or browse local farm job listings.'}
-                      </p>
-                    </div>
-                  </Link>
+                {/* Inline Sub-Tab Navigation Bar */}
+                <div className="flex border-b border-earth-200 dark:border-earth-850 overflow-x-auto whitespace-nowrap scrollbar-none gap-2">
+                  {[
+                    { id: 'crops', label: language === 'ta' ? 'பயிர்கள் (Crops)' : 'Crops Available' },
+                    { id: 'requirements', label: language === 'ta' ? 'கொள்முதல் தேவைகள்' : 'Buyer Requirements' },
+                    { id: 'prebookings', label: language === 'ta' ? 'முன்பதிவுகள்' : 'Pre-Bookings' },
+                    { id: 'orders', label: language === 'ta' ? 'ஆர்டர்கள்' : 'Orders & Tracking' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setBuySellTab(tab.id as any)}
+                      className={`py-3 px-5 text-xs font-black uppercase tracking-wider transition-all border-b-2 -mb-[2px] cursor-pointer bg-transparent border-0 ${
+                        buySellTab === tab.id
+                          ? 'border-primary-500 text-primary-600 dark:text-primary-400 font-black'
+                          : 'border-transparent text-earth-450 hover:text-foreground'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
+
+                {/* Sub-Tab 1: Crops Marketplace */}
+                {buySellTab === 'crops' && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <h2 className="text-base font-black text-foreground">{language === 'ta' ? 'விளைபொருட்கள் சந்தை' : 'Agri-Marketplace'}</h2>
+                        <p className="text-xs text-earth-450 mt-0.5">{t('agri_marketplace_desc')}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-full sm:w-56">
+                          <input
+                            type="text"
+                            placeholder={t('search_crops')}
+                            value={marketQuery}
+                            onChange={e => { setMarketQuery(e.target.value); setMarketPage(1); }}
+                            className="w-full h-10 pl-9 pr-4 bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary-500"
+                          />
+                          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-earth-400" />
+                        </div>
+                        <button
+                          onClick={() => setShowAddProduce(true)}
+                          className="h-10 px-4 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs border-0"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>{t('list_crop')}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Filters and Sorting bar */}
+                    <div className="flex flex-wrap gap-2 items-center bg-earth-50/40 dark:bg-earth-950/15 p-4 rounded-3xl border border-earth-150/40 dark:border-earth-900/10">
+                      <div className="flex flex-wrap gap-2 flex-1">
+                        <select
+                          value={selectedCategory}
+                          onChange={e => { setSelectedCategory(e.target.value); setMarketPage(1); }}
+                          className="h-9 px-3 rounded-xl text-xs font-semibold bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-800 text-foreground cursor-pointer focus:outline-none"
+                        >
+                          <option value="all">All Categories</option>
+                          <option value="Vegetables">Vegetables</option>
+                          <option value="Fruits">Fruits</option>
+                          <option value="Grains">Grains</option>
+                          <option value="Spices">Spices</option>
+                        </select>
+
+                        <select
+                          value={selectedDistrict}
+                          onChange={e => { setSelectedDistrict(e.target.value); setMarketPage(1); }}
+                          className="h-9 px-3 rounded-xl text-xs font-semibold bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-800 text-foreground cursor-pointer focus:outline-none"
+                        >
+                          <option value="all">All Districts</option>
+                          <option value="Madurai">Madurai</option>
+                          <option value="Dindigul">Dindigul</option>
+                          <option value="Virudhunagar">Virudhunagar</option>
+                          <option value="Thanjavur">Thanjavur</option>
+                          <option value="Erode">Erode</option>
+                          <option value="Sivagangai">Sivagangai</option>
+                        </select>
+
+                        <div className="flex items-center gap-1.5 px-3 h-9 rounded-xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-800 text-xs font-semibold text-earth-500">
+                          <span>Max Price: ₹{maxPrice}</span>
+                          <input
+                            type="range"
+                            min="10"
+                            max="200"
+                            value={maxPrice}
+                            onChange={e => { setMaxPrice(Number(e.target.value)); setMarketPage(1); }}
+                            className="w-20 accent-primary-500 cursor-pointer h-1"
+                          />
+                        </div>
+                      </div>
+
+                      <select
+                        value={sortOption}
+                        onChange={e => { setSortOption(e.target.value); setMarketPage(1); }}
+                        className="h-9 px-3 rounded-xl text-xs font-semibold bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-800 text-foreground cursor-pointer focus:outline-none ml-auto"
+                      >
+                        <option value="Recommended">Recommended</option>
+                        <option value="Newest">Newest</option>
+                        <option value="Price Low → High">Price Low → High</option>
+                        <option value="Price High → Low">Price High → Low</option>
+                        <option value="Nearest">Nearest</option>
+                        <option value="Highest Rated">Highest Rated</option>
+                        <option value="Most Popular">Most Popular</option>
+                      </select>
+                    </div>
+
+                    {/* Products Grid */}
+                    {processedProducts.length === 0 ? (
+                      <div className="p-12 text-center rounded-3xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] text-earth-400 font-bold text-xs">
+                        {t('no_crop_listings_found') || 'No crop listings found.'}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {processedProducts.slice((marketPage - 1) * 4, marketPage * 4).map((p) => (
+                            <ProductCard
+                              key={p.id}
+                              product={p}
+                              isBuyable={true}
+                              onBuyClick={(prod) => {
+                                setSelectedProdForOrder(prod);
+                                setIsOrderModalOpen(true);
+                              }}
+                            />
+                          ))}
+                        </div>
+
+                        {processedProducts.length > 4 && (
+                          <div className="flex items-center justify-between mt-6 pt-4 border-t border-earth-100 dark:border-earth-900/30">
+                            <button
+                              disabled={marketPage === 1}
+                              onClick={() => setMarketPage(p => Math.max(1, p - 1))}
+                              className="py-1.5 px-3 rounded-lg border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] hover:bg-earth-50 dark:hover:bg-earth-900 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              Previous
+                            </button>
+                            <span className="text-xs text-earth-500 font-mono">Page {marketPage} of {Math.ceil(processedProducts.length / 4)}</span>
+                            <button
+                              disabled={marketPage >= Math.ceil(processedProducts.length / 4)}
+                              onClick={() => setMarketPage(p => p + 1)}
+                              className="py-1.5 px-3 rounded-lg border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] hover:bg-earth-50 dark:hover:bg-earth-900 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Sub-Tab 2: Buyer Requirements */}
+                {buySellTab === 'requirements' && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div>
+                      <h2 className="text-base font-black text-foreground">{language === 'ta' ? 'வாங்குபவர் தேவைகள்' : 'Buyer Requirements'}</h2>
+                      <p className="text-xs text-earth-450 mt-0.5">
+                        {language === 'ta'
+                          ? 'நிறுவன மற்றும் மொத்த கொள்முதல் செய்யும் கார்ப்பரேட் வாங்குபவர்களின் தேவைகள்.'
+                          : 'Browse active crop purchase requirements posted by verified commercial buyers.'}
+                      </p>
+                    </div>
+
+                    {buyerRequirements.length === 0 ? (
+                      <div className="p-12 text-center rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] text-earth-400 font-bold text-xs">
+                        {language === 'ta' ? 'தேவைகள் எதுவும் இல்லை.' : 'No active buyer requirements found.'}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {buyerRequirements.map((req) => (
+                          <div
+                            key={req.id}
+                            className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 shadow-xs flex flex-col justify-between space-y-4"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                {req.status === 'open' ? 'Open Demand' : 'Matched'}
+                              </span>
+                              <span className="text-[10px] text-earth-400 font-bold font-mono">
+                                {req.location}
+                              </span>
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm font-black text-foreground">{req.crop}</h4>
+                              <p className="text-xs text-earth-450 mt-0.5">Posted by: <span className="font-bold text-foreground">{req.buyerName}</span></p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-earth-100 dark:border-earth-900/10">
+                              <div>
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Required Volume</span>
+                                <span className="font-bold text-foreground">{req.quantity} kg</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-bold text-earth-400 uppercase block">Required Date</span>
+                                <span className="font-bold text-foreground">{req.requiredDate}</span>
+                              </div>
+                            </div>
+
+                            {req.status === 'open' ? (
+                              <button
+                                onClick={() => matchBuyerRequirement(req.id)}
+                                className="w-full h-9 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs cursor-pointer border-0 shadow-xs transition-all"
+                              >
+                                {language === 'ta' ? 'ஒப்பந்தம் செய்' : 'Supply Crop / Match Demand'}
+                              </button>
+                            ) : (
+                              <div className="h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 text-xs font-black">
+                                Match Completed ✅
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sub-Tab 3: Pre-Bookings */}
+                {buySellTab === 'prebookings' && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div>
+                      <h2 className="text-base font-black text-foreground">{language === 'ta' ? 'அறுவடைக்கு முந்தைய முன்பதிவுகள்' : 'My Bookings & Payments'}</h2>
+                      <p className="text-xs text-earth-450 mt-0.5">
+                        {language === 'ta'
+                          ? 'உங்கள் முன்பதிவு ஒப்பந்தங்கள் மற்றும் பாதுகாப்பான பேமெண்ட் நிலவரம்.'
+                          : 'Track active crop booking contracts and secure payments.'}
+                      </p>
+                    </div>
+
+                    {/* Reuse the prebookings content block */}
+                    {(() => {
+                      const filtered = orders.filter(
+                        o => activeRole === 'farmer' ? o.farmerId === user?.id : o.buyerId === user?.id
+                      );
+
+                      if (filtered.length === 0) {
+                        return (
+                          <div className="p-12 text-center rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] text-earth-450 text-xs font-bold">
+                            {language === 'ta' ? 'முன்பதிவுகள் எதுவும் இல்லை.' : 'No pre-booking contracts found.'}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {filtered.map((ord) => {
+                            const escrowAmt = Math.round(ord.totalPrice * 0.1);
+                            return (
+                              <div
+                                key={ord.id}
+                                className="p-5 rounded-2xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] shadow-xs flex flex-col justify-between space-y-4"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-mono font-bold text-earth-400 uppercase tracking-widest">
+                                    {ord.id}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                    ord.status === 'pending'
+                                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                      : ord.status === 'accepted'
+                                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                      : ord.status === 'completed'
+                                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                      : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {ord.status}
+                                  </span>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <h4 className="text-sm font-black text-foreground">{ord.productName}</h4>
+                                  <p className="text-xs text-earth-500 dark:text-earth-400">
+                                    {activeRole === 'farmer' ? `Buyer: ${ord.buyerName}` : `Farmer Partner`}
+                                  </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-earth-100 dark:border-earth-900/10">
+                                  <div>
+                                    <span className="text-[9px] font-bold text-earth-400 uppercase block">Quantity</span>
+                                    <span className="font-bold text-foreground">{ord.quantity} kg</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[9px] font-bold text-earth-400 uppercase block">Advance Secured (10%)</span>
+                                    <span className="font-mono font-bold text-primary-600 dark:text-primary-400 font-semibold font-bold">₹{escrowAmt}</span>
+                                  </div>
+                                </div>
+
+                                {activeRole === 'farmer' && ord.status === 'pending' && (
+                                  <div className="flex items-center gap-2 pt-1">
+                                    <button
+                                      onClick={() => confirmOrder(ord.id)}
+                                      className="flex-1 h-8 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-[11px] cursor-pointer border-0 shadow-xs"
+                                    >
+                                      Accept
+                                    </button>
+                                    <button
+                                      onClick={() => cancelOrder(ord.id)}
+                                      className="flex-1 h-8 rounded-xl bg-red-500/10 hover:bg-red-500/15 text-red-500 font-bold text-[11px] cursor-pointer border-0"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Sub-Tab 4: Orders */}
+                {buySellTab === 'orders' && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div>
+                      <h2 className="text-base font-black text-foreground">{language === 'ta' ? 'ஆர்டர்கள் கண்காணிப்பு' : 'Purchase Orders & Tracking'}</h2>
+                      <p className="text-xs text-earth-450 mt-0.5">
+                        {language === 'ta'
+                          ? 'அறுவடைக்கு பிந்தைய விநியோகக் கண்காணிப்பு மற்றும் லாஜிஸ்டிக்ஸ்.'
+                          : 'Track post-harvest dispatch status, packaging, and logistics progress.'}
+                      </p>
+                    </div>
+
+                    {(() => {
+                      const filtered = orders.filter(
+                        o => activeRole === 'farmer' ? o.farmerId === user?.id : o.buyerId === user?.id
+                      );
+
+                      if (filtered.length === 0) {
+                        return (
+                          <div className="p-12 text-center rounded-3xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] text-earth-450 text-xs font-bold">
+                            {language === 'ta' ? 'ஆர்டர்கள் எதுவும் இல்லை.' : 'No orders in tracking list.'}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-3">
+                          {filtered.map((ord) => (
+                            <div
+                              key={ord.id}
+                              className="p-4 rounded-2xl border border-earth-150 dark:border-earth-900/30 bg-white dark:bg-[#111714] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                            >
+                              <div className="space-y-1">
+                                <span className="text-[9px] font-mono font-bold text-earth-400 block">{ord.id} • {ord.createdAt.slice(0,10)}</span>
+                                <h4 className="text-sm font-black text-foreground">{ord.productName}</h4>
+                                <p className="text-xs text-earth-500 dark:text-earth-400">
+                                  Quantity: <span className="font-bold">{ord.quantity} kg</span> | Price: <span className="font-bold">₹{ord.totalPrice}</span>
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary-500/10 text-primary-600 dark:text-primary-400">
+                                  {ord.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Compact Other Agriculture Services links row */}
+                <div className="pt-4 border-t border-earth-200 dark:border-earth-850">
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-earth-450 mb-3">
+                    {language === 'ta' ? 'விவசாய துணைச் சேவைகள்' : 'Other Agriculture Services'}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link
+                      href="/dashboard?tab=rentals"
+                      className="p-3.5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 hover:border-primary-500/30 hover:shadow-xs transition-all flex items-center justify-between no-underline group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-500 flex items-center justify-center shrink-0">
+                          <Truck className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-bold text-foreground">{language === 'ta' ? 'இயந்திர வாடகை' : 'Equipment Rental'}</span>
+                      </div>
+                      <span className="text-xs text-earth-400 group-hover:translate-x-0.5 transition-transform">→</span>
+                    </Link>
+
+                    <Link
+                      href="/dashboard?tab=labor"
+                      className="p-3.5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 hover:border-primary-500/30 hover:shadow-xs transition-all flex items-center justify-between no-underline group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0">
+                          <Users className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-bold text-foreground">{language === 'ta' ? 'வேலைவாய்ப்பு' : 'Labour Exchange'}</span>
+                      </div>
+                      <span className="text-xs text-earth-400 group-hover:translate-x-0.5 transition-transform">→</span>
+                    </Link>
+                  </div>
+                </div>
+
               </div>
             )}
 
@@ -1238,7 +1509,7 @@ function DashboardContent() {
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Link
-                      href="/dashboard?tab=intel"
+                      href="/dashboard?tab=market"
                       className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group"
                     >
                       <div className="w-10 h-10 rounded-xl bg-primary-500/10 text-primary-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
