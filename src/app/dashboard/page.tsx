@@ -430,7 +430,7 @@ function DashboardContent() {
                   }
                   return (
                     <Link
-                      href="/dashboard?tab=market&sub=prebooking"
+                      href="/dashboard?tab=buysell&sub=prebooking"
                       className="flex items-center gap-3 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 hover:bg-indigo-500/8 transition-all no-underline group"
                     >
                       <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -1373,7 +1373,7 @@ function DashboardContent() {
                                   </div>
                                   <div>
                                     <span className="text-[9px] font-bold text-earth-400 uppercase block">Advance Secured (10%)</span>
-                                    <span className="font-mono font-bold text-primary-600 dark:text-primary-400 font-semibold font-bold">₹{escrowAmt}</span>
+                                    <span className="font-mono font-black text-primary-600 dark:text-primary-400">₹{escrowAmt}</span>
                                   </div>
                                 </div>
 
@@ -1550,7 +1550,7 @@ function DashboardContent() {
                         <Users className="w-5 h-5" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-black">{language === 'ta' ? 'வேلهவாப்ப்பு' : 'Labour Exchange'}</h4>
+                        <h4 className="text-xs font-black">{language === 'ta' ? 'வேலைவாய்ப்பு' : 'Labour Exchange'}</h4>
                         <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'விவசாய வேலை வாய்ப்புகள்' : 'Seasonal workforce exchange'}</p>
                       </div>
                     </Link>
