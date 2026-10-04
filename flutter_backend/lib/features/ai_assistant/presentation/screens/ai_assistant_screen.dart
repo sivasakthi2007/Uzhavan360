@@ -31,7 +31,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
           children: [
             const Text(
               'AI விவசாய உதவியாளர்', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'AI Agriculture Assistant', // English Subtitle
@@ -330,7 +330,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
           children: [
             const Text(
               'குரல் வழி கேள்வி கேட்கவும்',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const Text(
               'Dictating in Tamil...',

@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    role TEXT NOT NULL CHECK (role IN ('farmer', 'buyer', 'delivery', 'labor', 'vendor')),
+    role TEXT NOT NULL CHECK (role IN ('farmer', 'buyer', 'delivery', 'labor', 'vendor', 'fpo')),
     language TEXT DEFAULT 'ta' CHECK (language IN ('ta', 'en')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );

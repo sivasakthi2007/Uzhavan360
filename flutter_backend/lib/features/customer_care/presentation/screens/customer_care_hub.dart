@@ -44,7 +44,7 @@ class _CustomerCareHubState extends ConsumerState<CustomerCareHub> {
           children: [
             const Text(
               'வாடிக்கையாளர் உதவி மையம்', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Customer Care & Support Hub', // English Subtitle
@@ -129,7 +129,7 @@ class _CustomerCareHubState extends ConsumerState<CustomerCareHub> {
                     children: [
                       const Text(
                         'நேரடி உதவி அழைப்பு (Direct Call)',
-                        style: TextStyle(fontWeight: FontWeight.black, fontSize: 16, color: Colors.black87),
+                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.black87),
                       ),
                       const SizedBox(height: 4),
                       const Text(
@@ -184,11 +184,11 @@ class _CustomerCareHubState extends ConsumerState<CustomerCareHub> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   ticket['id'],
-                  style: const TextStyle(fontWeight: FontWeight.black, fontSize: 15),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
                 ),
                 _buildStatusBadge(ticket['status']),
               ],
@@ -284,9 +284,9 @@ class _CustomerCareHubState extends ConsumerState<CustomerCareHub> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.between,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('விவசாயி: ஆறுமுகம் (Farmer Arumugam)', style: TextStyle(fontWeight: FontWeight.black)),
+                    const Text('விவசாயி: ஆறுமுகம் (Farmer Arumugam)', style: TextStyle(fontWeight: FontWeight.w900)),
                     const Chip(label: Text('OPEN')),
                   ],
                 ),
@@ -349,7 +349,7 @@ class _CustomerCareHubState extends ConsumerState<CustomerCareHub> {
             children: [
               const Text(
                 'புதிய புகார் பதிவு செய் (New Support Ticket)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -461,7 +461,7 @@ class _CustomerCareHubState extends ConsumerState<CustomerCareHub> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black)),
+        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
         Text(english, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
       ],
     );

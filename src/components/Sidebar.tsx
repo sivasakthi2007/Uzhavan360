@@ -22,10 +22,13 @@ import {
   Truck,
   Languages,
   TrendingUp,
-  Menu
+  Menu,
+  Radio
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
+import { enableLayer2 } from '@/lib/config';
 
 export default function Sidebar() {
   const { userName, activeRole, t, isOffline, language } = useApp();
@@ -35,16 +38,22 @@ export default function Sidebar() {
 
   const activeTab = searchParams.get('tab') || 'home';
 
-  // Primary navigation items (exactly 5 tabs, matching mobile bottom nav)
+  // Primary navigation items (matching mobile bottom nav + V-LINK Mesh)
   const primaryNavItems = [
-    { name: language === 'ta' ? 'முகப்பு' : 'Home', icon: Home, path: '/dashboard?tab=home', tabKey: 'home', roles: ['farmer', 'buyer', 'labor', 'vendor'] },
+    { name: language === 'ta' ? 'முகப்பு' : 'Home', icon: Home, path: '/dashboard?tab=home', tabKey: 'home', roles: ['farmer', 'buyer', 'labor', 'vendor', 'delivery'] },
+    { name: language === 'ta' ? 'V-LINK மெஷ்' : 'V-LINK Mesh', icon: Radio, path: '/dashboard?tab=vlink', tabKey: 'vlink', roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo', 'delivery'] },
+    { name: language === 'ta' ? 'FPO கன்சோல்' : 'FPO Console', icon: Users, path: '/dashboard?tab=fpo', tabKey: 'fpo', roles: ['fpo'] },
+    { name: language === 'ta' ? 'டிரைவர் கன்சோல்' : 'Driver Console', icon: Truck, path: '/dashboard?tab=driver', tabKey: 'driver', roles: ['delivery'] },
     { name: language === 'ta' ? 'என் பண்ணை' : 'My Farm', icon: Sprout, path: '/dashboard?tab=myfarm', tabKey: 'myfarm', roles: ['farmer'] },
-    { name: language === 'ta' ? 'வாங்கு/விற்று' : 'Buy/Sell', icon: ShoppingBag, path: '/dashboard?tab=buysell', tabKey: 'buysell', roles: ['farmer', 'buyer', 'labor', 'vendor'] },
-    { name: language === 'ta' ? 'AI உதவியாளர்' : 'AI Assistant', icon: Bot, path: '/dashboard?tab=assistant', tabKey: 'assistant', roles: ['farmer', 'buyer', 'labor', 'vendor'] },
-    { name: language === 'ta' ? 'இதர' : 'More', icon: Menu, path: '/dashboard?tab=more', tabKey: 'more', roles: ['farmer', 'buyer', 'labor', 'vendor'] },
+    { name: language === 'ta' ? 'வாங்கு/விற்று' : 'Buy/Sell', icon: ShoppingBag, path: '/dashboard?tab=buysell', tabKey: 'buysell', roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo'] },
+    { name: language === 'ta' ? 'AI உதவியாளர்' : 'AI Assistant', icon: Bot, path: '/dashboard?tab=assistant', tabKey: 'assistant', roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo', 'delivery'] },
+    { name: language === 'ta' ? 'இதர' : 'More', icon: Menu, path: '/dashboard?tab=more', tabKey: 'more', roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo', 'delivery'] },
   ];
 
-  const filteredPrimary = primaryNavItems.filter(item => item.roles.includes(activeRole) || activeRole === 'admin');
+  const filteredPrimary = primaryNavItems.filter(item => {
+    if (item.tabKey === 'vlink' && !enableLayer2) return false;
+    return item.roles.includes(activeRole) || activeRole === 'admin';
+  });
 
   return (
     <aside className="hidden md:flex w-72 flex-col h-screen shrink-0 p-5 bg-[#f7f9f6] dark:bg-[#090e0c] transition-colors duration-300">

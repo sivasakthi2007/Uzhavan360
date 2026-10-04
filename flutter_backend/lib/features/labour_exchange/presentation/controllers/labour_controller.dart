@@ -3,7 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/labour_entity.dart';
-import '../repositories/labour_repository_impl.dart';
+import '../../data/repositories/labour_repository_impl.dart';
 import '../../../../core/di/providers.dart';
 
 final labourRepositoryProvider = Provider<LabourRepository>((ref) {

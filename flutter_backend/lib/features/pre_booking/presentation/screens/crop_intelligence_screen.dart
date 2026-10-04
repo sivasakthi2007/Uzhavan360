@@ -28,7 +28,7 @@ class _CropIntelligenceScreenState extends ConsumerState<CropIntelligenceScreen>
           children: [
             const Text(
               'அருகிலுள்ள பயிர் விபரங்கள்', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Nearby Crop Intelligence', // English Subtitle
@@ -135,11 +135,11 @@ class _CropIntelligenceScreenState extends ConsumerState<CropIntelligenceScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     item.cropName,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.black),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
                   ),
                   Chip(
                     label: Text(
@@ -195,7 +195,7 @@ class _CropIntelligenceScreenState extends ConsumerState<CropIntelligenceScreen>
               subtitle: Text('Harvest Yield: ${item.estimatedQuantity} ${item.unit}'),
               trailing: Text(
                 '${item.expectedHarvestDate.day}/${item.expectedHarvestDate.month}',
-                style: const TextStyle(fontWeight: FontWeight.black, fontSize: 16),
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
               ),
             );
           },
@@ -342,7 +342,7 @@ class _CropIntelligenceScreenState extends ConsumerState<CropIntelligenceScreen>
           children: [
             Text(
               item.cropName,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.black),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
             Text('பயிர் அளவு (Quantity): ${item.estimatedQuantity} ${item.unit}'),

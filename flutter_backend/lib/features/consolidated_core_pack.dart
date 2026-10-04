@@ -5,7 +5,7 @@
 
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 import '../core/storage/database_helper.dart';
 import '../core/network/sync_queue_manager.dart';
 import '../core/di/providers.dart';

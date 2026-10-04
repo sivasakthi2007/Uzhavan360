@@ -2,8 +2,11 @@
 // Dart Filename: pre_booking_controller.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 import '../../domain/entities/pre_booking_entity.dart';
 import '../../domain/repositories/pre_booking_repository.dart';
+import '../../../../core/storage/database_helper.dart';
+import '../../../../core/network/sync_queue_manager.dart';
 import '../../../../core/di/providers.dart';
 
 // Extension provider binding the Pre-Booking repository implementation

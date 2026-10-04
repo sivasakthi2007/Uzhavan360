@@ -24,7 +24,7 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
           children: [
             const Text(
               'விவசாயக் கருவிகள் வாடகை', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Equipment Rental Marketplace', // English Subtitle
@@ -138,7 +138,7 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
                 const SizedBox(width: 8),
                 Text(
                   'AI பயிர் நுண்ணறிவுப் பரிந்துரை',
-                  style: TextStyle(fontWeight: FontWeight.black, color: Colors.green.shade900, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.w900, color: Colors.green.shade900, fontSize: 14),
                 ),
               ],
             ),
@@ -184,12 +184,12 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
                     name,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -248,7 +248,7 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
               children: [
                 const Text(
                   'கருவி உரிமையாளர் மையம் (Owner Hub)',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.black),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -281,9 +281,9 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('பவர் ஸ்பிரேயர் (Power Sprayer - ASPEE)', style: TextStyle(fontWeight: FontWeight.black, fontSize: 16)),
+                const Text('பவர் ஸ்பிரேயர் (Power Sprayer - ASPEE)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(8)),
@@ -333,7 +333,7 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
         ),
         title: const Text(
           'வாடிக்கையாளர் உதவி மையம் (Customer Care)',
-          style: TextStyle(fontWeight: FontWeight.black, fontSize: 14),
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
         ),
         subtitle: const Text('மின்னணு பதிவு செய்யத் தெரியவில்லையா? உடனே எங்களை அழைக்கவும்.'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -346,7 +346,7 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black)),
+        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
         Text(english, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
       ],
     );
@@ -365,7 +365,7 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
           children: [
             Text(
               'வாடகை முன்பதிவு: $equipmentName',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -442,7 +442,7 @@ class _EquipmentRentalMarketplaceState extends ConsumerState<EquipmentRentalMark
           children: [
             const Text(
               'புதிய கருவி பதிவு செய்தல்',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
             const TextField(

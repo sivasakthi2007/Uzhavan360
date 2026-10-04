@@ -26,7 +26,7 @@ class _WarehouseMarketplaceState extends ConsumerState<WarehouseMarketplace> {
           children: [
             const Text(
               'கிடங்கு மற்றும் குளிர்பதனச் சேமிப்பு', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Warehouse & Cold Storage Registry', // English Subtitle
@@ -135,7 +135,7 @@ class _WarehouseMarketplaceState extends ConsumerState<WarehouseMarketplace> {
                 const SizedBox(width: 8),
                 Text(
                   'பாதுகாப்பு வெப்பநிலை பரிந்துரை (AI Storage Advisor)',
-                  style: TextStyle(fontWeight: FontWeight.black, color: Colors.green.shade900, fontSize: 13),
+                  style: TextStyle(fontWeight: FontWeight.w900, color: Colors.green.shade900, fontSize: 13),
                 ),
               ],
             ),
@@ -174,10 +174,10 @@ class _WarehouseMarketplaceState extends ConsumerState<WarehouseMarketplace> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.black)),
+                  child: Text(name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
                 ),
                 Icon(
                   isCold ? Icons.ac_unit : Icons.wb_sunny_outlined,
@@ -194,7 +194,7 @@ class _WarehouseMarketplaceState extends ConsumerState<WarehouseMarketplace> {
             const SizedBox(height: 12),
             // Smart capacity indicator representation
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('கிடங்கு கொள்ளளவு (Capacity): $capacityPercent%'),
                 Text('$availablePercent% காலி (Available)', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
@@ -248,7 +248,7 @@ class _WarehouseMarketplaceState extends ConsumerState<WarehouseMarketplace> {
         ),
         title: const Text(
           'உதவி தேவைப்படுகிறதா? (Need Help?)',
-          style: TextStyle(fontWeight: FontWeight.black, fontSize: 14),
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
         ),
         subtitle: const Text('எங்கள் வாடிக்கையாளர் மையத்தைத் தொடர்பு கொண்டு கிடங்கு இடங்களை முன்பதிவு செய்யவும்.'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -280,7 +280,7 @@ class _WarehouseMarketplaceState extends ConsumerState<WarehouseMarketplace> {
             children: [
               Text(
                 'கிடங்கு முன்பதிவு: $warehouseName',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 16),
               const TextField(
@@ -352,7 +352,7 @@ class _WarehouseMarketplaceState extends ConsumerState<WarehouseMarketplace> {
                 decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(12)),
                 child: Text(
                   'மதிப்பிடப்பட்ட கட்டணம் (Estimated Cost): ₹$estimatedCost',
-                  style: const TextStyle(fontWeight: FontWeight.black, fontSize: 16, color: Colors.green),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.green),
                 ),
               ),
 

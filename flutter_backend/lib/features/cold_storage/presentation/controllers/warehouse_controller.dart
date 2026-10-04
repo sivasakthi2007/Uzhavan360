@@ -3,7 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/warehouse_entity.dart';
-import '../repositories/warehouse_repository_impl.dart';
+import '../../data/repositories/warehouse_repository_impl.dart';
 import '../../../../core/di/providers.dart';
 
 final warehouseRepositoryProvider = Provider<WarehouseRepository>((ref) {

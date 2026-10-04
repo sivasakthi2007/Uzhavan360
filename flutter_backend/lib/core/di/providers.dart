@@ -2,7 +2,7 @@
 // Dart Filename: providers.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 import '../storage/secure_storage_service.dart';
 import '../storage/database_helper.dart';
 import '../network/sync_queue_manager.dart';
@@ -30,11 +30,7 @@ final syncQueueProvider = Provider<SyncQueueManager>((ref) {
 });
 
 final syncEngineProvider = Provider<SyncEngine>((ref) {
-  return SyncEngine(
-    ref.watch(syncQueueProvider),
-    ref.watch(dbHelperProvider),
-    ref.watch(supabaseClientProvider),
-  );
+  return SyncEngine.instance;
 });
 
 // 3. System Services Providers

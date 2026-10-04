@@ -6,7 +6,7 @@ import MyFarmBoard from '@/components/MyFarmBoard';
 import Link from 'next/link';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
-import { useApp, Product } from '@/context/AppContext';
+import { useApp, Product, BuyerRequirement } from '@/context/AppContext';
 import {
   Leaf,
   Search,
@@ -37,7 +37,8 @@ import {
   User,
   Phone,
   ShieldAlert,
-  Snowflake
+  Snowflake,
+  Radio
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
@@ -46,12 +47,16 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import RentalsBoard from '@/components/RentalsBoard';
 import LaborBoard from '@/components/LaborBoard';
 import AdminBoard from '@/components/AdminBoard';
+import FpoBoard from '@/components/FpoBoard';
+import DriverBoard from '@/components/DriverBoard';
 import DiseaseDiagnosisBoard from '@/components/DiseaseDiagnosisBoard';
 import WeatherBoard from '@/components/WeatherBoard';
 import AIAssistantBoard from '@/components/AIAssistantBoard';
 import CustomerCareBoard from '@/components/CustomerCareBoard';
 import TranslatorBoard from '@/components/TranslatorBoard';
-import { useSearchParams } from 'next/navigation';
+import VLinkBoard from '@/components/VLinkBoard';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { enableLayer2 } from '@/lib/config';
 
 // ─── Official Schemes API Sandbox Mock ──────────────────────────────
 const OFFICIAL_SCHEMES_API_MOCK = [
@@ -106,11 +111,27 @@ function DashboardContent() {
     user,
     language,
     buyerRequirements,
-    matchBuyerRequirement
+    addBuyerRequirement,
+    updateBuyerRequirement,
+    cancelBuyerRequirement,
+    matchBuyerRequirement,
+    fpoTransactions,
+    updateFPOTransactionPrice,
+    acceptFPOTransaction,
+    rejectFPOTransaction
   } = useApp();
 
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'home';
+  const router = useRouter();
+  const rawTab = searchParams.get('tab') || 'home';
+  const activeTab = (rawTab === 'vlink' && !enableLayer2) ? 'home' : rawTab;
+
+  // Redirect FPO Admin to FPO Console tab by default
+  useEffect(() => {
+    if (activeRole === 'fpo' && activeTab === 'home') {
+      router.replace('/dashboard?tab=fpo');
+    }
+  }, [activeRole, activeTab, router]);
 
   // Sub-tab state for Buy/Sell workflow
   const [buySellTab, setBuySellTab] = useState<'crops' | 'requirements' | 'prebookings' | 'orders'>('crops');
@@ -145,6 +166,50 @@ function DashboardContent() {
   const [newProdPrice, setNewProdPrice] = useState(30);
   const [newProdStock, setNewProdStock] = useState(500);
   const [newProdLocation, setNewProdLocation] = useState('Madurai East, TN');
+
+  // Buyer Requirement Form States
+  const [isCreateReqOpen, setIsCreateReqOpen] = useState(false);
+  const [isEditReqOpen, setIsEditReqOpen] = useState(false);
+  const [selectedReqForEdit, setSelectedReqForEdit] = useState<BuyerRequirement | null>(null);
+  const [reqCrop, setReqCrop] = useState('Tomato (தக்காளி)');
+  const [reqQty, setReqQty] = useState<number>(1000);
+  const [reqRequiredDate, setReqRequiredDate] = useState(new Date().toISOString().split('T')[0]);
+  const [reqLocation, setReqLocation] = useState('Melur (மேலூர்)');
+
+  // B2B Buyer Negotiation States
+  const [buyerCounterPrices, setBuyerCounterPrices] = useState<Record<string, number>>({});
+
+  const handleCreateRequirementSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (reqQty <= 0) {
+      alert('Quantity must be greater than zero.');
+      return;
+    }
+    addBuyerRequirement(reqCrop, reqQty, reqRequiredDate, reqLocation);
+    setIsCreateReqOpen(false);
+    setReqQty(1000);
+  };
+
+  const handleEditRequirementSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedReqForEdit) return;
+    if (reqQty <= 0) {
+      alert('Quantity must be greater than zero.');
+      return;
+    }
+    updateBuyerRequirement(selectedReqForEdit.id, reqCrop, reqQty, reqRequiredDate, reqLocation);
+    setIsEditReqOpen(false);
+    setSelectedReqForEdit(null);
+  };
+
+  const startEditRequirement = (req: BuyerRequirement) => {
+    setSelectedReqForEdit(req);
+    setReqCrop(req.crop);
+    setReqQty(req.quantity);
+    setReqRequiredDate(req.requiredDate);
+    setReqLocation(req.location);
+    setIsEditReqOpen(true);
+  };
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -1060,6 +1125,14 @@ function DashboardContent() {
               <AdminBoard />
             )}
 
+            {activeTab === 'fpo' && (
+              <FpoBoard />
+            )}
+
+            {activeTab === 'driver' && (
+              <DriverBoard />
+            )}
+
             {activeTab === 'weather' && (
               <WeatherBoard />
             )}
@@ -1074,6 +1147,10 @@ function DashboardContent() {
 
             {activeTab === 'translator' && (
               <TranslatorBoard />
+            )}
+
+            {activeTab === 'vlink' && (
+              <VLinkBoard />
             )}
 
             {['buysell', 'market', 'prebookings', 'orders'].includes(activeTab) && (
@@ -1243,13 +1320,24 @@ function DashboardContent() {
                 {/* Sub-Tab 2: Buyer Requirements */}
                 {buySellTab === 'requirements' && (
                   <div className="space-y-6 animate-fade-in">
-                    <div>
-                      <h2 className="text-base font-black text-foreground">{language === 'ta' ? 'வாங்குபவர் தேவைகள்' : 'Buyer Requirements'}</h2>
-                      <p className="text-xs text-earth-450 mt-0.5">
-                        {language === 'ta'
-                          ? 'நிறுவன மற்றும் மொத்த கொள்முதல் செய்யும் கார்ப்பரேட் வாங்குபவர்களின் தேவைகள்.'
-                          : 'Browse active crop purchase requirements posted by verified commercial buyers.'}
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-base font-black text-foreground">{language === 'ta' ? 'வாங்குபவர் தேவைகள்' : 'Buyer Requirements'}</h2>
+                        <p className="text-xs text-earth-450 mt-0.5">
+                          {language === 'ta'
+                            ? 'நிறுவன மற்றும் மொத்த கொள்முதல் செய்யும் கார்ப்பரேட் வாங்குபவர்களின் தேவைகள்.'
+                            : 'Browse active crop purchase requirements posted by verified commercial buyers.'}
+                        </p>
+                      </div>
+                      {activeRole === 'buyer' && (
+                        <button
+                          onClick={() => setIsCreateReqOpen(true)}
+                          className="h-10 px-4 rounded-xl bg-purple-650 hover:bg-purple-750 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer border-0"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>{language === 'ta' ? 'புதிய தேவை' : 'Post Requirement'}</span>
+                        </button>
+                      )}
                     </div>
 
                     {buyerRequirements.length === 0 ? (
@@ -1274,6 +1362,45 @@ function DashboardContent() {
 
                             <div>
                               <h4 className="text-sm font-black text-foreground">{req.crop}</h4>
+                              {activeRole === 'buyer' ? (
+                              <div className="flex gap-2">
+                                {req.status === 'open' ? (
+                                  <>
+                                    <button
+                                      onClick={() => startEditRequirement(req)}
+                                      className="flex-1 h-9 rounded-xl border border-purple-200 text-purple-655 hover:bg-purple-50/50 font-bold text-xs cursor-pointer bg-white"
+                                    >
+                                      {language === 'ta' ? 'திருத்து' : 'Edit'}
+                                    </button>
+                                    <button
+                                      onClick={() => cancelBuyerRequirement(req.id)}
+                                      className="h-9 w-9 rounded-xl border border-red-200 text-red-500 hover:bg-red-50/50 flex items-center justify-center cursor-pointer bg-white"
+                                    >
+                                      ✕
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div className="w-full h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 text-xs font-black">
+                                    Contract Linked ✅
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                {req.status === 'open' ? (
+                                  <button
+                                    onClick={() => matchBuyerRequirement(req.id)}
+                                    className="w-full h-9 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs cursor-pointer border-0 shadow-xs transition-all"
+                                  >
+                                    {language === 'ta' ? 'ஒப்பந்தம் செய்' : 'Supply Crop / Match Demand'}
+                                  </button>
+                                ) : (
+                                  <div className="h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 text-xs font-black">
+                                    Match Completed ✅
+                                  </div>
+                                )}
+                              </>
+                            )}
                               <p className="text-xs text-earth-450 mt-0.5">Posted by: <span className="font-bold text-foreground">{req.buyerName}</span></p>
                             </div>
 
@@ -1452,6 +1579,141 @@ function DashboardContent() {
                         </div>
                       );
                     })()}
+
+                    {/* B2B FPO Bulk Contracts section */}
+                    {activeRole === 'buyer' && (
+                      <div className="pt-6 border-t border-earth-150 dark:border-earth-900/10 space-y-4">
+                        <div>
+                          <h3 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-1.5 text-purple-650">
+                            <span>💼 B2B Cooperative Bulk Contracts & Price Negotiations</span>
+                          </h3>
+                          <p className="text-xs text-earth-455 mt-0.5">
+                            Manage bulk cooperative contracts matched with FPOs, review offers, and propose counter pricing.
+                          </p>
+                        </div>
+
+                        {(() => {
+                          const myFpoTxns = fpoTransactions.filter(t => t.buyerId === user?.id || t.buyerId === 'buyer_1');
+                          if (myFpoTxns.length === 0) {
+                            return (
+                              <div className="p-8 text-center rounded-2xl border border-earth-150 dark:border-earth-900/10 bg-earth-50/20 text-earth-450 text-xs font-semibold">
+                                No B2B cooperative contract matches found. Match with FPOs inside the requirements tab.
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="space-y-4">
+                              {myFpoTxns.map(txn => {
+                                return (
+                                  <div key={txn.id} className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 shadow-xs space-y-4 text-left">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-earth-100 dark:border-earth-900/10 pb-3">
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-mono text-xs font-black text-purple-655 block">{txn.id}</span>
+                                          <span className="text-[10px] text-earth-450 block">v{txn.version}</span>
+                                        </div>
+                                        <h4 className="text-sm font-black text-foreground mt-0.5">{txn.cropName} - {txn.quantity.toLocaleString()} kg</h4>
+                                      </div>
+                                      <div className="flex items-center gap-2.5">
+                                        <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-650 dark:text-purple-400">
+                                          {txn.status}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold">
+                                      <div>
+                                        <span className="text-[9px] font-bold text-earth-400 uppercase block">Supplier Partner</span>
+                                        <span className="text-foreground block mt-0.5">Madurai FPO (Cooperative)</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-[9px] font-bold text-earth-400 uppercase block">Logistics Dispatch</span>
+                                        <span className="text-foreground block mt-0.5">
+                                          {txn.driverName ? `🚚 ${txn.driverName} (${txn.vehicleNumber})` : 'Pending Assignment'}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-[9px] font-bold text-earth-400 uppercase block">Total Volume</span>
+                                        <span className="text-foreground block mt-0.5">{txn.quantity} kg</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-[9px] font-bold text-earth-400 uppercase block">Contract Value</span>
+                                        <span className="text-emerald-500 font-mono font-black block mt-0.5">₹{(txn.quantity * txn.pricePerKg).toLocaleString()}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Action Buttons for Buyer Negotiation */}
+                                    <div className="pt-2 border-t border-earth-100 dark:border-earth-900/10 flex flex-wrap items-center justify-between gap-3">
+                                      <div>
+                                        <span className="text-[10px] text-earth-450 font-bold">Active Negotiated Price: </span>
+                                        <span className="font-mono font-black text-purple-655 text-sm">₹{txn.pricePerKg}/kg</span>
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        {txn.status === 'MATCHED' && (
+                                          <>
+                                            <button
+                                              onClick={() => acceptFPOTransaction(txn.id)}
+                                              className="h-8 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-650 text-white font-bold text-xs cursor-pointer border-0 shadow-xs"
+                                            >
+                                              Accept Offer
+                                            </button>
+                                            <div className="flex items-center gap-1.5">
+                                              <input
+                                                type="number"
+                                                min="1"
+                                                placeholder="₹"
+                                                value={buyerCounterPrices[txn.id] ?? txn.pricePerKg}
+                                                onChange={e => setBuyerCounterPrices(prev => ({ ...prev, [txn.id]: Number(e.target.value) || 0 }))}
+                                                className="w-14 h-8 px-2 bg-earth-50 border border-earth-200 dark:border-earth-800 rounded-lg text-center font-mono text-xs text-foreground focus:outline-none"
+                                              />
+                                              <button
+                                                onClick={() => {
+                                                  const price = buyerCounterPrices[txn.id] || txn.pricePerKg;
+                                                  updateFPOTransactionPrice(txn.id, price, 'OFFER_RECEIVED');
+                                                }}
+                                                className="h-8 px-3 rounded-lg border border-purple-200 text-purple-650 hover:bg-purple-50/50 font-bold text-[10px] cursor-pointer bg-white"
+                                              >
+                                                Counter
+                                              </button>
+                                            </div>
+                                            <button
+                                              onClick={() => rejectFPOTransaction(txn.id)}
+                                              className="h-8 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-xs cursor-pointer border border-red-200"
+                                            >
+                                              Reject
+                                            </button>
+                                          </>
+                                        )}
+
+                                        {txn.status === 'DRAFT' && (
+                                          <span className="text-xs text-earth-455 italic font-bold"> FPO is compiling initial offer...</span>
+                                        )}
+
+                                        {txn.status === 'OFFER_RECEIVED' && (
+                                          <span className="text-xs text-earth-455 italic font-bold">Waiting for FPO response to Counter Offer...</span>
+                                        )}
+
+                                        {txn.status === 'REJECTED' && (
+                                          <span className="text-xs text-red-500 font-black uppercase tracking-wider">Rejected ✕</span>
+                                        )}
+
+                                        {!['DRAFT', 'MATCHED', 'OFFER_RECEIVED', 'REJECTED'].includes(txn.status) && (
+                                          <div className="h-8 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 text-xs font-black">
+                                            Contract Finalized & Locked (Escrow Secured) ✅
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1531,6 +1793,19 @@ function DashboardContent() {
                       <div>
                         <h4 className="text-xs font-black">{language === 'ta' ? 'வானிலை' : 'Weather'}</h4>
                         <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'வானிலை முன்னறிவிப்பு' : 'Live weather forecasts'}</p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/dashboard?tab=vlink"
+                      className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200 dark:border-earth-850 hover:border-primary-500/40 hover:shadow-md transition-all duration-300 no-underline cursor-pointer flex items-center gap-4 text-foreground group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Radio className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black">{language === 'ta' ? 'V-LINK மெஷ் (Layer 2)' : 'V-LINK Mesh Network'}</h4>
+                        <p className="text-[10px] text-earth-550 dark:text-earth-400 mt-0.5">{language === 'ta' ? 'சாதன இணைப்பு & கண்டறிதல்' : 'Device-to-device P2P diagnostics'}</p>
                       </div>
                     </Link>
                   </div>
@@ -1863,6 +2138,168 @@ function DashboardContent() {
               >
                 {t('publish_listing_btn')}
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Post Buyer Requirement */}
+      {isCreateReqOpen && (
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-scale-up">
+          <div className="bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-primary-950/20 w-full max-w-md rounded-[24px] p-6 shadow-2xl space-y-5 text-left">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-foreground uppercase tracking-widest font-display">Post Purchase Requirement</h3>
+              <button
+                onClick={() => setIsCreateReqOpen(false)}
+                className="p-1 text-earth-400 hover:text-foreground hover:bg-earth-100 dark:hover:bg-earth-900 rounded-xl cursor-pointer border-0 bg-transparent"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateRequirementSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-earth-450 block mb-1">Select Crop Category *</label>
+                <select
+                  value={reqCrop}
+                  onChange={e => setReqCrop(e.target.value)}
+                  className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold text-foreground focus:outline-none cursor-pointer"
+                >
+                  <option value="Tomato (தக்காளி)">Tomato (தக்காளி)</option>
+                  <option value="Rice (நெல்)">Rice (நெல்)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-earth-455 block mb-1">Required Quantity (kg) *</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={reqQty}
+                  onChange={e => setReqQty(Number(e.target.value) || 0)}
+                  className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 text-foreground"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-earth-455 block mb-1">Required Delivery Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={reqRequiredDate}
+                  onChange={e => setReqRequiredDate(e.target.value)}
+                  className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 text-foreground"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-earth-450 block mb-1">Delivery Location *</label>
+                <input
+                  type="text"
+                  required
+                  value={reqLocation}
+                  onChange={e => setReqLocation(e.target.value)}
+                  className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 text-foreground"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateReqOpen(false)}
+                  className="h-10 px-4 rounded-xl border border-earth-200 text-earth-650 hover:bg-earth-50 text-xs font-bold cursor-pointer bg-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="h-10 px-6 rounded-xl bg-purple-650 hover:bg-purple-700 text-white font-bold text-xs cursor-pointer border-0 shadow-sm"
+                >
+                  Post Demand
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Buyer Requirement */}
+      {isEditReqOpen && selectedReqForEdit && (
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-scale-up">
+          <div className="bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-primary-950/20 w-full max-w-md rounded-[24px] p-6 shadow-2xl space-y-5 text-left">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-foreground uppercase tracking-widest font-display">Edit Purchase Requirement</h3>
+              <button
+                onClick={() => { setIsEditReqOpen(false); setSelectedReqForEdit(null); }}
+                className="p-1 text-earth-400 hover:text-foreground hover:bg-earth-100 dark:hover:bg-earth-900 rounded-xl cursor-pointer border-0 bg-transparent"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleEditRequirementSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-earth-450 block mb-1">Select Crop Category *</label>
+                <select
+                  value={reqCrop}
+                  onChange={e => setReqCrop(e.target.value)}
+                  className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold text-foreground focus:outline-none cursor-pointer"
+                >
+                  <option value="Tomato (தக்காளி)">Tomato (தக்காளி)</option>
+                  <option value="Rice (நெல்)">Rice (நெல்)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-earth-455 block mb-1">Required Quantity (kg) *</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={reqQty}
+                  onChange={e => setReqQty(Number(e.target.value) || 0)}
+                  className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 text-foreground"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-earth-455 block mb-1">Required Delivery Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={reqRequiredDate}
+                  onChange={e => setReqRequiredDate(e.target.value)}
+                  className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 text-foreground"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-earth-450 block mb-1">Delivery Location *</label>
+                <input
+                  type="text"
+                  required
+                  value={reqLocation}
+                  onChange={e => setReqLocation(e.target.value)}
+                  className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 text-foreground"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => { setIsEditReqOpen(false); setSelectedReqForEdit(null); }}
+                  className="h-10 px-4 rounded-xl border border-earth-200 text-earth-650 hover:bg-earth-50 text-xs font-bold cursor-pointer bg-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="h-10 px-6 rounded-xl bg-purple-650 hover:bg-purple-750 text-white font-bold text-xs cursor-pointer border-0 shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
             </form>
           </div>
         </div>

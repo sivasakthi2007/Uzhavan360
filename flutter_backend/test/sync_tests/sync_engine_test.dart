@@ -18,8 +18,8 @@ class MockSyncQueueManager extends Mock implements SyncQueueManager {
         action: 'INSERT',
         recordId: 'post_101',
         payload: {'title': 'Offline Post', 'content': 'Checking sync'},
-        createdAt: DateTime.now(),
-        retryCount: 0,
+        timestamp: DateTime.now(),
+        attempts: 0,
       )
     ];
   }

@@ -3,7 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/transport_entity.dart';
-import '../repositories/transport_repository_impl.dart';
+import '../../data/repositories/transport_repository_impl.dart';
 import '../../../../core/di/providers.dart';
 
 final transportRepositoryProvider = Provider<TransportRepository>((ref) {

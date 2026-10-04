@@ -3,7 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/community_entity.dart';
-import '../repositories/community_repository_impl.dart';
+import '../../data/repositories/community_repository_impl.dart';
 import '../../../../core/di/providers.dart';
 
 final communityRepositoryProvider = Provider<CommunityRepository>((ref) {

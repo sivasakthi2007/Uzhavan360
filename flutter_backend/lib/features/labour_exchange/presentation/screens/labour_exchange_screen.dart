@@ -28,7 +28,7 @@ class _LabourExchangeScreenState extends ConsumerState<LabourExchangeScreen> {
           children: [
             const Text(
               'வேலைவாய்ப்பு பரிமாற்றம்', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Agricultural Labour Exchange', // English Subtitle
@@ -171,7 +171,7 @@ class _LabourExchangeScreenState extends ConsumerState<LabourExchangeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black)),
+        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
         Text(english, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
       ],
     );
@@ -193,11 +193,11 @@ class _LabourExchangeScreenState extends ConsumerState<LabourExchangeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black)),
+            Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 4),
             Text('திறமைகள் (Skills): $skills', style: const TextStyle(fontSize: 13, color: Colors.grey)),
             const SizedBox(height: 6),
-            Text('கேட்கும் சம்பளம் (Wage): $wage', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.black, color: Colors.green)),
+            Text('கேட்கும் சம்பளம் (Wage): $wage', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.green)),
             const Divider(height: 24),
             Row(
               children: [
@@ -248,7 +248,7 @@ class _LabourExchangeScreenState extends ConsumerState<LabourExchangeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(jobTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black)),
+            Text(jobTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
             Text(employerName, style: const TextStyle(fontSize: 13, color: Colors.grey)),
             const SizedBox(height: 8),
             Text('சம்பளம் (Wages): $wages | காலம்: $duration'),
@@ -312,7 +312,7 @@ class _LabourExchangeScreenState extends ConsumerState<LabourExchangeScreen> {
           children: [
             Text(
               'வேலை ஒப்பந்தம்: $workerName',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
             const TextField(
@@ -386,7 +386,7 @@ class _LabourExchangeScreenState extends ConsumerState<LabourExchangeScreen> {
           children: [
             const Text(
               'குரல் வழி வேலை கோரிக்கை',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const Text(
               'Voice Booking Assistant',

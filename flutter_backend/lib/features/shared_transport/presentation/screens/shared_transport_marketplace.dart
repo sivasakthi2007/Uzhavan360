@@ -26,7 +26,7 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
           children: [
             const Text(
               'பகிர்வு வாகனச் சந்தை', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Shared Transport Marketplace', // English Subtitle
@@ -138,9 +138,9 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(driverName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black)),
+                Text(driverName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
                 Text(vehicleType, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -151,7 +151,7 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
             
             // Smart Space Utilization Indicator
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('பகிர்வு கொள்ளளவு (Capacity): $capacityPercent%'),
                 Text('$availablePercent% காலி (Available)', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
@@ -231,7 +231,7 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
               children: [
                 const Text(
                   'வாகன உரிமையாளர் தளம் (Partner Hub)',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.black),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -264,9 +264,9 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('பயணம் #TRP-9023', style: TextStyle(fontWeight: FontWeight.black)),
+                Text('பயணம் #TRP-9023', style: TextStyle(fontWeight: FontWeight.w900)),
                 Text('நிலை: AVAILABLE', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
               ],
             ),
@@ -312,7 +312,7 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
         ),
         title: const Text(
           'உதவி தேவைப்படுகிறதா? (Need Help?)',
-          style: TextStyle(fontWeight: FontWeight.black, fontSize: 14),
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
         ),
         subtitle: const Text('எங்கள் வாடிக்கையாளர் மையத்தைத் தொடர்பு கொண்டு வாகனங்களை முன்பதிவு செய்யவும்.'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -327,7 +327,7 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black)),
+        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
         Text(english, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
       ],
     );
@@ -351,7 +351,7 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
           children: [
             Text(
               'வாகன முன்பதிவு: $driverName',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
             const TextField(
@@ -432,7 +432,7 @@ class _SharedTransportMarketplaceState extends ConsumerState<SharedTransportMark
           children: [
             const Text(
               'புதிய பயணம் வெளியிடுதல்',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
             const TextField(

@@ -24,7 +24,7 @@ class _BuyerFpoNetworkScreenState extends ConsumerState<BuyerFpoNetworkScreen> {
           children: [
             const Text(
               'கொள்முதல் மற்றும் FPO நெட்வொர்க்', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Buyer & FPO Network Directory', // English Subtitle
@@ -136,7 +136,7 @@ class _BuyerFpoNetworkScreenState extends ConsumerState<BuyerFpoNetworkScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'சந்தை பயிர் தேவை கணிப்பு (AI Demand Prediction)',
-                  style: TextStyle(fontWeight: FontWeight.black, color: Colors.green.shade900, fontSize: 13),
+                  style: TextStyle(fontWeight: FontWeight.w900, color: Colors.green.shade900, fontSize: 13),
                 ),
               ],
             ),
@@ -183,7 +183,7 @@ class _BuyerFpoNetworkScreenState extends ConsumerState<BuyerFpoNetworkScreen> {
                 Expanded(
                   child: Text(
                     name,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -197,7 +197,7 @@ class _BuyerFpoNetworkScreenState extends ConsumerState<BuyerFpoNetworkScreen> {
             Text('தேவைப்படும் பயிர் (Crop): $requiredCrop', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             Text('தேவைப்படும் அளவு (Qty): $qtyRequired', style: const TextStyle(fontSize: 14)),
             const SizedBox(height: 4),
-            Text('வழங்கும் விலை (Price): $priceOffered', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.black, color: Colors.green)),
+            Text('வழங்கும் விலை (Price): $priceOffered', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.green)),
             
             const Divider(height: 24),
             Row(
@@ -273,7 +273,7 @@ class _BuyerFpoNetworkScreenState extends ConsumerState<BuyerFpoNetworkScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(fpoName, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.black)),
+            Text(fpoName, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
             const SizedBox(height: 4),
             Text('நிர்வாகி (Rep): $repName | மாவட்டம்: $district', style: const TextStyle(fontSize: 12, color: Colors.grey)),
             Text('உறுப்பினர்கள் (Members count): $memberCount', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
@@ -335,7 +335,7 @@ class _BuyerFpoNetworkScreenState extends ConsumerState<BuyerFpoNetworkScreen> {
         ),
         title: const Text(
           'வாடிக்கையாளர் உதவி மையம் (Customer Care)',
-          style: TextStyle(fontWeight: FontWeight.black, fontSize: 14),
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
         ),
         subtitle: const Text('சந்தையில் FPOக்களை தொடர்பு கொள்ள எங்களை அழைக்கலாம்.'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -348,7 +348,7 @@ class _BuyerFpoNetworkScreenState extends ConsumerState<BuyerFpoNetworkScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black)),
+        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
         Text(english, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
       ],
     );
@@ -372,7 +372,7 @@ class _BuyerFpoNetworkScreenState extends ConsumerState<BuyerFpoNetworkScreen> {
           children: [
             Text(
               'விலை விசாரிப்பு: $buyerName',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
             const TextField(

@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../consolidated_core_pack.dart';
+import '../../../consolidated_core_pack.dart';
 
 class WeatherDashboardScreen extends ConsumerStatefulWidget {
   const WeatherDashboardScreen({super.key});
@@ -27,7 +27,7 @@ class _WeatherDashboardScreenState extends ConsumerState<WeatherDashboardScreen>
           children: [
             const Text(
               'வானிலை நுண்ணறிவு', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Weather Intelligence', // English Subtitle
@@ -103,7 +103,7 @@ class _WeatherDashboardScreenState extends ConsumerState<WeatherDashboardScreen>
                 children: [
                   Text(
                     hasHeavyRainAlert ? 'அதிவேக மழை எச்சரிக்கை (Heavy Rain Warning)' : 'வெப்ப அலை எச்சரிக்கை (Heat Advisory)',
-                    style: TextStyle(fontWeight: FontWeight.black, fontSize: 13, color: hasHeavyRainAlert ? Colors.red.shade900 : Colors.orange.shade900),
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: hasHeavyRainAlert ? Colors.red.shade900 : Colors.orange.shade900),
                   ),
                   Text(
                     hasHeavyRainAlert
@@ -141,13 +141,13 @@ class _WeatherDashboardScreenState extends ConsumerState<WeatherDashboardScreen>
                 const SizedBox(width: 16),
                 Text(
                   '${advisory.temperature}°C',
-                  style: const TextStyle(fontSize: 54, fontWeight: FontWeight.black, color: Colors.black87),
+                  style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: Colors.black87),
                 ),
               ],
             ),
             Text(
               advisory.condition.toUpperCase(),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black, letterSpacing: 1.5),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.5),
             ),
             const SizedBox(height: 20),
             Row(
@@ -169,7 +169,7 @@ class _WeatherDashboardScreenState extends ConsumerState<WeatherDashboardScreen>
       children: [
         Icon(icon, color: Colors.blue.shade800, size: 24),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.black, fontSize: 15)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         Text(label, style: const TextStyle(fontSize: 8, color: Colors.grey, fontWeight: FontWeight.bold)),
       ],
     );
@@ -218,7 +218,7 @@ class _WeatherDashboardScreenState extends ConsumerState<WeatherDashboardScreen>
           backgroundColor: color.withOpacity(0.1),
           child: Icon(icon, color: color),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.black, fontSize: 14)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
         subtitle: Text(advice, style: const TextStyle(fontSize: 12, height: 1.4)),
       ),
     );
@@ -249,7 +249,7 @@ class _WeatherDashboardScreenState extends ConsumerState<WeatherDashboardScreen>
                     children: [
                       Text(days[index], style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                       const Icon(Icons.wb_sunny_outlined, color: Colors.orange, size: 24),
-                      const Text('32° / 24°', style: TextStyle(fontWeight: FontWeight.black, fontSize: 13)),
+                      const Text('32° / 24°', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
                       const Text('20% Rain', style: TextStyle(fontSize: 9, color: Colors.blue)),
                     ],
                   ),
@@ -266,7 +266,7 @@ class _WeatherDashboardScreenState extends ConsumerState<WeatherDashboardScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black)),
+        Text(tamil, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
         Text(english, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
       ],
     );

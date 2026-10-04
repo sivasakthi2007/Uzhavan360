@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../consolidated_core_pack.dart';
+import '../../../consolidated_core_pack.dart';
 
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
   const AnalyticsDashboardScreen({super.key});
@@ -27,7 +27,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             const Text(
               'பண்ணை வருமான பகுப்பாய்வு', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Farm Analytics Dashboard', // English Subtitle
@@ -42,7 +42,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Icon(
-              _isOffline ? Icons.wifi_off : Icons.sync_done,
+              _isOffline ? Icons.wifi_off : Icons.sync,
               color: _isOffline ? Colors.orange : Colors.green,
             ),
           )
@@ -96,7 +96,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                 SizedBox(width: 8),
                 Text(
                   'ஸ்மார்ட் பரிந்துரைகள் (AI Smart Insights)',
-                  style: TextStyle(fontWeight: FontWeight.black, color: Colors.green, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.w900, color: Colors.green, fontSize: 14),
                 ),
               ],
             ),
@@ -169,7 +169,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Icon(icon, color: color, size: 24),
                 Container(
@@ -186,7 +186,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                 const SizedBox(height: 2),
                 Text(
                   amount,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.black, color: color),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -207,7 +207,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             const Text(
               'செலவுப் பிரிவுகள் (Expenses Breakdown)',
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 16),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
             ),
             const SizedBox(height: 16),
             if (categoryCosts.isEmpty)
@@ -239,7 +239,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             const Text(
               'அறிக்கை பதிவிறக்கம் (Reports & Sharing)',
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 14),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
             ),
             const SizedBox(height: 12),
             Row(

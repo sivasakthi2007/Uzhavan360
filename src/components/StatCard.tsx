@@ -7,7 +7,7 @@ interface StatCardProps {
   trend?: string;
   trendType?: 'up' | 'down' | 'neutral';
   subtitle?: string;
-  color?: 'emerald' | 'blue' | 'amber' | 'stone' | 'default';
+  color?: 'emerald' | 'blue' | 'amber' | 'stone' | 'purple' | 'indigo' | 'default';
 }
 
 export default function StatCard({
@@ -24,6 +24,16 @@ export default function StatCard({
       bg: 'bg-emerald-50/50 dark:bg-emerald-950/20',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       borderColor: 'border-emerald-100 dark:border-emerald-950/50'
+    },
+    purple: {
+      bg: 'bg-purple-50/50 dark:bg-purple-950/20',
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      borderColor: 'border-purple-100 dark:border-purple-950/50'
+    },
+    indigo: {
+      bg: 'bg-indigo-50/50 dark:bg-indigo-950/20',
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      borderColor: 'border-indigo-100 dark:border-indigo-950/50'
     },
     blue: {
       bg: 'bg-blue-50/50 dark:bg-blue-950/20',

@@ -66,7 +66,7 @@ export default function Navbar() {
     if (alerts.length === 0) {
       alerts.push({
         id: 'welcome',
-        text: t('welcome_alert') || 'Welcome to V-LINK. System fully operational.',
+        text: t('welcome_alert') || 'Welcome to UZHAVAN360. System fully operational.',
         time: '1h ago',
         type: 'success'
       });
@@ -196,12 +196,16 @@ export default function Navbar() {
                 activeRole === 'farmer' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
                 activeRole === 'buyer' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
                 activeRole === 'labor' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                activeRole === 'fpo' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' :
+                activeRole === 'delivery' ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400' :
                 activeRole === 'admin' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
                 'bg-earth-500/10 text-earth-600 dark:text-earth-400'
               }`}
             >
               <option value="farmer" className="text-foreground bg-white dark:bg-[#111714]">Farmer</option>
+              <option value="fpo" className="text-foreground bg-white dark:bg-[#111714]">FPO Admin</option>
               <option value="buyer" className="text-foreground bg-white dark:bg-[#111714]">Buyer</option>
+              <option value="delivery" className="text-foreground bg-white dark:bg-[#111714]">Driver</option>
               <option value="labor" className="text-foreground bg-white dark:bg-[#111714]">Labor</option>
               <option value="vendor" className="text-foreground bg-white dark:bg-[#111714]">Owner</option>
               <option value="admin" className="text-foreground bg-white dark:bg-[#111714]">Admin</option>

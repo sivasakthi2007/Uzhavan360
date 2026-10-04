@@ -10,9 +10,64 @@ import { MarketPrice, GovScheme, DEFAULT_MARKET_PRICES, DEFAULT_GOV_SCHEMES } fr
 import { ScanResult, saveScanRecord, fetchScanHistory } from '../services/scanService';
 
 // ─── Type definitions ───────────────────────────────────────────────
-export type Role = 'farmer' | 'buyer' | 'labor' | 'vendor' | 'admin';
+export type Role = 'farmer' | 'buyer' | 'labor' | 'vendor' | 'admin' | 'fpo' | 'delivery';
 export type BuyerType = 'customer' | 'hotel' | 'retail' | 'marriage';
 export type Language = 'ta' | 'en';
+
+export interface FPOMember {
+  id: string;
+  fpoId: string;
+  fullName: string;
+  email?: string;
+  phone: string;
+  village: string;
+  district: string;
+  status: 'active' | 'inactive';
+  hasSmartphone: boolean;
+  joinDate: string;
+}
+
+export interface FPOProduce {
+  id: string;
+  farmerId: string; // references FPOMember.id
+  farmerName: string;
+  cropName: string;
+  category: string;
+  expectedQuantity: number;
+  availableQuantity: number;
+  expectedHarvestDate: string;
+  unit: string;
+  pricePerKg: number;
+}
+
+export interface FPOAggregationBatch {
+  id: string;
+  cropName: string;
+  totalQuantity: number;
+  farmerContributions: { farmerId: string; farmerName: string; quantity: number }[];
+  status: 'draft' | 'completed' | 'linked';
+  buyerDemandId?: string;
+  createdDate: string;
+}
+
+export interface FPOTransaction {
+  id: string;
+  fpoId: string;
+  buyerId: string;
+  buyerName: string;
+  cropName: string;
+  quantity: number;
+  pricePerKg: number;
+  netProfit?: number;
+  status: 'DRAFT' | 'MATCHED' | 'OFFER_RECEIVED' | 'ACCEPTED' | 'LOGISTICS_ASSIGNED' | 'PICKUP' | 'IN_TRANSIT' | 'DELIVERED' | 'COMPLETED' | 'REJECTED';
+  driverName?: string;
+  driverPhone?: string;
+  vehicleNumber?: string;
+  pickupStatus?: 'pending' | 'completed';
+  deliveryStatus?: 'pending' | 'completed';
+  timestamp: string;
+  version: number;
+}
 
 export interface UserProfile {
   id: string;
@@ -600,7 +655,148 @@ const INITIAL_WALLETS: Record<Role, number> = {
   labor: 1_800,
   vendor: 8_500,
   admin: 1_20_000,
+  fpo: 75_000,
+  delivery: 12_500,
 };
+
+const SEED_FPO_MEMBERS: FPOMember[] = [
+  {
+    id: 'fpo_mem_1',
+    fpoId: 'fpo_1',
+    fullName: 'Ramanathan Swamy',
+    email: 'ramanathan@farmnet.in',
+    phone: '+91 94432 10987',
+    village: 'Othakadai',
+    district: 'Madurai',
+    status: 'active',
+    hasSmartphone: true,
+    joinDate: '2026-01-12'
+  },
+  {
+    id: 'fpo_mem_2',
+    fpoId: 'fpo_1',
+    fullName: 'Lakshmi Devi',
+    email: 'lakshmi@farmnet.in',
+    phone: '+91 98421 23456',
+    village: 'Palani',
+    district: 'Dindigul',
+    status: 'active',
+    hasSmartphone: true,
+    joinDate: '2026-02-15'
+  },
+  {
+    id: 'fpo_mem_3',
+    fpoId: 'fpo_1',
+    fullName: 'Murugan Vel',
+    phone: '+91 97654 32109',
+    village: 'Sattur',
+    district: 'Virudhunagar',
+    status: 'active',
+    hasSmartphone: false,
+    joinDate: '2026-03-22'
+  },
+  {
+    id: 'fpo_mem_4',
+    fpoId: 'fpo_1',
+    fullName: 'Anbu Selvan',
+    phone: '+91 94876 54321',
+    village: 'Kumbakonam',
+    district: 'Thanjavur',
+    status: 'inactive',
+    hasSmartphone: false,
+    joinDate: '2026-04-05'
+  }
+];
+
+const SEED_FPO_PRODUCE: FPOProduce[] = [
+  {
+    id: 'fpo_prd_1',
+    farmerId: 'fpo_mem_1',
+    farmerName: 'Ramanathan Swamy',
+    cropName: 'Tomato (தக்காளி)',
+    category: 'Vegetables',
+    expectedQuantity: 2500,
+    availableQuantity: 1000,
+    expectedHarvestDate: '2026-09-10',
+    unit: 'kg',
+    pricePerKg: 32
+  },
+  {
+    id: 'fpo_prd_2',
+    farmerId: 'fpo_mem_2',
+    farmerName: 'Lakshmi Devi',
+    cropName: 'Tomato (தக்காளி)',
+    category: 'Vegetables',
+    expectedQuantity: 4000,
+    availableQuantity: 2000,
+    expectedHarvestDate: '2026-09-12',
+    unit: 'kg',
+    pricePerKg: 28
+  },
+  {
+    id: 'fpo_prd_3',
+    farmerId: 'fpo_mem_3',
+    farmerName: 'Murugan Vel',
+    cropName: 'Tomato (தக்காளி)',
+    category: 'Vegetables',
+    expectedQuantity: 2000,
+    availableQuantity: 1500,
+    expectedHarvestDate: '2026-09-15',
+    unit: 'kg',
+    pricePerKg: 30
+  },
+  {
+    id: 'fpo_prd_4',
+    farmerId: 'fpo_mem_1',
+    farmerName: 'Ramanathan Swamy',
+    cropName: 'Rice (நெல்)',
+    category: 'Grains',
+    expectedQuantity: 8000,
+    availableQuantity: 5000,
+    expectedHarvestDate: '2026-09-25',
+    unit: 'kg',
+    pricePerKg: 55
+  }
+];
+
+const SEED_FPO_TRANSACTIONS: FPOTransaction[] = [
+  {
+    id: 'TXN-FPO-001',
+    fpoId: 'fpo_1',
+    buyerId: 'buyer_2',
+    buyerName: 'Raza Grocers',
+    cropName: 'Tomato (தக்காளி)',
+    quantity: 1500,
+    pricePerKg: 30,
+    netProfit: 40500,
+    status: 'LOGISTICS_ASSIGNED',
+    driverName: 'Suresh Kumar',
+    driverPhone: '+91 99887 76655',
+    vehicleNumber: 'TN-59-AX-1234',
+    pickupStatus: 'pending',
+    deliveryStatus: 'pending',
+    timestamp: new Date().toISOString(),
+    version: 1
+  },
+  {
+    id: 'TXN-FPO-002',
+    fpoId: 'fpo_1',
+    buyerId: 'buyer_1',
+    buyerName: 'Gourmet Grand Hotel',
+    cropName: 'Rice (நெல்)',
+    quantity: 5000,
+    pricePerKg: 55,
+    netProfit: 260000,
+    status: 'COMPLETED',
+    driverName: 'Velu Swamy',
+    driverPhone: '+91 98765 01234',
+    vehicleNumber: 'TN-49-Y-9876',
+    pickupStatus: 'completed',
+    deliveryStatus: 'completed',
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    version: 1
+  }
+];
 
 // ─── Context interface ──────────────────────────────────────────────
 interface AppContextProps {
@@ -719,7 +915,27 @@ interface AppContextProps {
   // Buyer Requirements
   buyerRequirements: BuyerRequirement[];
   addBuyerRequirement: (crop: string, quantity: number, requiredDate: string, location: string) => void;
+  updateBuyerRequirement: (id: string, crop: string, quantity: number, requiredDate: string, location: string) => void;
+  cancelBuyerRequirement: (id: string) => void;
   matchBuyerRequirement: (requirementId: string) => void;
+
+  // FPO Coordination States & Actions
+  fpoMembers: FPOMember[];
+  fpoProduce: FPOProduce[];
+  fpoAggregations: FPOAggregationBatch[];
+  fpoTransactions: FPOTransaction[];
+  simulatedOffline: boolean;
+  toggleSimulatedNetwork: () => void;
+  addFPOMember: (member: Omit<FPOMember, 'id' | 'joinDate'>) => void;
+  updateFPOMember: (id: string, updates: Partial<FPOMember>) => void;
+  toggleFPOMemberStatus: (id: string) => void;
+  addFPOProduce: (produce: Omit<FPOProduce, 'id'>) => void;
+  createFPOAggregationBatch: (cropName: string, contributions: { farmerId: string; quantity: number }[], buyerDemandId?: string) => void;
+  createFPOTransaction: (buyerRequirementId: string, aggregationBatchId: string) => void;
+  updateFPOTransactionPrice: (transactionId: string, price: number, newStatus: FPOTransaction['status']) => void;
+  acceptFPOTransaction: (transactionId: string) => void;
+  rejectFPOTransaction: (transactionId: string) => void;
+  advanceFPOTransactionStatus: (transactionId: string, driverDetails?: { name: string; phone: string; vehicle: string }) => void;
 }
 
 // ─── Context ────────────────────────────────────────────────────────
@@ -964,6 +1180,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [govSchemes, setGovSchemes] = useState<GovScheme[]>([]);
   const [isOffline, setIsOffline] = useState(false);
 
+  // ── FPO Coordination States ──
+  const [fpoMembers, setFpoMembers] = useState<FPOMember[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vlink_fpo_members');
+      return saved ? JSON.parse(saved) : [...SEED_FPO_MEMBERS];
+    }
+    return [...SEED_FPO_MEMBERS];
+  });
+  const [fpoProduce, setFpoProduce] = useState<FPOProduce[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vlink_fpo_produce');
+      return saved ? JSON.parse(saved) : [...SEED_FPO_PRODUCE];
+    }
+    return [...SEED_FPO_PRODUCE];
+  });
+  const [fpoAggregations, setFpoAggregations] = useState<FPOAggregationBatch[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vlink_fpo_aggregations');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  const [fpoTransactions, setFpoTransactions] = useState<FPOTransaction[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vlink_fpo_transactions');
+      return saved ? JSON.parse(saved) : [...SEED_FPO_TRANSACTIONS];
+    }
+    return [...SEED_FPO_TRANSACTIONS];
+  });
+  const [simulatedOffline, setSimulatedOffline] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vlink_simulated_offline');
+      return saved === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('vlink_fpo_members', JSON.stringify(fpoMembers));
+  }, [fpoMembers]);
+
+  useEffect(() => {
+    localStorage.setItem('vlink_fpo_produce', JSON.stringify(fpoProduce));
+  }, [fpoProduce]);
+
+  useEffect(() => {
+    localStorage.setItem('vlink_fpo_aggregations', JSON.stringify(fpoAggregations));
+  }, [fpoAggregations]);
+
+  useEffect(() => {
+    localStorage.setItem('vlink_fpo_transactions', JSON.stringify(fpoTransactions));
+  }, [fpoTransactions]);
+
+  useEffect(() => {
+    localStorage.setItem('vlink_simulated_offline', String(simulatedOffline));
+  }, [simulatedOffline]);
+
   // ── Offline Queue Helpers ──
   const enqueueOfflineAction = useCallback((actionType: string, payload: any) => {
     if (typeof window === 'undefined') return;
@@ -994,7 +1267,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Load / Sync cache logic
   const syncData = useCallback(async () => {
-    const online = typeof window !== 'undefined' ? navigator.onLine : true;
+    const online = typeof window !== 'undefined' ? (navigator.onLine && !simulatedOffline) : true;
     setIsOffline(!online);
 
     if (!online) {
@@ -1102,7 +1375,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       setGovSchemes([...DEFAULT_GOV_SCHEMES]);
     }
-  }, []);
+  }, [simulatedOffline, addToast, language]);
 
   // Network connection listener
   useEffect(() => {
@@ -1576,6 +1849,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     addToast(language === 'ta' ? 'விருப்பம் அனுப்பப்பட்டது! வாங்குபவர் உங்களைத் தொடர்புகொள்வார்.' : 'Interest sent! The buyer will contact you.', 'success');
   };
+
+  const updateBuyerRequirement = useCallback((id: string, crop: string, quantity: number, requiredDate: string, location: string) => {
+    setBuyerRequirements(prev => prev.map(req => {
+      if (req.id === id) {
+        if (req.status !== 'open') {
+          addToast(language === 'ta' ? 'இணைக்கப்பட்ட தேவையை திருத்த முடியாது!' : 'Cannot edit a matched requirement!', 'error');
+          return req;
+        }
+        return { ...req, crop, quantity, requiredDate, location };
+      }
+      return req;
+    }));
+    addToast(language === 'ta' ? 'தேவை வெற்றிகரமாக புதுப்பிக்கப்பட்டது!' : 'Buyer requirement updated successfully!', 'success');
+  }, [addToast, language]);
+
+  const cancelBuyerRequirement = useCallback((id: string) => {
+    setBuyerRequirements(prev => prev.filter(req => req.id !== id));
+    addToast(language === 'ta' ? 'தேவை நீக்கப்பட்டது!' : 'Buyer requirement cancelled!', 'success');
+  }, [addToast, language]);
 
   // Load scan history and farm data when appUser changes
   useEffect(() => {
@@ -2202,6 +2494,274 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // ── FPO Coordination Methods ──
+  const toggleSimulatedNetwork = useCallback(() => {
+    setSimulatedOffline(prev => {
+      const next = !prev;
+      addToast(
+        language === 'ta'
+          ? (next ? 'வி-லிங்க் சிமுலேஷன்: இணையம் துண்டிக்கப்பட்டது' : 'வி-லிங்க் சிமுலேஷன்: இணையம் இணைக்கப்பட்டது')
+          : (next ? 'V-LINK Simulation: Network Offline' : 'V-LINK Simulation: Network Online'),
+        'info'
+      );
+      return next;
+    });
+  }, [addToast, language]);
+
+  const addFPOMember = useCallback((member: Omit<FPOMember, 'id' | 'joinDate'>) => {
+    const newMember: FPOMember = {
+      ...member,
+      id: `fpo_mem_${Date.now()}`,
+      joinDate: new Date().toISOString().split('T')[0]
+    };
+    
+    if (simulatedOffline) {
+      enqueueOfflineAction('addFPOMember', newMember);
+      setFpoMembers(prev => [...prev, newMember]);
+    } else {
+      setFpoMembers(prev => [...prev, newMember]);
+      addToast(
+        language === 'ta' ? 'உறுப்பினர் வெற்றிகரமாக சேர்க்கப்பட்டார்' : 'FPO Member added successfully',
+        'success'
+      );
+    }
+  }, [simulatedOffline, enqueueOfflineAction, addToast, language]);
+
+  const updateFPOMember = useCallback((id: string, updates: Partial<FPOMember>) => {
+    setFpoMembers(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+    addToast(
+      language === 'ta' ? 'உறுப்பினர் விவரம் புதுப்பிக்கப்பட்டது' : 'Member updated successfully',
+      'success'
+    );
+  }, [addToast, language]);
+
+  const toggleFPOMemberStatus = useCallback((id: string) => {
+    setFpoMembers(prev => prev.map(m => m.id === id ? { ...m, status: m.status === 'active' ? 'inactive' : 'active' } : m));
+    addToast(
+      language === 'ta' ? 'உறுப்பினர் நிலை மாற்றப்பட்டது' : 'Membership status toggled',
+      'success'
+    );
+  }, [addToast, language]);
+
+  const addFPOProduce = useCallback((produce: Omit<FPOProduce, 'id'>) => {
+    const newProduce: FPOProduce = {
+      ...produce,
+      id: `fpo_prd_${Date.now()}`
+    };
+    setFpoProduce(prev => [...prev, newProduce]);
+    addToast(
+      language === 'ta' ? 'விளைபொருள் பதிவு செய்யப்பட்டது' : 'Produce recorded successfully',
+      'success'
+    );
+  }, [addToast, language]);
+
+  const createFPOAggregationBatch = useCallback((cropName: string, contributions: { farmerId: string; quantity: number }[], buyerDemandId?: string) => {
+    const totalQty = contributions.reduce((sum, c) => sum + c.quantity, 0);
+    const contributionsWithNames = contributions.map(c => {
+      const member = fpoMembers.find(m => m.id === c.farmerId);
+      return {
+        farmerId: c.farmerId,
+        farmerName: member ? member.fullName : 'Unknown Farmer',
+        quantity: c.quantity
+      };
+    });
+
+    const newBatch: FPOAggregationBatch = {
+      id: `AGGR-${Date.now().toString().slice(-6)}`,
+      cropName,
+      totalQuantity: totalQty,
+      farmerContributions: contributionsWithNames,
+      status: buyerDemandId ? 'linked' : 'completed',
+      buyerDemandId,
+      createdDate: new Date().toISOString().split('T')[0]
+    };
+
+    setFpoAggregations(prev => [...prev, newBatch]);
+
+    // Update members produce available quantity by subtracting the contributions
+    setFpoProduce(prev => prev.map(p => {
+      if (p.cropName === cropName) {
+        const contr = contributions.find(c => c.farmerId === p.farmerId);
+        if (contr) {
+          return {
+            ...p,
+            availableQuantity: Math.max(0, p.availableQuantity - contr.quantity)
+          };
+        }
+      }
+      return p;
+    }));
+
+    addToast(
+      language === 'ta' 
+        ? `தொகுப்பு ${newBatch.id} வெற்றிகரமாக உருவாக்கப்பட்டது` 
+        : `Aggregation Batch ${newBatch.id} created successfully`,
+      'success'
+    );
+  }, [fpoMembers, addToast, language]);
+
+  const createFPOTransaction = useCallback((buyerRequirementId: string, aggregationBatchId: string) => {
+    const demand = buyerRequirements.find(d => d.id === buyerRequirementId);
+    const batch = fpoAggregations.find(b => b.id === aggregationBatchId);
+    if (!demand || !batch) {
+      addToast('Demand or batch not found', 'error');
+      return;
+    }
+
+    const price = demand.crop.includes('Tomato') ? 30 : 55;
+    const netProfit = (batch.totalQuantity * price) - 1500 - 500;
+
+    const newTxn: FPOTransaction = {
+      id: `TXN-FPO-${Date.now().toString().slice(-4)}`,
+      fpoId: 'fpo_1',
+      buyerId: demand.buyerId,
+      buyerName: demand.buyerName,
+      cropName: demand.crop,
+      quantity: batch.totalQuantity,
+      pricePerKg: price,
+      netProfit,
+      status: 'DRAFT',
+      timestamp: new Date().toISOString(),
+      version: 1
+    };
+
+    if (simulatedOffline) {
+      enqueueOfflineAction('createFPOTransaction', newTxn);
+      setFpoTransactions(prev => [newTxn, ...prev]);
+    } else {
+      setFpoTransactions(prev => [newTxn, ...prev]);
+      addToast(
+        language === 'ta' ? 'புதிய ஒப்பந்த பரிவர்த்தனை உருவாக்கப்பட்டது' : 'FPO transaction created successfully',
+        'success'
+      );
+    }
+    
+    // Link batch
+    setFpoAggregations(prev => prev.map(b => b.id === aggregationBatchId ? { ...b, status: 'linked', buyerDemandId: buyerRequirementId } : b));
+    // Set demand status as matched
+    setBuyerRequirements(prev => prev.map(d => d.id === buyerRequirementId ? { ...d, status: 'matched' } : d));
+  }, [buyerRequirements, fpoAggregations, simulatedOffline, enqueueOfflineAction, addToast, language]);
+
+  const updateFPOTransactionPrice = useCallback((transactionId: string, price: number, newStatus: FPOTransaction['status']) => {
+    setFpoTransactions(prev => prev.map(t => {
+      if (t.id === transactionId) {
+        if (t.status === 'ACCEPTED' || t.status === 'COMPLETED' || t.status === 'LOGISTICS_ASSIGNED') {
+          addToast(language === 'ta' ? 'ஏற்றுக்கொள்ளப்பட்ட ஒப்பந்தத்தை திருத்த முடியாது!' : 'Cannot modify an accepted contract!', 'error');
+          return t;
+        }
+        const netProfit = (t.quantity * price) - 1500 - 500;
+        return {
+          ...t,
+          pricePerKg: price,
+          netProfit,
+          status: newStatus,
+          version: t.version + 1
+        };
+      }
+      return t;
+    }));
+    addToast(language === 'ta' ? 'ஆஃபர் விலை புதுப்பிக்கப்பட்டது!' : 'Offer price updated!', 'success');
+  }, [addToast, language]);
+
+  const acceptFPOTransaction = useCallback((transactionId: string) => {
+    setFpoTransactions(prev => prev.map(t => {
+      if (t.id === transactionId) {
+        // Debit buyer wallet escrow immediately (escrow lock)
+        const totalCost = t.quantity * t.pricePerKg;
+        setWallets(w => ({
+          ...w,
+          buyer: Math.max(0, (w.buyer || 0) - totalCost)
+        }));
+        // Record wallet transaction for escrow lock
+        setWalletTransactions(wt => [
+          {
+            id: `ESCROW-LOCK-${Date.now()}`,
+            user_id: t.buyerId || 'buyer_1',
+            amount: totalCost,
+            transaction_type: 'debit',
+            created_at: new Date().toISOString()
+          },
+          ...wt
+        ]);
+        return {
+          ...t,
+          status: 'ACCEPTED',
+          version: t.version + 1
+        };
+      }
+      return t;
+    }));
+    addToast(language === 'ta' ? 'ஒப்பந்தம் ஏற்றுக்கொள்ளப்பட்டது! எஸ்க்ரோ லாக் செய்யப்பட்டது.' : 'Contract accepted! Escrow funds locked.', 'success');
+  }, [addToast, language]);
+
+  const rejectFPOTransaction = useCallback((transactionId: string) => {
+    setFpoTransactions(prev => prev.map(t => {
+      if (t.id === transactionId) {
+        return {
+          ...t,
+          status: 'REJECTED',
+          version: t.version + 1
+        };
+      }
+      return t;
+    }));
+    addToast(language === 'ta' ? 'ஒப்பந்தம் நிராகரிக்கப்பட்டது!' : 'Contract offer rejected!', 'error');
+  }, [addToast, language]);
+
+  const advanceFPOTransactionStatus = useCallback((transactionId: string, driverDetails?: { name: string; phone: string; vehicle: string }) => {
+    const orderStatuses: FPOTransaction['status'][] = [
+      'DRAFT', 'MATCHED', 'OFFER_RECEIVED', 'ACCEPTED', 'LOGISTICS_ASSIGNED', 'PICKUP', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED'
+    ];
+
+    setFpoTransactions(prev => prev.map(t => {
+      if (t.id === transactionId) {
+        const currIndex = orderStatuses.indexOf(t.status);
+        if (currIndex !== -1 && currIndex < orderStatuses.length - 1) {
+          const nextStatus = orderStatuses[currIndex + 1];
+          let updates: Partial<FPOTransaction> = { status: nextStatus, version: t.version + 1 };
+          
+          if (nextStatus === 'LOGISTICS_ASSIGNED') {
+            updates.driverName = driverDetails?.name || 'Suresh Kumar';
+            updates.driverPhone = driverDetails?.phone || '+91 99887 76655';
+            updates.vehicleNumber = driverDetails?.vehicle || 'TN-59-AX-1234';
+            updates.pickupStatus = 'pending';
+            updates.deliveryStatus = 'pending';
+          } else if (nextStatus === 'PICKUP') {
+            updates.pickupStatus = 'completed';
+          } else if (nextStatus === 'DELIVERED') {
+            updates.deliveryStatus = 'completed';
+          } else if (nextStatus === 'COMPLETED') {
+            // Escrow release
+            const orderTotal = t.quantity * t.pricePerKg;
+            setWallets(w => ({
+              ...w,
+              fpo: (w.fpo || 0) + orderTotal,
+              buyer: Math.max(0, (w.buyer || 0) - orderTotal)
+            }));
+            
+            // Generate a wallet transaction
+            const now = new Date().toISOString();
+            setWalletTransactions(wt => [
+              { id: `TXN-${Date.now()}-f`, user_id: 'buyer_1', amount: orderTotal, transaction_type: 'debit', created_at: now },
+              { id: `TXN-${Date.now()}-o`, user_id: 'fpo_1', amount: orderTotal, transaction_type: 'credit', created_at: now },
+              ...wt
+            ]);
+          }
+
+          addToast(
+            language === 'ta'
+              ? `நிலை புதுப்பிக்கப்பட்டது: ${nextStatus}`
+              : `Status advanced to: ${nextStatus}`,
+            'success'
+          );
+
+          return { ...t, ...updates };
+        }
+      }
+      return t;
+    }));
+  }, [addToast, language]);
+
   // ── Context value ──
   const value: AppContextProps = {
     theme,
@@ -2285,7 +2845,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     applyForScheme,
     buyerRequirements,
     addBuyerRequirement,
+    updateBuyerRequirement,
+    cancelBuyerRequirement,
     matchBuyerRequirement,
+
+    // FPO Coordination States & Actions
+    fpoMembers,
+    fpoProduce,
+    fpoAggregations,
+    fpoTransactions,
+    simulatedOffline,
+    toggleSimulatedNetwork,
+    addFPOMember,
+    updateFPOMember,
+    toggleFPOMemberStatus,
+    addFPOProduce,
+    createFPOAggregationBatch,
+    createFPOTransaction,
+    updateFPOTransactionPrice,
+    acceptFPOTransaction,
+    rejectFPOTransaction,
+    advanceFPOTransactionStatus,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

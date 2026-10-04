@@ -6,7 +6,7 @@ import {
   Sprout, Plus, Trash2, Edit3, Navigation, Calendar, DollarSign,
   TrendingUp, AlertTriangle, CloudRain, HeartPulse, CheckCircle2,
   FileText, ShoppingBag, Wrench, Users,
-  ArrowUpRight, ArrowDownLeft, X, Sparkles, RefreshCw
+  ArrowUpRight, ArrowDownLeft, X, Sparkles, RefreshCw, Calculator
 } from 'lucide-react';
 
 export default function MyFarmBoard() {
@@ -14,7 +14,9 @@ export default function MyFarmBoard() {
     t, language, farms, farmsLoading, addFarm, updateFarm, deleteFarm,
     farmExpenses, addFarmExpense, deleteFarmExpense,
     farmIncomes, addFarmIncome, deleteFarmIncome,
-    scanHistory, rentalBookings, laborJobs, schemeApplications
+    scanHistory, rentalBookings, laborJobs, schemeApplications,
+    user, fpoMembers, addFPOMember, toggleFPOMemberStatus, fpoProduce, addFPOProduce,
+    marketPrices, fpoTransactions
   } = useApp();
 
   // Local UI State
@@ -24,6 +26,173 @@ export default function MyFarmBoard() {
   const [isLogExpenseOpen, setIsLogExpenseOpen] = useState(false);
   const [isLogIncomeOpen, setIsLogIncomeOpen] = useState(false);
   const [isRecordsOpen, setIsRecordsOpen] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+
+  // Calculator States
+  const [calcCrop, setCalcCrop] = useState('Tomato');
+  const [calcQty, setCalcQty] = useState<string>('1000');
+  const [calcUnit, setCalcUnit] = useState<'kg' | 'tonne'>('kg');
+  const [calcPriceExpected, setCalcPriceExpected] = useState<string>('30');
+  
+  // Cost States (Production)
+  const [costSeeds, setCostSeeds] = useState<string>('');
+  const [costFertilizer, setCostFertilizer] = useState<string>('');
+  const [costPesticides, setCostPesticides] = useState<string>('');
+  const [costLabour, setCostLabour] = useState<string>('');
+  const [costIrrigation, setCostIrrigation] = useState<string>('');
+  const [costOtherProd, setCostOtherProd] = useState<string>('');
+  
+  // Cost States (Selling/Transport)
+  const [costTransport, setCostTransport] = useState<string>('');
+  const [costLoading, setCostLoading] = useState<string>('');
+  const [costPackaging, setCostPackaging] = useState<string>('');
+  const [costOtherSelling, setCostOtherSelling] = useState<string>('');
+  
+  // Saved calculations history
+  const [savedCalculations, setSavedCalculations] = useState<any[]>([]);
+  const [calcResult, setCalcResult] = useState<{
+    revenue: number;
+    productionCost: number;
+    sellingCost: number;
+    totalCost: number;
+    profit: number;
+    profitPerKg: number;
+    quantityInKg: number;
+  } | null>(null);
+
+  // Load calculations on mount
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && user?.id) {
+      const saved = localStorage.getItem(`vlink_profit_calculations_${user.id}`);
+      if (saved) {
+        try {
+          setSavedCalculations(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, [user?.id]);
+
+  // Calculator Handlers
+  const handleCalculateProfit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const qtyVal = Number(calcQty) || 0;
+    const priceVal = Number(calcPriceExpected) || 0;
+    
+    if (qtyVal <= 0) {
+      alert(language === 'ta' ? 'தயவுசெய்து அளவை உள்ளிடவும்.' : 'Please enter a valid quantity.');
+      return;
+    }
+    if (priceVal <= 0) {
+      alert(language === 'ta' ? 'விற்பனை விலையை உள்ளிடவும்.' : 'Please enter a valid selling price.');
+      return;
+    }
+    
+    const qtyInKg = calcUnit === 'tonne' ? qtyVal * 1000 : qtyVal;
+    const revenue = qtyInKg * priceVal;
+    
+    // Sum production costs
+    const prodCost = (Number(costSeeds) || 0) +
+                     (Number(costFertilizer) || 0) +
+                     (Number(costPesticides) || 0) +
+                     (Number(costLabour) || 0) +
+                     (Number(costIrrigation) || 0) +
+                     (Number(costOtherProd) || 0);
+                     
+    // Sum selling costs
+    const sellCost = (Number(costTransport) || 0) +
+                     (Number(costLoading) || 0) +
+                     (Number(costPackaging) || 0) +
+                     (Number(costOtherSelling) || 0);
+                     
+    const totalCost = prodCost + sellCost;
+    const profit = revenue - totalCost;
+    const profitPerKg = profit / qtyInKg;
+    
+    setCalcResult({
+      revenue,
+      productionCost: prodCost,
+      sellingCost: sellCost,
+      totalCost,
+      profit,
+      profitPerKg,
+      quantityInKg: qtyInKg
+    });
+  };
+
+  const handleSaveCalculation = () => {
+    if (!calcResult || !user?.id) return;
+    
+    const newCalc = {
+      id: 'CALC-' + Date.now(),
+      crop: calcCrop,
+      quantity: Number(calcQty) || 0,
+      quantityUnit: calcUnit,
+      expectedPrice: Number(calcPriceExpected) || 0,
+      productionCost: calcResult.productionCost,
+      sellingCost: calcResult.sellingCost,
+      revenue: calcResult.revenue,
+      totalCost: calcResult.totalCost,
+      estimatedProfit: calcResult.profit,
+      profitPerKg: calcResult.profitPerKg,
+      date: new Date().toISOString()
+    };
+    
+    const updated = [newCalc, ...savedCalculations];
+    setSavedCalculations(updated);
+    localStorage.setItem(`vlink_profit_calculations_${user.id}`, JSON.stringify(updated));
+    alert(language === 'ta' ? 'கணக்கீடு வெற்றிகரமாக சேமிக்கப்பட்டது!' : 'Calculation saved successfully!');
+  };
+
+  const handleDeleteCalculation = (id: string) => {
+    if (!user?.id) return;
+    const updated = savedCalculations.filter(c => c.id !== id);
+    setSavedCalculations(updated);
+    localStorage.setItem(`vlink_profit_calculations_${user.id}`, JSON.stringify(updated));
+  };
+
+  const handleSkipCosts = () => {
+    setCostSeeds('');
+    setCostFertilizer('');
+    setCostPesticides('');
+    setCostLabour('');
+    setCostIrrigation('');
+    setCostOtherProd('');
+    setCostTransport('');
+    setCostLoading('');
+    setCostPackaging('');
+    setCostOtherSelling('');
+    
+    // Auto-calculate with 0 costs
+    const qtyVal = Number(calcQty) || 0;
+    const priceVal = Number(calcPriceExpected) || 0;
+    if (qtyVal > 0 && priceVal > 0) {
+      const qtyInKg = calcUnit === 'tonne' ? qtyVal * 1000 : qtyVal;
+      const revenue = qtyInKg * priceVal;
+      setCalcResult({
+        revenue,
+        productionCost: 0,
+        sellingCost: 0,
+        totalCost: 0,
+        profit: revenue,
+        profitPerKg: priceVal,
+        quantityInKg: qtyInKg
+      });
+    }
+  };
+
+  const getMarketRefPrice = (crop: string) => {
+    const term = crop.toLowerCase();
+    const match = marketPrices.find(p => p.cropName.toLowerCase().includes(term));
+    return match ? match.modalPrice : null;
+  };
+
+  const getBuyerOfferPrice = (crop: string) => {
+    const term = crop.toLowerCase();
+    const match = fpoTransactions.find(t => t.cropName.toLowerCase().includes(term) && t.status !== 'REJECTED');
+    return match ? match.pricePerKg : null;
+  };
 
   // Form States - Add/Edit Farm
   const [farmName, setFarmName] = useState('');
@@ -62,6 +231,14 @@ export default function MyFarmBoard() {
   const [calcTransport, setCalcTransport] = useState<number>(1500);
   const [calcLoading, setCalcLoading] = useState<number>(500);
   const [calcOtherExpenses, setCalcOtherExpenses] = useState<number>(3000);
+
+  // FPO Integration States
+  const [selectedFpoId, setSelectedFpoId] = useState('fpo_1');
+  const [fpoCropName, setFpoCropName] = useState('Tomato (தக்காளி)');
+  const [fpoExpectedQty, setFpoExpectedQty] = useState<number>(1000);
+  const [fpoAvailableQty, setFpoAvailableQty] = useState<number>(500);
+  const [fpoPriceRate, setFpoPriceRate] = useState<number>(30);
+  const [fpoHarvestDate, setFpoHarvestDate] = useState(new Date().toISOString().split('T')[0]);
 
   // GPS fetch helper
   const handleFetchGps = () => {
@@ -318,6 +495,54 @@ export default function MyFarmBoard() {
 
     return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [activeFarm, scanHistory, currentIncomes, language]);
+
+  // FPO Join & Supply Handlers
+  const handleJoinFpo = () => {
+    addFPOMember({
+      fpoId: selectedFpoId,
+      fullName: user?.displayName || 'Ramanathan Swamy',
+      phone: user?.email === 'farmer_1@vlink.com' ? '+91 94432 10987' : '+91 95555 12345',
+      village: activeFarm?.village || 'Othakadai',
+      district: activeFarm?.district || 'Madurai',
+      status: 'active',
+      hasSmartphone: true
+    });
+  };
+
+  const handleLeaveFpo = (memberId: string) => {
+    if (confirm(language === 'ta' ? 'FPO உறுப்பினர் பதவியில் இருந்து விலக விரும்புகிறீர்களா?' : 'Are you sure you want to deactivate your FPO membership?')) {
+      toggleFPOMemberStatus(memberId);
+    }
+  };
+
+  const handleAddFpoProduce = (e: React.FormEvent) => {
+    e.preventDefault();
+    const myFpoMembership = fpoMembers.find(
+      m => m.fullName === user?.displayName || m.email === user?.email || m.id === user?.id
+    );
+    if (!myFpoMembership) {
+      alert(language === 'ta' ? 'நீங்கள் FPO-வில் உறுப்பினராக இல்லை!' : 'You are not linked to any FPO membership!');
+      return;
+    }
+    if (fpoExpectedQty <= 0 || fpoAvailableQty <= 0) {
+      alert(language === 'ta' ? 'அளவு பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும்!' : 'Quantity must be greater than zero!');
+      return;
+    }
+
+    addFPOProduce({
+      farmerId: myFpoMembership.id,
+      farmerName: myFpoMembership.fullName,
+      cropName: fpoCropName,
+      category: fpoCropName.includes('Tomato') ? 'Vegetables' : 'Grains',
+      expectedQuantity: fpoExpectedQty,
+      availableQuantity: fpoAvailableQty,
+      expectedHarvestDate: fpoHarvestDate,
+      unit: 'kg',
+      pricePerKg: fpoPriceRate
+    });
+
+    alert(language === 'ta' ? 'FPO விளைபொருள் வெற்றிகரமாக பதிவு செய்யப்பட்டது!' : 'Produce supply posted to FPO registry!');
+  };
 
   // Navigate helper
   const navigateToTab = (tabName: string) => {
@@ -686,7 +911,7 @@ export default function MyFarmBoard() {
               {/* Quick Actions Grid */}
               <div className="space-y-3">
                 <h3 className="text-xs font-black uppercase tracking-wider text-earth-400">{t('quick_actions')}</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-6 gap-4">
                   
                   <button
                     onClick={() => navigateToTab('diagnosis')}
@@ -730,12 +955,22 @@ export default function MyFarmBoard() {
 
                   <button
                     onClick={() => setIsRecordsOpen(true)}
-                    className="col-span-2 sm:col-span-1 p-4 rounded-3xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] hover:bg-earth-50 dark:hover:bg-earth-900/40 flex flex-col items-center justify-center text-center space-y-2 group shadow-xs cursor-pointer"
+                    className="p-4 rounded-3xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] hover:bg-earth-50 dark:hover:bg-earth-900/40 flex flex-col items-center justify-center text-center space-y-2 group shadow-xs cursor-pointer"
                   >
                     <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <FileText className="w-5 h-5" />
                     </div>
                     <span className="text-[10px] font-black text-foreground leading-tight">{language === 'ta' ? 'பண்ணை பதிவுகள்' : 'Farm Records'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsCalculatorOpen(true)}
+                    className="p-4 rounded-3xl border border-earth-200 dark:border-earth-850 bg-white dark:bg-[#111714] hover:bg-earth-50 dark:hover:bg-earth-900/40 flex flex-col items-center justify-center text-center space-y-2 group shadow-xs cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-2xl bg-teal-500/10 text-teal-650 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Calculator className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-black text-foreground leading-tight">{language === 'ta' ? 'லாப கணக்கீடு' : 'Profit Calculator'}</span>
                   </button>
 
                 </div>
@@ -824,6 +1059,180 @@ export default function MyFarmBoard() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* FPO Membership and expected harvest linking */}
+              <div className="p-6 border border-earth-200/60 dark:border-primary-950/20 bg-white dark:bg-[#111714] shadow-sm rounded-[24px] space-y-6">
+                <h3 className="text-xs font-black uppercase tracking-wider text-purple-650 dark:text-purple-400">
+                  {language === 'ta' ? 'FPO கூட்டுறவு மேலாண்மை' : 'FPO Cooperative Membership'}
+                </h3>
+                
+                {(() => {
+                  const myFpoMembership = fpoMembers.find(
+                    m => m.fullName === user?.displayName || m.email === user?.email || m.id === user?.id
+                  );
+
+                  if (myFpoMembership) {
+                    const myCrops = fpoProduce.filter(p => p.farmerId === myFpoMembership.id);
+                    return (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-purple-500/5 border border-purple-500/10 rounded-2xl space-y-2.5 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-earth-450 font-bold">{language === 'ta' ? 'கூட்டுறவு FPO:' : 'Connected FPO:'}</span>
+                            <span className="font-black text-foreground">
+                              {myFpoMembership.fpoId === 'fpo_1' ? 'Madurai Farmer Producer Org' : 'Thanjavur Grains Cooperative'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-earth-450 font-bold">{language === 'ta' ? 'நிலை:' : 'Status:'}</span>
+                            <span className={`font-black uppercase ${myFpoMembership.status === 'active' ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {myFpoMembership.status}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-earth-450 font-bold">{language === 'ta' ? 'சேர்ந்த நாள்:' : 'Joined Date:'}</span>
+                            <span className="font-mono text-foreground">{myFpoMembership.joinDate}</span>
+                          </div>
+                          {myFpoMembership.status === 'active' && (
+                            <button
+                              onClick={() => handleLeaveFpo(myFpoMembership.id)}
+                              className="w-full mt-2 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-[10px] cursor-pointer border-0 transition-colors"
+                            >
+                              {language === 'ta' ? 'உறுப்பினர் பதவியிலிருந்து விலக' : 'Leave Membership'}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* FPO Produce Listing Form */}
+                        {myFpoMembership.status === 'active' && (
+                          <form onSubmit={handleAddFpoProduce} className="space-y-3 pt-3 border-t border-earth-100 dark:border-earth-900/10">
+                            <h4 className="text-[10px] font-black uppercase text-earth-450 tracking-wider">
+                              {language === 'ta' ? 'விளைச்சல் விநியோகத்தை FPO-விடம் பதிவு செய்' : 'Report Crop Supply to FPO'}
+                            </h4>
+                            
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold text-earth-455 uppercase block">{language === 'ta' ? 'பயிர்' : 'Select Crop'}</label>
+                              <select
+                                value={fpoCropName}
+                                onChange={e => setFpoCropName(e.target.value)}
+                                className="w-full h-9 px-3 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                              >
+                                <option value="Tomato (தக்காளி)">Tomato (தக்காளி)</option>
+                                <option value="Rice (நெல்)">Rice (நெல்)</option>
+                              </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-earth-450 uppercase block">{language === 'ta' ? 'எதிர்பார்ப்பு (kg)' : 'Expected Qty (kg)'}</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={fpoExpectedQty}
+                                  onChange={e => setFpoExpectedQty(Number(e.target.value) || 0)}
+                                  className="w-full h-9 px-3 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-earth-450 uppercase block">{language === 'ta' ? 'இருப்பு (kg)' : 'Available Qty (kg)'}</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={fpoAvailableQty}
+                                  onChange={e => setFpoAvailableQty(Number(e.target.value) || 0)}
+                                  className="w-full h-9 px-3 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-earth-450 uppercase block">{language === 'ta' ? 'அறுவடை தேதி' : 'Expected Harvest'}</label>
+                                <input
+                                  type="date"
+                                  value={fpoHarvestDate}
+                                  onChange={e => setFpoHarvestDate(e.target.value)}
+                                  className="w-full h-9 px-2 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-earth-450 uppercase block">{language === 'ta' ? 'ஆஃபர் விலை (₹/kg)' : 'Offer Price (₹/kg)'}</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={fpoPriceRate}
+                                  onChange={e => setFpoPriceRate(Number(e.target.value) || 0)}
+                                  className="w-full h-9 px-3 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                />
+                              </div>
+                            </div>
+
+                            <button
+                              type="submit"
+                              className="w-full h-9 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs cursor-pointer border-0 shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span>{language === 'ta' ? 'சப்ளை பதிவை சமர்ப்பி' : 'Post Supply to FPO'}</span>
+                            </button>
+                          </form>
+                        )}
+                        
+                        {/* List registered supply */}
+                        {myCrops.length > 0 && (
+                          <div className="pt-2 border-t border-earth-100 dark:border-earth-900/10">
+                            <span className="text-[9px] font-black uppercase text-earth-450 tracking-wider block mb-1">
+                              {language === 'ta' ? 'பதிவு செய்யப்பட்ட சப்ளைகள்:' : 'My FPO Supply Logs:'}
+                            </span>
+                            <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1">
+                              {myCrops.map(c => (
+                                <div key={c.id} className="p-2 border border-earth-100 dark:border-earth-900 bg-earth-50/30 rounded-xl text-[10px] flex justify-between items-center">
+                                  <div>
+                                    <span className="font-bold text-foreground block">{c.cropName}</span>
+                                    <span className="text-earth-450 text-[9px]">Avail: {c.availableQuantity}kg | Exp: {c.expectedQuantity}kg</span>
+                                  </div>
+                                  <span className="font-mono text-purple-650 font-bold">₹{c.pricePerKg}/kg</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      <p className="text-xs text-earth-500 font-semibold leading-relaxed">
+                        {language === 'ta' 
+                          ? 'FPO-வில் உறுப்பினராகி உங்கள் அறுவடை விளைச்சலை மொத்த விலைக்கு விற்பனை செய்ய இணைக்கவும்.' 
+                          : 'Join a Farmer Producer Organization to pool your crops and sell directly to wholesale B2B buyers.'}
+                      </p>
+
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-earth-450 uppercase block">
+                            {language === 'ta' ? 'FPO தேர்ந்தெடு' : 'Select FPO Hub'}
+                          </label>
+                          <select
+                            value={selectedFpoId}
+                            onChange={(e) => setSelectedFpoId(e.target.value)}
+                            className="w-full h-10 px-3 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-200 dark:border-earth-800 rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                          >
+                            <option value="fpo_1">Madurai Farmer Producer Org (Melur Hub)</option>
+                            <option value="fpo_2">Thanjavur Grains Cooperative (Kumbakonam Hub)</option>
+                          </select>
+                        </div>
+
+                        <button
+                          onClick={handleJoinFpo}
+                          className="w-full h-10 rounded-xl bg-purple-650 hover:bg-purple-700 text-white font-bold text-xs cursor-pointer border-0 shadow-sm transition-all"
+                        >
+                          {language === 'ta' ? 'FPO-வில் இணையுங்கள்' : 'Apply & Join FPO'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Financial Farm Summary Card */}
@@ -1656,6 +2065,325 @@ export default function MyFarmBoard() {
                 className="h-11 px-6 rounded-2xl bg-earth-100 hover:bg-earth-200 dark:bg-earth-900 dark:hover:bg-earth-850 text-foreground font-black text-xs cursor-pointer border-0"
               >
                 Close Records Ledger
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: EXPECTED PROFIT CALCULATOR ─── */}
+      {isCalculatorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#111714] rounded-3xl border border-earth-200 dark:border-earth-850 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-6 animate-scale-up text-left">
+            
+            <div className="flex items-center justify-between border-b border-earth-100 dark:border-earth-900/35 pb-4">
+              <div>
+                <h3 className="text-sm font-black text-foreground uppercase tracking-widest flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-teal-650" />
+                  <span>{language === 'ta' ? 'விவசாய எதிர்பார்த்த லாப கால்குலேட்டர்' : 'Farmer Expected Profit Calculator'}</span>
+                </h3>
+                <p className="text-[10px] text-earth-450 mt-1">
+                  {language === 'ta' ? 'பயிர்களின் செலவுகள் மற்றும் விற்பனை விலையை உள்ளிட்டு லாபத்தை கணக்கிடுங்கள்' : 'Estimate revenues, production costs, and net margin per kg.'}
+                </p>
+              </div>
+              <button onClick={() => { setIsCalculatorOpen(false); setCalcResult(null); }} className="p-1.5 rounded-full hover:bg-earth-100 dark:hover:bg-earth-900 text-earth-400 cursor-pointer border-0 bg-transparent">
+                <X className="w-4.5 h-4.5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              
+              {/* Form panel */}
+              <form onSubmit={handleCalculateProfit} className="space-y-4">
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Crop Selector */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-earth-450 block">{language === 'ta' ? 'பயிர் வகை' : 'Crop Type'}</label>
+                    <select
+                      value={calcCrop}
+                      onChange={e => setCalcCrop(e.target.value)}
+                      className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-teal-500"
+                    >
+                      <option value="Tomato">{language === 'ta' ? '🍅 தக்காளி (Tomato)' : '🍅 Tomato'}</option>
+                      <option value="Onion">{language === 'ta' ? '🧅 வெங்காயம் (Onion)' : '🧅 Onion'}</option>
+                      <option value="Brinjal">{language === 'ta' ? '🍆 கத்தரிக்காய் (Brinjal)' : '🍆 Brinjal'}</option>
+                      <option value="Chilli">{language === 'ta' ? '🌶️ மிளகாய் (Chilli)' : '🌶️ Chilli'}</option>
+                      <option value="Other">{language === 'ta' ? '🌾 இதர பயிர்கள் (Other)' : '🌾 Other'}</option>
+                    </select>
+                  </div>
+
+                  {/* Quantity */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-earth-455 block">{language === 'ta' ? 'எதிர்பார்க்கும் அளவு' : 'Expected Quantity'}</label>
+                    <div className="flex gap-1">
+                      <input
+                        type="number"
+                        min="1"
+                        required
+                        value={calcQty}
+                        onChange={e => setCalcQty(e.target.value)}
+                        className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-semibold text-foreground focus:outline-none focus:border-teal-500"
+                      />
+                      <select
+                        value={calcUnit}
+                        onChange={e => setCalcUnit(e.target.value as any)}
+                        className="h-10 px-2 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-[10px] font-mono font-bold text-foreground focus:outline-none"
+                      >
+                        <option value="kg">kg</option>
+                        <option value="tonne">tonne</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expected Selling Price */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black uppercase text-earth-455 block">
+                      {language === 'ta' ? 'எதிர்பார்க்கும் விற்பனை விலை (₹/kg) *' : 'Expected Selling Price (₹/kg) *'}
+                    </label>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    placeholder="e.g. 30"
+                    value={calcPriceExpected}
+                    onChange={e => setCalcPriceExpected(e.target.value)}
+                    className="w-full h-10 px-3 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-xl text-xs font-mono font-bold text-foreground focus:outline-none focus:border-teal-500"
+                  />
+                  
+                  {/* Reference Data Block */}
+                  {(() => {
+                    const refPrice = getMarketRefPrice(calcCrop);
+                    const offerPrice = getBuyerOfferPrice(calcCrop);
+                    if (!refPrice && !offerPrice) return null;
+                    return (
+                      <div className="flex flex-wrap gap-2 pt-1 text-[9px] font-black tracking-wide">
+                        {refPrice && (
+                          <button
+                            type="button"
+                            onClick={() => setCalcPriceExpected(String(refPrice))}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15 cursor-pointer font-sans"
+                          >
+                            📈 {language === 'ta' ? 'சந்தை விலை: ₹' : 'Market Ref: ₹'}{refPrice}/kg
+                          </button>
+                        )}
+                        {offerPrice && (
+                          <button
+                            type="button"
+                            onClick={() => setCalcPriceExpected(String(offerPrice))}
+                            className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-650 dark:text-purple-400 border border-purple-500/15 cursor-pointer font-sans"
+                          >
+                            💼 {language === 'ta' ? 'வாங்குபவர் விலை: ₹' : 'Buyer Offer: ₹'}{offerPrice}/kg
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Production Costs Section */}
+                <div className="p-4 rounded-2xl border border-earth-150 dark:border-earth-900/30 bg-earth-50/20 dark:bg-earth-950/10 space-y-3">
+                  <div className="flex justify-between items-center border-b border-earth-100 dark:border-earth-900/20 pb-2">
+                    <span className="text-[10px] font-black text-foreground uppercase tracking-wider">🌱 {language === 'ta' ? 'உற்பத்தி செலவுகள்' : 'Production Costs'}</span>
+                    <button
+                      type="button"
+                      onClick={handleSkipCosts}
+                      className="text-[9px] font-black text-teal-650 hover:underline cursor-pointer border-0 bg-transparent"
+                    >
+                      {language === 'ta' ? 'தெரியவில்லை / Skip' : 'Skip / தெரியவில்லை'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {[
+                      { label: language === 'ta' ? 'விதைகள்' : 'Seeds', state: costSeeds, set: setCostSeeds },
+                      { label: language === 'ta' ? 'உரங்கள்' : 'Fertilizer', state: costFertilizer, set: setCostFertilizer },
+                      { label: language === 'ta' ? 'பூச்சிக்கொல்லி' : 'Pesticides', state: costPesticides, set: setCostPesticides },
+                      { label: language === 'ta' ? 'ஆட்கள் கூலி' : 'Labour', state: costLabour, set: setCostLabour },
+                      { label: language === 'ta' ? 'நீர் பாசனம்' : 'Irrigation', state: costIrrigation, set: setCostIrrigation },
+                      { label: language === 'ta' ? 'இதர செலவு' : 'Other Expenses', state: costOtherProd, set: setCostOtherProd }
+                    ].map((item, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <label className="text-[9px] font-bold text-earth-450 block">{item.label}</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          value={item.state}
+                          onChange={e => item.set(e.target.value)}
+                          className="w-full h-8 px-2 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-lg text-xs font-mono text-foreground focus:outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Selling & Transport Costs */}
+                <div className="p-4 rounded-2xl border border-earth-150 dark:border-earth-900/30 bg-earth-50/20 dark:bg-earth-950/10 space-y-3">
+                  <span className="text-[10px] font-black text-foreground uppercase tracking-wider block border-b border-earth-100 dark:border-earth-900/20 pb-2">🚚 {language === 'ta' ? 'விற்பனை மற்றும் போக்குவரத்து செலவுகள்' : 'Transport & Selling Costs'}</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { label: language === 'ta' ? 'போக்குவரத்து' : 'Transport', state: costTransport, set: setCostTransport },
+                      { label: language === 'ta' ? 'ஏற்று இறக்கு' : 'Loading', state: costLoading, set: setCostLoading },
+                      { label: language === 'ta' ? 'பேக்கேஜிங்' : 'Packaging', state: costPackaging, set: setCostPackaging },
+                      { label: language === 'ta' ? 'இதர செலவுகள்' : 'Other Selling', state: costOtherSelling, set: setCostOtherSelling }
+                    ].map((item, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <label className="text-[9px] font-bold text-earth-455 block">{item.label}</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          value={item.state}
+                          onChange={e => item.set(e.target.value)}
+                          className="w-full h-8 px-2 bg-white dark:bg-[#070b09] border border-earth-200 dark:border-earth-850 rounded-lg text-xs font-mono text-foreground focus:outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    className="flex-1 h-11 rounded-xl bg-teal-650 hover:bg-teal-700 text-white font-black text-xs cursor-pointer border-0 shadow-sm transition-colors"
+                  >
+                    {language === 'ta' ? 'வருமானத்தை கணக்கிடு' : 'Calculate Profit'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCalcResult(null);
+                      setCostSeeds(''); setCostFertilizer(''); setCostPesticides('');
+                      setCostLabour(''); setCostIrrigation(''); setCostOtherProd('');
+                      setCostTransport(''); setCostLoading(''); setCostPackaging(''); setCostOtherSelling('');
+                    }}
+                    className="px-4 h-11 rounded-xl border border-earth-200 text-earth-650 hover:bg-earth-50 text-xs font-bold cursor-pointer bg-white"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </form>
+
+              {/* Result & History panel */}
+              <div className="space-y-5">
+                {/* Result Display */}
+                {calcResult ? (
+                  <div className="p-5 rounded-3xl bg-gradient-to-tr from-teal-500/10 to-emerald-500/10 border border-teal-500/20 space-y-4 animate-scale-up">
+                    <div className="flex justify-between items-center border-b border-teal-500/25 pb-3">
+                      <div>
+                        <span className="text-[9px] font-black uppercase text-teal-650 tracking-wider">Estimated Report / லாப அறிக்கை</span>
+                        <h4 className="text-base font-black text-foreground mt-0.5">
+                          {calcCrop === 'Tomato' ? '🍅 Tomato (தக்காளி)' :
+                           calcCrop === 'Onion' ? '🧅 Onion (வெங்காயம்)' :
+                           calcCrop === 'Brinjal' ? '🍆 Brinjal (கத்தரிக்காய்)' :
+                           calcCrop === 'Chilli' ? '🌶️ Chilli (மிளகாய்)' :
+                           `🌾 Other (${calcCrop})`}
+                        </h4>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] font-black uppercase text-earth-450 block">Quantity / அளவு</span>
+                        <span className="text-xs font-mono font-black text-foreground">{calcQty} {calcUnit} ({calcResult.quantityInKg.toLocaleString()} kg)</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
+                      <div>
+                        <span className="text-[9px] text-earth-450 font-bold block uppercase">{language === 'ta' ? 'மொத்த வருமானம் (Revenue)' : 'Expected Revenue'}</span>
+                        <span className="text-sm font-mono font-black text-foreground mt-0.5">₹{calcResult.revenue.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-earth-450 font-bold block uppercase">{language === 'ta' ? 'மொத்த செலவு (Costs)' : 'Total Estimated Cost'}</span>
+                        <span className="text-sm font-mono font-black text-red-500 mt-0.5">₹{calcResult.totalCost.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-teal-500/15 flex items-center justify-between shadow-xs">
+                      <div>
+                        <span className="text-[9px] text-teal-650 font-black uppercase tracking-wider block">{language === 'ta' ? 'மதிப்பிடப்பட்ட லாபம்' : 'Estimated Net Profit'}</span>
+                        <span className={`text-xl font-mono font-black block mt-1 ${calcResult.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                          ₹{calcResult.profit.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] text-earth-450 font-bold block uppercase">{language === 'ta' ? 'ஒரு கிலோவுக்கு லாபம்' : 'Profit per kg'}</span>
+                        <span className={`text-sm font-mono font-black block mt-1 ${calcResult.profitPerKg >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                          ₹{calcResult.profitPerKg.toFixed(2)}/kg
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Disclaimer */}
+                    <div className="p-3 bg-earth-50/50 dark:bg-earth-950/20 border border-earth-150 rounded-xl text-[9px] leading-normal font-semibold text-earth-450">
+                      <p>⚠️ <strong>Tamil:</strong> இது ஒரு கணக்கீட்டு மதிப்பீடு மட்டுமே. இறுதி விற்பனை விலை, வாங்குபவர் மற்றும் விவசாயி/FPO பேச்சுவார்த்தையின் மூலம் முடிவு செய்யப்படும்.</p>
+                      <p className="mt-1">⚠️ <strong>English:</strong> This is only an estimate. The final selling price is decided through negotiation between the farmer/FPO and buyer.</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveCalculation}
+                      className="w-full h-10 rounded-xl bg-emerald-500 hover:bg-emerald-650 text-white font-black text-xs cursor-pointer border-0 shadow-xs flex items-center justify-center gap-1.5"
+                    >
+                      Save Calculation
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-12 text-center rounded-3xl border border-dashed border-earth-300 dark:border-earth-850 text-earth-400 font-bold text-xs">
+                    Enter details and click 'Calculate' to see estimated revenue and net profit projection.
+                  </div>
+                )}
+
+                {/* History list */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-black text-foreground uppercase tracking-wider">{language === 'ta' ? 'சேமிக்கப்பட்ட லாப கணக்கீடுகள்' : 'Saved Projections Log'}</h4>
+                  {savedCalculations.length === 0 ? (
+                    <p className="text-[10px] text-earth-400 italic">No saved calculations yet.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                      {savedCalculations.map((calc: any) => (
+                        <div key={calc.id} className="p-3.5 bg-white dark:bg-earth-950/20 border border-earth-150 dark:border-earth-900/10 rounded-xl flex items-center justify-between text-[11px] text-left">
+                          <div>
+                            <span className="font-bold text-foreground capitalize block">
+                              {calc.crop === 'Tomato' ? '🍅 Tomato' :
+                               calc.crop === 'Onion' ? '🧅 Onion' :
+                               calc.crop === 'Brinjal' ? '🍆 Brinjal' :
+                               calc.crop === 'Chilli' ? '🌶️ Chilli' :
+                               `🌾 ${calc.crop}`} ({calc.quantity} {calc.quantityUnit})
+                            </span>
+                            <span className="text-[8px] text-earth-400 font-mono block mt-0.5">
+                              Price: ₹{calc.expectedPrice}/kg | Cost: ₹{calc.totalCost.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <span className={`font-mono font-bold block ${calc.estimatedProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                ₹{calc.estimatedProfit.toLocaleString()}
+                              </span>
+                              <span className="text-[8px] text-earth-450 font-bold block uppercase">{calc.date.slice(0, 10)}</span>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteCalculation(calc.id)}
+                              className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg cursor-pointer border-0 bg-transparent"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            <div className="pt-4 border-t border-earth-100 dark:border-earth-900/35 flex justify-end">
+              <button
+                onClick={() => { setIsCalculatorOpen(false); setCalcResult(null); }}
+                className="h-11 px-6 rounded-2xl bg-earth-100 hover:bg-earth-200 dark:bg-earth-900 dark:hover:bg-earth-850 text-foreground font-black text-xs cursor-pointer border-0"
+              >
+                {language === 'ta' ? 'மூடுக' : 'Close Calculator'}
               </button>
             </div>
 

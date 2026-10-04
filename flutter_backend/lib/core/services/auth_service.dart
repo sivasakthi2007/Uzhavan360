@@ -2,7 +2,7 @@
 // Dart Filename: auth_service.dart
 
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'secure_storage_service.dart';
+import '../storage/secure_storage_service.dart';
 
 class AuthService {
   final SupabaseClient _client;
@@ -35,7 +35,7 @@ class AuthService {
 
   Future<void> loginWithGoogle() async {
     await _client.auth.signInWithOAuth(
-      OAuthProvider.google,
+      Provider.google,
     );
   }
 

@@ -7,7 +7,8 @@ import {
   ShoppingBag,
   ClipboardList,
   Bot,
-  Menu
+  Menu,
+  Truck
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -21,11 +22,13 @@ export default function BottomNav() {
 
   // Base navigation items definitions for mobile - exactly 5 tabs
   const allNavItems = [
-    { name: language === 'ta' ? 'முகப்பு' : 'Home', icon: Home, path: '/dashboard?tab=home', tabKey: 'home', highlightKeys: ['home', 'crop-discovery'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
+    { name: language === 'ta' ? 'முகப்பு' : 'Home', icon: Home, path: '/dashboard?tab=home', tabKey: 'home', highlightKeys: ['home', 'crop-discovery'], roles: ['farmer', 'buyer', 'labor', 'vendor', 'delivery'] },
+    { name: language === 'ta' ? 'டிரைவர்' : 'Driver Console', icon: Truck, path: '/dashboard?tab=driver', tabKey: 'driver', highlightKeys: ['driver'], roles: ['delivery'] },
+    { name: language === 'ta' ? 'FPO கன்சோல்' : 'FPO Console', icon: Home, path: '/dashboard?tab=fpo', tabKey: 'fpo', highlightKeys: ['fpo'], roles: ['fpo'] },
     { name: language === 'ta' ? 'என் பண்ணை' : 'My Farm', icon: Sprout, path: '/dashboard?tab=myfarm', tabKey: 'myfarm', highlightKeys: ['myfarm'], roles: ['farmer'] },
-    { name: language === 'ta' ? 'வாங்கு/விற்று' : 'Buy/Sell', icon: ShoppingBag, path: '/dashboard?tab=buysell', tabKey: 'buysell', highlightKeys: ['buysell', 'market', 'prebookings', 'orders'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
-    { name: language === 'ta' ? 'உதவியாளர்' : 'AI Assistant', icon: Bot, path: '/dashboard?tab=assistant', tabKey: 'assistant', highlightKeys: ['assistant'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
-    { name: language === 'ta' ? 'இதர' : 'More', icon: Menu, path: '/dashboard?tab=more', tabKey: 'more', highlightKeys: ['more', 'translator', 'weather', 'wallet', 'profile', 'schemes', 'support', 'admin', 'labor', 'rentals', 'intel'], roles: ['farmer', 'buyer', 'labor', 'vendor'] },
+    { name: language === 'ta' ? 'வாங்கு/விற்று' : 'Buy/Sell', icon: ShoppingBag, path: '/dashboard?tab=buysell', tabKey: 'buysell', highlightKeys: ['buysell', 'market', 'prebookings', 'orders'], roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo'] },
+    { name: language === 'ta' ? 'உதவியாளர்' : 'AI Assistant', icon: Bot, path: '/dashboard?tab=assistant', tabKey: 'assistant', highlightKeys: ['assistant'], roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo', 'delivery'] },
+    { name: language === 'ta' ? 'இதர' : 'More', icon: Menu, path: '/dashboard?tab=more', tabKey: 'more', highlightKeys: ['more', 'translator', 'weather', 'wallet', 'profile', 'schemes', 'support', 'admin', 'labor', 'rentals', 'intel'], roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo', 'delivery'] },
   ];
 
   // Filter items matching current active role workspace

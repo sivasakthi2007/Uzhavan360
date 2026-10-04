@@ -28,7 +28,7 @@ class _FarmerCommunityForumState extends ConsumerState<FarmerCommunityForum> {
           children: [
             const Text(
               'விவசாயிகள் குழுமம்', // Tamil Title
-              style: TextStyle(fontWeight: FontWeight.black, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Text(
               'Farmer Community Forum', // English Subtitle
@@ -97,7 +97,7 @@ class _FarmerCommunityForumState extends ConsumerState<FarmerCommunityForum> {
                 cat['label']!,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : Colors.black85,
+                  color: isSelected ? Colors.white : Colors.black87,
                 ),
               ),
               selectedColor: Theme.of(context).colorScheme.primary,
@@ -168,7 +168,7 @@ class _FarmerCommunityForumState extends ConsumerState<FarmerCommunityForum> {
                         children: [
                           const Text(
                             'இராமலிங்கம் பி. (Ramalingam P.)',
-                            style: TextStyle(fontWeight: FontWeight.black, fontSize: 14),
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                           ),
                           if (isExpert) ...[
                             const SizedBox(width: 4),
@@ -192,7 +192,7 @@ class _FarmerCommunityForumState extends ConsumerState<FarmerCommunityForum> {
             const SizedBox(height: 12),
             Text(
               item.title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.black),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 6),
             Text(
@@ -363,7 +363,7 @@ class _FarmerCommunityForumState extends ConsumerState<FarmerCommunityForum> {
           children: [
             const Text(
               'புதிய விவாதம் துவங்கு (Create Thread)',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.black),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -460,7 +460,7 @@ class _FarmerCommunityForumState extends ConsumerState<FarmerCommunityForum> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('பதில்கள் & கருத்துக்கள் (Answers & Comments)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.black)),
+            const Text('பதில்கள் & கருத்துக்கள் (Answers & Comments)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
             const SizedBox(height: 12),
             
             // Best Answer Highlight (Expert solution card)
@@ -502,7 +502,7 @@ class _FarmerCommunityForumState extends ConsumerState<FarmerCommunityForum> {
               const SizedBox(width: 6),
               Text(
                 'சிறந்த பதில் (Best Expert Answer)',
-                style: TextStyle(fontWeight: FontWeight.black, color: Colors.amber.shade900, fontSize: 12),
+                style: TextStyle(fontWeight: FontWeight.w900, color: Colors.amber.shade900, fontSize: 12),
               ),
             ],
           ),
