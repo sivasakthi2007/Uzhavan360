@@ -348,13 +348,13 @@ class _DemandHomeScreenState extends State<DemandHomeScreen> {
             childAspectRatio: 2.5,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            children: const [
-              _CategoryChip(icon: Icons.groups, label: '👷 Labour / வேலையாள்'),
-              _CategoryChip(icon: Icons.build, label: '🔧 Technician / டெக்னீசியன்'),
-              _CategoryChip(icon: Icons.agriculture, label: '🚜 Equipment / கருவிகள்'),
-              _CategoryChip(icon: Icons.store, label: '🏪 Buyer / சந்தை'),
-              _CategoryChip(icon: Icons.local_shipping, label: '🚚 Transport / சரக்கு'),
-              _CategoryChip(icon: Icons.ac_unit, label: '🏚️ Cold Storage / கிடங்கு'),
+            children: [
+              _CategoryChip(icon: Icons.groups, label: '👷 Labour / வேலையாள்', onTap: widget.onOpenLabourForm),
+              _CategoryChip(icon: Icons.build, label: '🔧 Technician / டெக்னீசியன்', onTap: widget.onOpenTechForm),
+              _CategoryChip(icon: Icons.agriculture, label: '🚜 Equipment / கருவிகள்', onTap: () => setState(() => _currentIndex = 3)),
+              _CategoryChip(icon: Icons.store, label: '🏪 Buyer / சந்தை', onTap: () => setState(() => _currentIndex = 3)),
+              _CategoryChip(icon: Icons.local_shipping, label: '🚚 Transport / சரக்கு', onTap: () => setState(() => _currentIndex = 3)),
+              _CategoryChip(icon: Icons.ac_unit, label: '🏚️ Cold Storage / கிடங்கு', onTap: () => setState(() => _currentIndex = 3)),
             ],
           ),
 
@@ -397,30 +397,36 @@ class _DemandHomeScreenState extends State<DemandHomeScreen> {
 class _CategoryChip extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _CategoryChip({required this.icon, required this.label});
+  final VoidCallback? onTap;
+
+  const _CategoryChip({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF1B5E20), size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFF1B5E20), size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
