@@ -8,7 +8,8 @@ import {
   ClipboardList,
   Bot,
   Menu,
-  Truck
+  Truck,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -20,9 +21,10 @@ export default function BottomNav() {
 
   const activeTab = searchParams.get('tab') || 'home';
 
-  // Base navigation items definitions for mobile - exactly 5 tabs
+  // Base navigation items definitions for mobile
   const allNavItems = [
     { name: language === 'ta' ? 'முகப்பு' : 'Home', icon: Home, path: '/dashboard?tab=home', tabKey: 'home', highlightKeys: ['home', 'crop-discovery'], roles: ['farmer', 'buyer', 'labor', 'vendor', 'delivery'] },
+    { name: language === 'ta' ? 'OoruConnect' : 'OoruConnect', icon: Users, path: '/dashboard?tab=ooruconnect', tabKey: 'ooruconnect', highlightKeys: ['ooruconnect'], roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo', 'delivery'] },
     { name: language === 'ta' ? 'டிரைவர்' : 'Driver Console', icon: Truck, path: '/dashboard?tab=driver', tabKey: 'driver', highlightKeys: ['driver'], roles: ['delivery'] },
     { name: language === 'ta' ? 'FPO கன்சோல்' : 'FPO Console', icon: Home, path: '/dashboard?tab=fpo', tabKey: 'fpo', highlightKeys: ['fpo'], roles: ['fpo'] },
     { name: language === 'ta' ? 'என் பண்ணை' : 'My Farm', icon: Sprout, path: '/dashboard?tab=myfarm', tabKey: 'myfarm', highlightKeys: ['myfarm'], roles: ['farmer'] },

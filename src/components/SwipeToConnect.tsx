@@ -50,7 +50,7 @@ export const SwipeToConnect: React.FC<SwipeToConnectProps> = ({
   };
 
   return (
-    <div className="fixed bottom-16 left-0 right-0 z-40 px-4 max-w-md mx-auto">
+    <div className="w-full max-w-md mx-auto my-3">
       {/* Swipe Bar Container */}
       <div 
         className="relative bg-gradient-to-r from-emerald-800 to-green-700 rounded-2xl p-2 shadow-xl border-2 border-emerald-400/40 text-white overflow-hidden select-none touch-none"

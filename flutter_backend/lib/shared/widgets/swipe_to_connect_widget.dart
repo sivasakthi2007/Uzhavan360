@@ -6,11 +6,15 @@ import '../../core/services/matching_engine.dart';
 class SwipeToConnectWidget extends StatefulWidget {
   final String currentScreen;
   final String? currentFeature;
+  final String? serviceType;
+  final Function(ServiceContact)? onCallInitiated;
 
   const SwipeToConnectWidget({
     super.key,
     required this.currentScreen,
     this.currentFeature,
+    this.serviceType,
+    this.onCallInitiated,
   });
 
   @override

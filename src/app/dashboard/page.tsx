@@ -3,6 +3,7 @@ import { prioritizeProducts } from '@/services/priorityService';
 import ProductCard from '@/components/ProductCard';
 import OrderModal from '@/components/OrderModal';
 import MyFarmBoard from '@/components/MyFarmBoard';
+import OoruConnectBoard from '@/components/OoruConnectBoard';
 import Link from 'next/link';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -334,6 +335,13 @@ function DashboardContent() {
             {/* ========================================================================= */}
             {activeTab === 'myfarm' && (
               <MyFarmBoard />
+            )}
+
+            {/* ========================================================================= */}
+            {/* 0.1 OORUCONNECT DEDICATED TAB */}
+            {/* ========================================================================= */}
+            {activeTab === 'ooruconnect' && (
+              <OoruConnectBoard />
             )}
 
             {/* ========================================================================= */}

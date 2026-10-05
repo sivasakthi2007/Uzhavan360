@@ -8,12 +8,14 @@ interface VoiceAssistantModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccessRequest?: (result: VoiceIntentResult) => void;
+  onIntentExtracted?: (intentText: string) => void;
 }
 
 export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   isOpen,
   onClose,
   onSuccessRequest,
+  onIntentExtracted,
 }) => {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<string>('');
@@ -144,3 +146,6 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     </div>
   );
 };
+
+export default VoiceAssistantModal;
+

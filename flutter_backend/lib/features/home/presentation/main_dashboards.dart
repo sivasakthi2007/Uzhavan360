@@ -57,18 +57,12 @@ class _DemandHomeScreenState extends State<DemandHomeScreen> {
         unselectedItemColor: Colors.grey[600],
         type: BottomNavigationBarType.fixed,
         onTap: (idx) => setState(() => _currentIndex = idx),
-        items: [
-          BottomNavigationBar(
-            items: [
-              BottomNavigationBarItem(icon: const Icon(Icons.home), label: AppStrings.quickActions),
-              BottomNavigationBarItem(icon: const Icon(Icons.assignment), label: AppStrings.myRequests),
-              BottomNavigationBarItem(icon: const Icon(Icons.people), label: AppStrings.nearbyAvailable),
-              BottomNavigationBarItem(icon: const Icon(Icons.person), label: AppStrings.profileTitle),
-            ],
-          ).items[_currentIndex],
-          BottomNavigationBarItem(icon: const Icon(Icons.assignment), label: AppStrings.myRequests),
-          BottomNavigationBarItem(icon: const Icon(Icons.people), label: AppStrings.nearbyAvailable),
-          BottomNavigationBarItem(icon: const Icon(Icons.person), label: AppStrings.profileTitle),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.swap_horizontal_circle), label: 'OoruConnect'),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'My Requests'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Nearby'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
@@ -79,10 +73,12 @@ class _DemandHomeScreenState extends State<DemandHomeScreen> {
       case 0:
         return _buildHomeActionsTab();
       case 1:
-        return _buildMyRequestsTab();
+        return _buildOoruConnectTab();
       case 2:
-        return _buildNearbyTab();
+        return _buildMyRequestsTab();
       case 3:
+        return _buildNearbyTab();
+      case 4:
       default:
         return _buildProfileTab();
     }
@@ -291,15 +287,139 @@ class _DemandHomeScreenState extends State<DemandHomeScreen> {
     );
   }
 
+  Widget _buildOoruConnectTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)]),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  '🤝 OoruConnect',
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'உங்களுக்கு தேவையான சரியான நபருடன் இணைக்கிறோம்.',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Voice Command Banner
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE65100),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.mic),
+            label: const Text('🎙️ பேசுங்கள் (Speak your Need)', style: TextStyle(fontWeight: FontWeight.bold)),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('குரல் மூலம் கோரிக்கை: "5 நபர்கள் அறுவடை தேவை" என்று கூறவும்')),
+              );
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          // What Do You Need Categories
+          const Text('உங்களுக்கு என்ன தேவை? (What do you need?)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 10),
+
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            childAspectRatio: 2.5,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            children: const [
+              _CategoryChip(icon: Icons.groups, label: '👷 Labour / வேலையாள்'),
+              _CategoryChip(icon: Icons.build, label: '🔧 Technician / டெக்னீசியன்'),
+              _CategoryChip(icon: Icons.agriculture, label: '🚜 Equipment / கருவிகள்'),
+              _CategoryChip(icon: Icons.store, label: '🏪 Buyer / சந்தை'),
+              _CategoryChip(icon: Icons.local_shipping, label: '🚚 Transport / சரக்கு'),
+              _CategoryChip(icon: Icons.ac_unit, label: '🏚️ Cold Storage / கிடங்கு'),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Context-Aware Connection Section
+          const Text('நேரடி இணைப்பு (Context-Aware Connect)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 10),
+
+          SwipeToConnectWidget(
+            currentScreen: 'DemandHomeScreen',
+            currentFeature: 'Harvesting Labour Squad',
+            serviceType: 'labor',
+            onCallInitiated: (contact) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Calling ${contact.name} (${contact.role}) at ${contact.phone}')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfileTab() {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
+        children: const [
+          CircleAvatar(radius: 48, backgroundColor: Color(0xFF2E7D32), child: Icon(Icons.person, size: 64, color: Colors.white)),
+          SizedBox(height: 16),
+          Text('User / Farmer Profile', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Text('Vadugapalayam | Phone: 9842100000', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _CategoryChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
         children: [
-          const CircleAvatar(radius: 48, backgroundColor: Color(0xFF2E7D32), child: Icon(Icons.person, size: 64, color: Colors.white)),
-          const SizedBox(height: 16),
-          const Text('User / Farmer Profile', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const Text('Vadugapalayam | Phone: 9842100000', style: TextStyle(color: Colors.grey)),
+          Icon(icon, color: const Color(0xFF1B5E20), size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
