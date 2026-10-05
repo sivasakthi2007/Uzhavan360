@@ -11,10 +11,7 @@ import {
   Tractor,
   Store,
   Truck,
-  Warehouse,
-  Sprout,
   FileText,
-  CreditCard,
   UserCheck,
   Mic,
   MapPin,
@@ -25,22 +22,24 @@ import {
   ChevronRight,
   AlertCircle,
   Phone,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 
-interface NeedCategory {
+interface NeedOption {
   id: string;
   nameEn: string;
   nameTa: string;
+  subtextEn: string;
+  subtextTa: string;
   icon: React.ElementType;
   serviceType: string;
   color: string;
-  count: number;
   targetTab: string;
   targetSub?: string;
 }
 
-interface NearbyProvider {
+interface NearbyMatch {
   id: string;
   name: string;
   role: string;
@@ -67,13 +66,11 @@ interface UserRequest {
 }
 
 export default function OoruConnectBoard() {
-  const { language, userName } = useApp();
+  const { language } = useApp();
   const isTamil = language === 'ta';
   const router = useRouter();
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
-  const [activeRequestFilter, setActiveRequestFilter] = useState<'all' | 'pending' | 'matched'>('all');
   const [activeVoiceSummary, setActiveVoiceSummary] = useState<{
     service: string;
     requirement: string;
@@ -83,31 +80,96 @@ export default function OoruConnectBoard() {
     targetTab: string;
   } | null>(null);
 
-  // 10 Core Categories mapped to ACTUAL Uzhavan360 pages
-  const categories: NeedCategory[] = [
-    { id: 'labor', nameEn: 'Labour', nameTa: 'வேலையாட்கள்', icon: Users, serviceType: 'labor', color: 'from-amber-500 to-orange-600', count: 14, targetTab: 'labor' },
-    { id: 'technician', nameEn: 'Technician', nameTa: 'டெக்னீசியன்', icon: Wrench, serviceType: 'technician', color: 'from-blue-500 to-indigo-600', count: 6, targetTab: 'labor', targetSub: 'technician' },
-    { id: 'equipment', nameEn: 'Equipment Rental', nameTa: 'கருவிகள் வாடகை', icon: Tractor, serviceType: 'equipment', color: 'from-emerald-500 to-teal-600', count: 8, targetTab: 'rentals' },
-    { id: 'buyer', nameEn: 'Buyer / Market', nameTa: 'கொள்முதல் / சந்தை', icon: Store, serviceType: 'fpo', color: 'from-purple-500 to-violet-600', count: 12, targetTab: 'market' },
-    { id: 'transport', nameEn: 'Transport', nameTa: 'சரக்கு போக்குவரத்து', icon: Truck, serviceType: 'transport', color: 'from-sky-500 to-cyan-600', count: 5, targetTab: 'driver' },
-    { id: 'storage', nameEn: 'Cold Storage', nameTa: 'குளிர்சாதன கிடங்கு', icon: Warehouse, serviceType: 'storage', color: 'from-cyan-600 to-blue-700', count: 3, targetTab: 'support', targetSub: 'storage' },
-    { id: 'agri', nameEn: 'Agri Assistance', nameTa: 'விவசாய உதவி', icon: Sprout, serviceType: 'agronomist', color: 'from-green-500 to-emerald-700', count: 9, targetTab: 'assistant' },
-    { id: 'government', nameEn: 'Govt Assistance', nameTa: 'அரசு நலத்திட்டங்கள்', icon: FileText, serviceType: 'government', color: 'from-amber-600 to-yellow-700', count: 7, targetTab: 'schemes' },
-    { id: 'payment', nameEn: 'Payment Support', nameTa: 'கட்டணம் / ஆர்டர் உதவி', icon: CreditCard, serviceType: 'office', color: 'from-pink-500 to-rose-600', count: 4, targetTab: 'orders' },
-    { id: 'fos', nameEn: 'FOS Assistance', nameTa: 'FOS உதவி', icon: UserCheck, serviceType: 'fos', color: 'from-teal-600 to-emerald-800', count: 11, targetTab: 'support' },
+  // Simple Need Categories (No availability counts, direct Uzhavan360 routes)
+  const needOptions: NeedOption[] = [
+    {
+      id: 'labor',
+      nameEn: 'Need Labour Squad',
+      nameTa: 'ஒருவர் உதவி வேண்டும் (வேலையாட்கள்)',
+      subtextEn: 'Paddy harvesting, weeding & farm work',
+      subtextTa: 'அறுவடை, களை எடுத்தல் & பண்ணை வேலைகள்',
+      icon: Users,
+      serviceType: 'labor',
+      color: 'from-amber-500 to-orange-600',
+      targetTab: 'labor'
+    },
+    {
+      id: 'technician',
+      nameEn: 'Need Technical Repair',
+      nameTa: 'தொழில்நுட்ப உதவி வேண்டும்',
+      subtextEn: 'Solar pump, motor & drip irrigation technician',
+      subtextTa: 'மோட்டார், சொட்டுநீர் & சோலார் பம்ப் பழுது',
+      icon: Wrench,
+      serviceType: 'technician',
+      color: 'from-blue-500 to-indigo-600',
+      targetTab: 'labor',
+      targetSub: 'technician'
+    },
+    {
+      id: 'equipment',
+      nameEn: 'Need Equipment / Machine',
+      nameTa: 'கருவி அல்லது இயந்திரம் வேண்டும்',
+      subtextEn: 'Tractor, rotavator, harvester rental',
+      subtextTa: 'ட்ராக்டர், ரொட்டவேட்டர், ஹார்வெஸ்டர் வாடகை',
+      icon: Tractor,
+      serviceType: 'equipment',
+      color: 'from-emerald-500 to-teal-600',
+      targetTab: 'rentals'
+    },
+    {
+      id: 'buyer',
+      nameEn: 'Need Buyer or Seller',
+      nameTa: 'வாங்குபவர் / விற்பவர் தேவை',
+      subtextEn: 'FPO bulk trade, harvest sales & market prices',
+      subtextTa: 'பயிர் விற்பனை, சந்தை விலை & FPO கொள்முதல்',
+      icon: Store,
+      serviceType: 'fpo',
+      color: 'from-purple-500 to-violet-600',
+      targetTab: 'market'
+    },
+    {
+      id: 'transport',
+      nameEn: 'Need Transport / Freight',
+      nameTa: 'போக்குவரத்து வேண்டும்',
+      subtextEn: 'Crop transport, mini-truck & freight booking',
+      subtextTa: 'பயிர் சரக்கு லாரி & டிராக்டர் லோடு',
+      icon: Truck,
+      serviceType: 'transport',
+      color: 'from-sky-500 to-cyan-600',
+      targetTab: 'driver'
+    },
+    {
+      id: 'government',
+      nameEn: 'Need Government Assistance',
+      nameTa: 'அரசு உதவி வேண்டும்',
+      subtextEn: 'Subsidy schemes, VAO desk & crop insurance',
+      subtextTa: 'மானிய திட்டங்கள், VAO உதவி & காப்பீடு',
+      icon: FileText,
+      serviceType: 'government',
+      color: 'from-amber-600 to-yellow-700',
+      targetTab: 'schemes'
+    },
+    {
+      id: 'fos',
+      nameEn: 'Need Field Officer (FOS)',
+      nameTa: 'FOS உதவி வேண்டும்',
+      subtextEn: 'Assisted access, offline support & verification',
+      subtextTa: 'நேரடி உதவி & கள அலுவலர் சேவை',
+      icon: UserCheck,
+      serviceType: 'fos',
+      color: 'from-teal-600 to-emerald-800',
+      targetTab: 'support'
+    },
   ];
 
-  // Nearby providers dataset with real page targets
-  const nearbyProviders: NearbyProvider[] = [
-    { id: 'p1', name: 'Raman Squad', role: 'Harvesting Labour Captain', serviceType: 'labor', distanceKm: 2.4, available: true, vouchedCount: 6, phone: '+91 98765 43210', village: 'Melur', rating: 4.9, targetTab: 'labor' },
-    { id: 'p2', name: 'Kannan Equipment', role: '55HP Tractor & Rotavator', serviceType: 'equipment', distanceKm: 4.8, available: true, vouchedCount: 8, phone: '+91 98765 43211', village: 'Vadipatti', rating: 4.8, targetTab: 'rentals' },
-    { id: 'p3', name: 'Senthil Kumar', role: 'Motor & Drip Irrigation Tech', serviceType: 'technician', distanceKm: 6.2, available: true, vouchedCount: 4, phone: '+91 98765 43212', village: 'Melur', rating: 4.7, targetTab: 'labor' },
-    { id: 'p4', name: 'Karur Agri Cold Storage', role: 'Multi-Commodity Warehouse', serviceType: 'storage', distanceKm: 8.1, available: true, vouchedCount: 12, phone: '+91 98765 43213', village: 'Karur Industrial', rating: 4.9, targetTab: 'support' },
-    { id: 'p5', name: 'Murugan Transport', role: '3.5 Ton Freight Truck', serviceType: 'transport', distanceKm: 3.5, available: false, vouchedCount: 5, phone: '+91 98765 43214', village: 'Vadipatti', rating: 4.6, targetTab: 'driver' },
-    { id: 'p6', name: 'Dr. Arumugam VAO', role: 'Government Agri Extension Officer', serviceType: 'government', distanceKm: 1.5, available: true, vouchedCount: 15, phone: '+91 98765 43215', village: 'Melur Taluk', rating: 5.0, targetTab: 'schemes' },
+  // Nearby matched providers
+  const nearbyMatches: NearbyMatch[] = [
+    { id: 'm1', name: 'Raman Squad', role: 'Harvesting Labour Captain', serviceType: 'labor', distanceKm: 2.4, available: true, vouchedCount: 6, phone: '+91 98765 43210', village: 'Melur', rating: 4.9, targetTab: 'labor' },
+    { id: 'm2', name: 'Kannan Equipment', role: '55HP Tractor & Rotavator', serviceType: 'equipment', distanceKm: 4.8, available: true, vouchedCount: 8, phone: '+91 98765 43211', village: 'Vadipatti', rating: 4.8, targetTab: 'rentals' },
+    { id: 'm3', name: 'Senthil Tech', role: 'Motor & Drip Irrigation Tech', serviceType: 'technician', distanceKm: 6.2, available: true, vouchedCount: 4, phone: '+91 98765 43212', village: 'Melur', rating: 4.7, targetTab: 'labor' },
   ];
 
-  // Active requests dataset
+  // User's active requests
   const [requests, setRequests] = useState<UserRequest[]>([
     {
       id: 'REQ-101',
@@ -131,19 +193,12 @@ export default function OoruConnectBoard() {
     }
   ]);
 
-  // Navigate to existing Uzhavan360 page
+  // Navigate directly to existing Uzhavan360 page
   const navigateToFeature = (targetTab: string, sub?: string) => {
     let url = `/dashboard?tab=${targetTab}&from=ooruconnect`;
     if (sub) url += `&sub=${sub}`;
     router.push(url);
   };
-
-  const filteredProviders = nearbyProviders.filter(p => {
-    if (selectedCategory === 'all') return true;
-    return p.serviceType === selectedCategory;
-  });
-
-  const availableNowProviders = nearbyProviders.filter(p => p.available);
 
   // Handle voice intent confirmation
   const handleVoiceIntent = (intentText: string) => {
@@ -174,7 +229,7 @@ export default function OoruConnectBoard() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-16">
+    <div className="space-y-8 max-w-5xl mx-auto pb-16">
       
       {/* 1. Header Banner */}
       <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-r from-emerald-900 via-primary-900 to-earth-950 p-6 sm:p-8 text-white shadow-xl border border-primary-800/30">
@@ -183,29 +238,32 @@ export default function OoruConnectBoard() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 border border-primary-400/30 backdrop-blur-md text-primary-300 text-xs font-bold font-mono">
-              <Users className="w-3.5 h-3.5" />
-              <span>OoruConnect Discovery & Dispatch Layer</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Uzhavan360 Connection Engine</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-white">
-              🤝 OoruConnect
+            <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-white flex items-center gap-2">
+              <span>🤝 OoruConnect</span>
             </h1>
-            <p className="text-sm text-earth-200 font-semibold leading-relaxed">
+            <h2 className="text-lg font-bold text-emerald-200">
+              {isTamil ? 'உங்களுக்கு என்ன தேவை?' : 'What do you need?'}
+            </h2>
+            <p className="text-xs text-earth-200 font-semibold leading-relaxed">
               {isTamil 
-                ? 'உங்களுக்கு தேவையான சரியான சேவையை தேர்வு செய்து தேவையான நபருடன் நேரடியாக இணையுங்கள்.' 
-                : 'Select your required need — OoruConnect connects you directly to the relevant service page & verified provider.'}
+                ? 'தேவையை சொல்லுங்கள். Uzhavan360-ல் ஏற்கனவே இருக்கும் சரியான சேவை அல்லது நபருடன் இணைக்கிறோம்.' 
+                : 'Speak your requirement. OoruConnect connects you directly to the relevant existing Uzhavan360 service & verified provider.'}
             </p>
           </div>
 
-          {/* Voice Command Card */}
+          {/* Primary Action — Prominent Voice Button */}
           <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-3 shrink-0 sm:min-w-[240px]">
-            <span className="text-xs font-bold text-earth-100">
-              {isTamil ? 'குரல் மூலம் கோரிக்கை பதிவிட' : 'Post request via Voice'}
+            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
+              {isTamil ? 'முதன்மை நடவடிக்கை' : 'Primary Action'}
             </span>
             <button
               onClick={() => setShowVoiceModal(true)}
-              className="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer border-0 active:scale-95"
+              className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-sm shadow-xl shadow-amber-500/30 flex items-center justify-center gap-2 transition-all cursor-pointer border-0 active:scale-95"
             >
-              <Mic className="w-4 h-4 animate-bounce" />
+              <Mic className="w-5 h-5 animate-bounce" />
               <span>🎙️ {isTamil ? 'பேசுங்கள்' : 'Speak Now'}</span>
             </button>
           </div>
@@ -258,48 +316,49 @@ export default function OoruConnectBoard() {
               className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md cursor-pointer border-0 flex items-center gap-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{isTamil ? 'உறுதி செய் (Confirm & Open Service Page)' : 'Confirm & Open Service Page'}</span>
+              <span>{isTamil ? 'உறுதி செய் (Confirm & Open Service)' : 'Confirm & Open Service'}</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* 3. "What Do You Need?" Categories Grid -> Real Page Navigation */}
+      {/* 3. Simple Need Categories -> Click Redirects to Existing Pages */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-black text-foreground tracking-tight font-display">
-              {isTamil ? 'உங்களுக்கு என்ன தேவை?' : 'What do you need?'}
-            </h2>
-            <p className="text-xs text-earth-450 mt-0.5">
-              {isTamil ? 'தேவையான சேவையை கிளிக் செய்யவும் — உரிய உழவன்360 பக்கத்திற்கு அழைத்துச்செல்லும்' : 'Click a category to open the corresponding existing Uzhavan360 feature page'}
-            </p>
-          </div>
+        <div>
+          <h2 className="text-lg font-black text-foreground tracking-tight font-display">
+            {isTamil ? 'தேவையை தேர்வு செய்யவும்' : 'Select your need option'}
+          </h2>
+          <p className="text-xs text-earth-450 mt-0.5">
+            {isTamil ? 'தேவையான விருப்பத்தை கிளிக் செய்யவும் — உரிய உழவன்360 சேவை பக்கத்திற்கு அழைத்துச்செல்லும்' : 'Click a need — redirects directly to the corresponding existing Uzhavan360 page'}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
-          {categories.map((cat) => {
-            const Icon = cat.icon;
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {needOptions.map((opt) => {
+            const Icon = opt.icon;
 
             return (
               <button
-                key={cat.id}
-                onClick={() => navigateToFeature(cat.targetTab, cat.targetSub)}
-                className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-earth-850 hover:border-primary-500 hover:shadow-lg hover:scale-[1.02] text-left flex flex-col justify-between gap-3 transition-all duration-200 cursor-pointer group border-0"
+                key={opt.id}
+                onClick={() => navigateToFeature(opt.targetTab, opt.targetSub)}
+                className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-earth-850 hover:border-primary-500 hover:shadow-lg hover:scale-[1.01] text-left flex items-center justify-between gap-4 transition-all duration-200 cursor-pointer group border-0"
               >
-                <div className="flex items-center justify-between">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cat.color} text-white flex items-center justify-center shadow-md shrink-0 group-hover:scale-110 transition-transform`}>
-                    <Icon className="w-5 h-5" />
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${opt.color} text-white flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform`}>
+                    <Icon className="w-5.5 h-5.5" />
                   </div>
-                  <ArrowRight className="w-4 h-4 text-earth-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-black text-foreground tracking-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
+                      {isTamil ? opt.nameTa : opt.nameEn}
+                    </h3>
+                    <p className="text-[11px] text-earth-450 font-semibold truncate mt-0.5">
+                      {isTamil ? opt.subtextTa : opt.subtextEn}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xs font-black text-foreground tracking-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                    {isTamil ? cat.nameTa : cat.nameEn}
-                  </h3>
-                  <span className="text-[10px] font-bold text-earth-400 block mt-0.5">
-                    {cat.count} {isTamil ? 'இருப்பில்' : 'available'}
-                  </span>
+
+                <div className="w-8 h-8 rounded-full bg-earth-100 dark:bg-earth-900 group-hover:bg-primary-500 group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                  <ArrowRight className="w-4 h-4" />
                 </div>
               </button>
             );
@@ -307,16 +366,16 @@ export default function OoruConnectBoard() {
         </div>
       </div>
 
-      {/* 4. Active Request / Context-Aware Connection Section */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-earth-850 shadow-xs space-y-5">
+      {/* 4. Active Requests Section */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-earth-850 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-earth-150/40 dark:border-earth-900/10 pb-4">
           <div>
             <h3 className="text-base font-black text-foreground font-display flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary-500" />
-              <span>{isTamil ? 'என் கோரிக்கைகள் (My Requests)' : 'My Requests'}</span>
+              <span>{isTamil ? '📋 என் கோரிக்கைகள் (My Requests)' : '📋 My Requests'}</span>
             </h3>
             <p className="text-xs text-earth-450 mt-0.5">
-              {isTamil ? 'உங்களின் கோரிக்கைகள் மற்றும் நேரடி இணைப்பு' : 'Your active requests and dynamic call connections'}
+              {isTamil ? 'உங்களின் தற்போதைய கோரிக்கைகள் மற்றும் நேரடி அழைப்பு' : 'Your current active requests & call options'}
             </p>
           </div>
 
@@ -324,12 +383,12 @@ export default function OoruConnectBoard() {
             onClick={() => navigateToFeature('orders')}
             className="text-xs font-bold text-primary-500 hover:underline cursor-pointer bg-transparent border-0 flex items-center gap-1"
           >
-            <span>{isTamil ? 'அனைத்து கோரிக்கைகள்' : 'View All Orders'}</span>
+            <span>{isTamil ? 'அனைத்தும் காண்க' : 'View All Orders'}</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {requests.map((req) => (
             <div 
               key={req.id} 
@@ -347,7 +406,7 @@ export default function OoruConnectBoard() {
                 <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                   req.status === 'MATCHED' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
                 }`}>
-                  {req.status === 'MATCHED' ? (isTamil ? '🟢 நபர் கிடைத்தார்' : '🟢 Provider Found') : (isTamil ? '🟡 தேடுகிறது' : '🟡 Finding Providers')}
+                  {req.status === 'MATCHED' ? (isTamil ? '🟢 Matched' : '🟢 Matched') : (isTamil ? '🟡 Finding' : '🟡 Finding')}
                 </span>
               </div>
 
@@ -365,63 +424,58 @@ export default function OoruConnectBoard() {
         </div>
       </div>
 
-      {/* 5. Nearby Services (10 km Concept) & Available Now */}
+      {/* 5. Nearby Match & Trusted Connections Banner */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {/* Nearby Services */}
+        {/* Nearby Match Banner */}
         <div className="p-6 rounded-3xl bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-earth-850 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-earth-150/40 dark:border-earth-900/10">
             <div>
               <h3 className="text-base font-black text-foreground font-display flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-500" />
-                <span>{isTamil ? 'அருகிலுள்ள சேவைகள் (Nearby Services)' : 'Nearby Services (10 km)'}</span>
+                <span>{isTamil ? '📍 அருகிலுள்ள நபர்கள் (Nearby Match)' : '📍 Nearby Match'}</span>
               </h3>
               <p className="text-xs text-earth-450 mt-0.5">
-                {isTamil ? 'உங்களின் இருப்பிடத்திலிருந்து 10 கி.மீ சுற்றளவில்' : 'Verified providers within your 10 km radius'}
+                {isTamil ? 'உங்களின் தேவைகேற்ப 3 பொருத்தமான நபர்கள் அருகில் உள்ளனர்' : '3 suitable people found near your location'}
               </p>
             </div>
           </div>
 
           <div className="space-y-3">
-            {filteredProviders.length === 0 ? (
-              <div className="p-6 text-center text-xs text-earth-450 italic bg-earth-50/30 rounded-2xl">
-                {isTamil ? 'தேர்ந்தெடுக்கப்பட்ட வகைக்கு சேவை எதுவும் அருகிலில்லை.' : 'No suitable service provider currently available within 10 km.'}
-              </div>
-            ) : (
-              filteredProviders.map(p => (
-                <div 
-                  key={p.id} 
-                  onClick={() => navigateToFeature(p.targetTab)}
-                  className="p-3.5 rounded-2xl bg-earth-50/40 dark:bg-earth-950/20 border border-earth-200/40 dark:border-earth-900/20 flex items-center justify-between hover:border-primary-500/40 cursor-pointer transition-all"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-black text-foreground">{p.name}</h4>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-md">
-                        📍 {p.distanceKm} km
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-earth-500 font-semibold">{p.role} • {p.village}</p>
+            {nearbyMatches.map(m => (
+              <div 
+                key={m.id} 
+                onClick={() => navigateToFeature(m.targetTab)}
+                className="p-3.5 rounded-2xl bg-earth-50/40 dark:bg-earth-950/20 border border-earth-200/40 dark:border-earth-900/20 flex items-center justify-between hover:border-primary-500/40 cursor-pointer transition-all"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-black text-foreground">{m.name}</h4>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-md">
+                      📍 {m.distanceKm} km
+                    </span>
                   </div>
-
-                  <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
-                    p.available ? 'bg-emerald-500/10 text-emerald-600' : 'bg-earth-200 dark:bg-earth-800 text-earth-500'
-                  }`}>
-                    {p.available ? (isTamil ? 'இருப்பில்' : 'Available') : (isTamil ? 'பிஸியாக உள்ளார்' : 'Busy')}
-                  </span>
+                  <p className="text-[11px] text-earth-500 font-semibold">{m.role} • {m.village}</p>
                 </div>
-              ))
-            )}
+
+                <button
+                  className="py-1.5 px-3 rounded-xl bg-primary-500 text-white font-bold text-[11px] flex items-center gap-1 border-0"
+                >
+                  <span>{isTamil ? 'பார்க்க' : 'View Match'}</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Available Now & Trusted People */}
+        {/* Trusted Connections */}
         <div className="p-6 rounded-3xl bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-earth-850 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-earth-150/40 dark:border-earth-900/10">
             <div>
               <h3 className="text-base font-black text-foreground font-display flex items-center gap-2">
                 <Star className="w-4 h-4 text-amber-500" />
-                <span>{isTamil ? 'நம்பகமான நபர்கள் (Trusted People)' : 'Trusted & Vouched People'}</span>
+                <span>{isTamil ? '⭐ சான்றளிக்கப்பட்டவர்கள் (Trusted Connections)' : '⭐ Trusted Connections'}</span>
               </h3>
               <p className="text-xs text-earth-450 mt-0.5">
                 {isTamil ? 'ஊராரால் உறுதி செய்யப்பட்ட சேவை நபர்கள்' : 'Community verified & vouched by village members'}
@@ -430,7 +484,7 @@ export default function OoruConnectBoard() {
           </div>
 
           <div className="space-y-3">
-            {availableNowProviders.slice(0, 3).map(p => (
+            {nearbyMatches.map(p => (
               <div key={p.id} className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/15 flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
