@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
+import { SwipeToConnect } from './SwipeToConnect';
 import {
   CloudRain,
   Sun,
@@ -612,8 +613,8 @@ export default function WeatherBoard() {
         <div className="p-8 text-center bg-white dark:bg-[#111714] border rounded-[24px] text-xs font-bold text-earth-450">
           {isTamil ? 'இருப்பிடத்தைத் தேர்ந்தெடுத்து வானிலை விவரங்களைப் பெறவும்.' : 'Please select a location presets or input custom coordinates.'}
         </div>
-      )}
-
+      )}      {/* Context-Aware Connection */}
+      <SwipeToConnect currentScreen="WeatherBoard" currentFeature="Weather Forecast Assistance" />
     </div>
   );
 }

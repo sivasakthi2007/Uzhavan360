@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
+import SwipeToConnect from '@/components/SwipeToConnect';
 import {
   Send,
   Bot,
@@ -454,6 +455,13 @@ export default function AIAssistantBoard() {
             >
               <Send className="w-5 h-5" />
             </button>
+          </div>
+          <div className="mt-3">
+            <SwipeToConnect
+              currentScreen="AIAssistantBoard"
+              currentFeature="AI & Assisted Agriculture Support"
+              serviceType="fos"
+            />
           </div>
           <p className="text-[9px] font-mono font-bold text-earth-400 mt-2 text-center">
             {isTamil ? '🌿 V-LINK AI — தமிழ் & ஆங்கிலத்தில் விவசாய உதவி' : '🌿 V-LINK AI — Farming assistance in Tamil & English'}

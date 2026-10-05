@@ -55,6 +55,8 @@ import AIAssistantBoard from '@/components/AIAssistantBoard';
 import CustomerCareBoard from '@/components/CustomerCareBoard';
 import TranslatorBoard from '@/components/TranslatorBoard';
 import VLinkBoard from '@/components/VLinkBoard';
+import { VoiceAssistantModal } from '@/components/VoiceAssistantModal';
+import { FOSAndIVRBoard } from '@/components/FOSAndIVRBoard';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { enableLayer2 } from '@/lib/config';
 

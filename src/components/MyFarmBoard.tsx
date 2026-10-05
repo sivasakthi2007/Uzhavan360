@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
+import { SwipeToConnect } from './SwipeToConnect';
 import {
   Sprout, Plus, Trash2, Edit3, Navigation, Calendar, DollarSign,
   TrendingUp, AlertTriangle, CloudRain, HeartPulse, CheckCircle2,
@@ -2391,6 +2392,11 @@ export default function MyFarmBoard() {
         </div>
       )}
 
+      {/* Context-Aware Connection */}
+      <div className="mt-8">
+        <SwipeToConnect currentScreen="MyFarmBoard" currentFeature="Farm Management Assistance" />
+      </div>
     </div>
   );
 }
+

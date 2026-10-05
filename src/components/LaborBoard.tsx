@@ -14,6 +14,7 @@ import StatisticsCard from './StatisticsCard';
 import EmptyState from './EmptyState';
 import ConfirmationDialog from './ConfirmationDialog';
 import SuccessModal from './SuccessModal';
+import { SwipeToConnect } from './SwipeToConnect';
 
 export default function LaborBoard() {
   const { 
@@ -885,6 +886,10 @@ export default function LaborBoard() {
         </div>
       )}
 
+      {/* Context-Aware Connection */}
+      <div className="mt-8">
+        <SwipeToConnect currentScreen="LaborBoard" currentFeature="Labour Squad Request" />
+      </div>
     </div>
   );
 }

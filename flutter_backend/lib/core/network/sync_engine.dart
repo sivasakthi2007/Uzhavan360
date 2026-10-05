@@ -10,6 +10,10 @@ class SyncEngine {
 
   bool _isSyncing = false;
 
+  Future<void> executeFullSync({bool force = false}) async {
+    await syncPendingOutbox();
+  }
+
   Future<void> syncPendingOutbox() async {
     if (_isSyncing) return;
     _isSyncing = true;

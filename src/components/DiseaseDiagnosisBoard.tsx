@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { diagnoseImage, ScanResult } from '@/services/scanService';
+import SwipeToConnect from '@/components/SwipeToConnect';
 import {
   Camera,
   Upload,
@@ -536,6 +537,15 @@ export default function DiseaseDiagnosisBoard() {
             </div>
 
           </div>
+        </div>
+
+        {/* Swipe to Connect with Agronomist / FOS */}
+        <div className="mt-8 pt-6 border-t border-earth-150/40 dark:border-earth-900/10">
+          <SwipeToConnect 
+            currentScreen="DiseaseDiagnosisBoard" 
+            currentFeature="Crop Assistance & Agronomist Support"
+            serviceType="agronomist"
+          />
         </div>
 
       </div>

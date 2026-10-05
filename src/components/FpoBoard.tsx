@@ -8,6 +8,7 @@ import {
   ChevronRight, Activity, TrendingUp, AlertTriangle, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import StatCard from './StatCard';
+import { SwipeToConnect } from './SwipeToConnect';
 import { enableLayer2 } from '@/lib/config';
 
 export default function FpoBoard() {
@@ -1257,6 +1258,10 @@ export default function FpoBoard() {
         );
       })()}
 
+      {/* Context-Aware Connection */}
+      <div className="mt-8">
+        <SwipeToConnect currentScreen="FpoBoard" currentFeature="Market Price & Crop Trade" />
+      </div>
     </div>
   );
 }

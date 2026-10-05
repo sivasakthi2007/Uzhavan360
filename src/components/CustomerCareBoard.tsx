@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { SwipeToConnect } from './SwipeToConnect';
 import {
   Headset,
   HelpCircle,
@@ -641,6 +642,9 @@ export default function CustomerCareBoard() {
       {view === 'my_tickets' && renderMyTickets()}
       {view === 'contact' && renderContact()}
       {view === 'feedback' && renderFeedback()}
+
+      {/* Context-Aware Connection */}
+      <SwipeToConnect currentScreen="CustomerCareBoard" currentFeature="Government Scheme Assistance" />
     </div>
   );
 }

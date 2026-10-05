@@ -16,6 +16,7 @@ import StatisticsCard from './StatisticsCard';
 import EmptyState from './EmptyState';
 import ConfirmationDialog from './ConfirmationDialog';
 import SuccessModal from './SuccessModal';
+import { SwipeToConnect } from './SwipeToConnect';
 
 export default function RentalsBoard() {
   const { 
@@ -836,6 +837,10 @@ export default function RentalsBoard() {
         </div>
       )}
 
+      {/* Context-Aware Connection */}
+      <div className="mt-8">
+        <SwipeToConnect currentScreen="RentalsBoard" currentFeature="Equipment Rental" />
+      </div>
     </div>
   );
 }

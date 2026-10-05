@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/models/ooru_models.dart';
 import '../../../core/network/supabase_service.dart';
+import '../../../shared/widgets/swipe_to_connect_widget.dart';
 
 class DemandHomeScreen extends StatefulWidget {
   final VoidCallback onOpenLabourForm;
@@ -210,6 +211,31 @@ class _DemandHomeScreenState extends State<DemandHomeScreen> {
                 ],
               ),
             ),
+          ),
+
+          const SizedBox(height: 24),
+          // Voice Assistant Quick Button
+          ElevatedButton.icon(
+            icon: const Icon(Icons.mic, color: Colors.white, size: 24),
+            label: const Text('🎙 பேசுங்கள் (Voice Access)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD81B60),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Voice Assistant activated: "Naalaikku 5 peru harvesting ku venum"')),
+              );
+            },
+          ),
+
+          const SizedBox(height: 24),
+          // Context-Aware Swipe To Connect Widget
+          const SwipeToConnectWidget(
+            currentScreen: 'DemandHomeScreen',
+            currentFeature: 'Harvest Squad Need',
           ),
         ],
       ),

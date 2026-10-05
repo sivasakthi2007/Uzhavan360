@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
+import { SwipeToConnect } from './SwipeToConnect';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import {
   Wifi,
@@ -968,6 +969,10 @@ CREATE TABLE IF NOT EXISTS public.vlink_messages (
         </div>
       )}
 
+      {/* Context-Aware Connection */}
+      <div className="mt-8">
+        <SwipeToConnect currentScreen="VLinkBoard" currentFeature="V-LINK Connectivity Support" />
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { SwipeToConnect } from './SwipeToConnect';
 import {
   Truck,
   MapPin,
@@ -296,6 +297,10 @@ export default function DriverBoard() {
         </div>
       )}
 
+      {/* Context-Aware Connection */}
+      <div className="mt-8">
+        <SwipeToConnect currentScreen="DriverBoard" currentFeature="Freight Transport" />
+      </div>
     </div>
   );
 }
