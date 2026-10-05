@@ -39,7 +39,12 @@ import {
   Phone,
   ShieldAlert,
   Snowflake,
-  Radio
+  Radio,
+  Sparkles,
+  Mic,
+  Tractor,
+  Wrench,
+  FileText
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
@@ -151,6 +156,7 @@ function DashboardContent() {
   }, [activeTab, subParam]);
 
   // State Management
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [schemeQuery, setSchemeQuery] = useState('');
   const [marketQuery, setMarketQuery] = useState('');
@@ -382,26 +388,133 @@ function DashboardContent() {
                   </div>
                 </div>
 
-                {/* Quick Navigation Strip */}
-                <div className="grid grid-cols-5 gap-2">
-                  {[
-                    { href: '/dashboard?tab=myfarm', icon: Leaf, label: language === 'ta' ? 'என் பண்ணை' : 'My Farm', color: 'text-primary-500 bg-primary-500/10' },
-                    { href: '/dashboard?tab=market', icon: ShoppingBag, label: language === 'ta' ? 'சந்தை' : 'Market', color: 'text-emerald-500 bg-emerald-500/10' },
-                    { href: '/dashboard?tab=buysell', icon: Package, label: language === 'ta' ? 'முன்பதிவு' : 'Pre-Book', color: 'text-indigo-500 bg-indigo-500/10' },
-                    { href: '/dashboard?tab=assistant', icon: Bot, label: language === 'ta' ? 'AI' : 'AI Chat', color: 'text-purple-500 bg-purple-500/10' },
-                    { href: '/dashboard?tab=more', icon: Users, label: language === 'ta' ? 'இதர' : 'More', color: 'text-amber-500 bg-amber-500/10' },
-                  ].map(({ href, icon: Icon, label, color }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 hover:border-primary-500/20 hover:shadow-xs transition-all no-underline cursor-pointer group"
+                {/* ========================================================================= */}
+                {/* DISCOVERY SHORTCUTS SECTION: "உங்களுக்கு என்ன தேவை?" */}
+                {/* ========================================================================= */}
+                <div className="space-y-3 p-5 rounded-3xl bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-900/30 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-black text-foreground font-display flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span>{language === 'ta' ? 'உங்களுக்கு என்ன தேவை?' : 'What do you need?'}</span>
+                      </h2>
+                      <p className="text-xs text-earth-450 mt-0.5">
+                        {language === 'ta' ? 'தேவையை கிளிக் செய்யவும் — உரிய உழவன்360 சேவை பக்கத்திற்கு அழைத்துச்செல்லும்' : 'Click a need shortcut to navigate directly to the existing Uzhavan360 feature page'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {/* 1. Voice Action */}
+                    <button
+                      onClick={() => setShowVoiceModal(true)}
+                      className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md flex items-center gap-3 cursor-pointer border-0 hover:scale-[1.02] transition-all"
                     >
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${color}`}>
-                        <Icon className="w-4 h-4" />
+                      <Mic className="w-5 h-5 animate-bounce shrink-0" />
+                      <div className="text-left">
+                        <span className="text-xs font-black block">{language === 'ta' ? '🎙️ பேசுங்கள்' : '🎙️ Voice Request'}</span>
+                        <span className="text-[9px] text-amber-100 font-semibold block">{language === 'ta' ? 'குரல் மூலம் கோரிக்கை' : 'Speak your requirement'}</span>
                       </div>
-                      <span className="text-[9px] font-black text-foreground text-center leading-tight">{label}</span>
+                    </button>
+
+                    {/* 2. Labour */}
+                    <Link
+                      href="/dashboard?tab=labor"
+                      className="p-3.5 rounded-2xl bg-earth-50/60 dark:bg-earth-950/30 border border-earth-200/50 dark:border-earth-850 hover:border-primary-500 flex items-center gap-3 no-underline text-foreground hover:scale-[1.02] transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <Users className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-black block truncate">{language === 'ta' ? '👷 வேலையாட்கள்' : '👷 Labour Squad'}</span>
+                        <span className="text-[9px] text-earth-450 font-semibold block truncate">{language === 'ta' ? 'பண்ணை வேலையாட்கள்' : 'Farm labour squad'}</span>
+                      </div>
                     </Link>
-                  ))}
+
+                    {/* 3. Equipment */}
+                    <Link
+                      href="/dashboard?tab=rentals"
+                      className="p-3.5 rounded-2xl bg-earth-50/60 dark:bg-earth-950/30 border border-earth-200/50 dark:border-earth-850 hover:border-primary-500 flex items-center gap-3 no-underline text-foreground hover:scale-[1.02] transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <Tractor className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-black block truncate">{language === 'ta' ? '🚜 கருவி / இயந்திரம்' : '🚜 Equipment Rental'}</span>
+                        <span className="text-[9px] text-earth-450 font-semibold block truncate">{language === 'ta' ? 'ட்ராக்டர் & வாடகை' : 'Tractor & Harvester'}</span>
+                      </div>
+                    </Link>
+
+                    {/* 4. Technician */}
+                    <Link
+                      href="/dashboard?tab=labor&sub=technician"
+                      className="p-3.5 rounded-2xl bg-earth-50/60 dark:bg-earth-950/30 border border-earth-200/50 dark:border-earth-850 hover:border-primary-500 flex items-center gap-3 no-underline text-foreground hover:scale-[1.02] transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <Wrench className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-black block truncate">{language === 'ta' ? '🔧 தொழில்நுட்ப உதவி' : '🔧 Technician Help'}</span>
+                        <span className="text-[9px] text-earth-450 font-semibold block truncate">{language === 'ta' ? 'மோட்டார் & பம்ப் பழுது' : 'Motor & pump repair'}</span>
+                      </div>
+                    </Link>
+
+                    {/* 5. Transport */}
+                    <Link
+                      href="/dashboard?tab=driver"
+                      className="p-3.5 rounded-2xl bg-earth-50/60 dark:bg-earth-950/30 border border-earth-200/50 dark:border-earth-850 hover:border-primary-500 flex items-center gap-3 no-underline text-foreground hover:scale-[1.02] transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <Truck className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-black block truncate">{language === 'ta' ? '🚚 போக்குவரத்து' : '🚚 Transport Logistics'}</span>
+                        <span className="text-[9px] text-earth-450 font-semibold block truncate">{language === 'ta' ? 'பயிர் லோடு லாரி' : 'Freight & trucks'}</span>
+                      </div>
+                    </Link>
+
+                    {/* 6. Buy / Sell */}
+                    <Link
+                      href="/dashboard?tab=market"
+                      className="p-3.5 rounded-2xl bg-earth-50/60 dark:bg-earth-950/30 border border-earth-200/50 dark:border-earth-850 hover:border-primary-500 flex items-center gap-3 no-underline text-foreground hover:scale-[1.02] transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <ShoppingBag className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-black block truncate">{language === 'ta' ? '🏪 வாங்க / விற்க' : '🏪 Buy / Sell Market'}</span>
+                        <span className="text-[9px] text-earth-450 font-semibold block truncate">{language === 'ta' ? 'பயிர் சந்தை & FPO' : 'Market trade & produce'}</span>
+                      </div>
+                    </Link>
+
+                    {/* 7. Government Schemes */}
+                    <Link
+                      href="/dashboard?tab=schemes"
+                      className="p-3.5 rounded-2xl bg-earth-50/60 dark:bg-earth-950/30 border border-earth-200/50 dark:border-earth-850 hover:border-primary-500 flex items-center gap-3 no-underline text-foreground hover:scale-[1.02] transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-amber-600/10 text-amber-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <FileText className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-black block truncate">{language === 'ta' ? '📋 அரசு உதவி' : '📋 Govt Schemes'}</span>
+                        <span className="text-[9px] text-earth-450 font-semibold block truncate">{language === 'ta' ? 'மானியங்கள் & VAO' : 'Subsidies & insurance'}</span>
+                      </div>
+                    </Link>
+
+                    {/* 8. Crop Discovery */}
+                    <Link
+                      href="/dashboard?tab=home"
+                      className="p-3.5 rounded-2xl bg-earth-50/60 dark:bg-earth-950/30 border border-earth-200/50 dark:border-earth-850 hover:border-primary-500 flex items-center gap-3 no-underline text-foreground hover:scale-[1.02] transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-green-500/10 text-green-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <Leaf className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-black block truncate">{language === 'ta' ? '🌾 அருகிலுள்ள பயிர்கள்' : '🌾 Nearby Crops'}</span>
+                        <span className="text-[9px] text-earth-450 font-semibold block truncate">{language === 'ta' ? 'பயிர் விவரங்கள்' : 'Crop discovery'}</span>
+                      </div>
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Mandi Price + Weather strip */}
@@ -2314,6 +2427,12 @@ function DashboardContent() {
           </div>
         </div>
       )}
+
+      {/* Voice Assistant Modal */}
+      <VoiceAssistantModal
+        isOpen={showVoiceModal}
+        onClose={() => setShowVoiceModal(false)}
+      />
     </div>
   );
 }
