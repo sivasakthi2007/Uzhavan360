@@ -2,344 +2,283 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { useRouter } from 'next/navigation';
 import SwipeToConnect from '@/components/SwipeToConnect';
 import VoiceAssistantModal from '@/components/VoiceAssistantModal';
 import {
-  Users,
-  Wrench,
-  Tractor,
-  Store,
-  Truck,
-  FileText,
-  UserCheck,
   Mic,
-  MapPin,
-  CheckCircle2,
-  Clock,
-  Star,
-  ShieldCheck,
-  ChevronRight,
+  Users,
   AlertCircle,
-  Phone,
-  ArrowRight,
-  Sparkles
+  CheckCircle2,
+  Sparkles,
+  Star
 } from 'lucide-react';
 
-interface ActiveMatch {
+interface UserRequirementMatch {
   id: string;
-  serviceName: string;
-  requirement: string;
-  matchedPersonName: string;
-  matchedPersonRole: string;
+  categoryIcon: string;
+  categoryTitleTa: string;
+  categoryTitleEn: string;
+  userRequirementTa: string;
+  userRequirementEn: string;
+  personName: string;
+  personRole: string;
   distanceKm: number;
-  phone: string;
-  village: string;
-  rating: number;
-  vouchedCount: number;
+  isTrusted: boolean;
   serviceType: string;
-  targetTab: string;
+  village: string;
 }
 
 export default function OoruConnectBoard() {
   const { language } = useApp();
   const isTamil = language === 'ta';
-  const router = useRouter();
 
   const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
   const [activeVoiceSummary, setActiveVoiceSummary] = useState<{
     service: string;
     requirement: string;
-    count: number;
-    date: string;
-    location: string;
     targetTab: string;
   } | null>(null);
 
-  // Active Real Matches derived from active user needs & requests
-  const activeMatches: ActiveMatch[] = [
+  // Active Real Matches derived from active user needs
+  const [matchedItems, setMatchedItems] = useState<UserRequirementMatch[]>([
     {
-      id: 'MATCH-101',
-      serviceName: isTamil ? 'அறுவடை வேலையாட்கள்' : 'Harvesting Labour Squad',
-      requirement: '5 People for paddy harvesting',
-      matchedPersonName: 'Raman Squad',
-      matchedPersonRole: 'Harvesting Labour Captain',
+      id: 'req_1',
+      categoryIcon: '👷',
+      categoryTitleTa: 'அறுவடை வேலை',
+      categoryTitleEn: 'Harvesting Work',
+      userRequirementTa: 'நீங்கள் கேட்டது: 5 பேர்',
+      userRequirementEn: 'You requested: 5 workers',
+      personName: 'Raman Squad',
+      personRole: 'Harvesting Labour Captain',
       distanceKm: 2.4,
-      phone: '+91 98765 43210',
-      village: 'Melur Village',
-      rating: 4.9,
-      vouchedCount: 6,
+      isTrusted: true,
       serviceType: 'labor',
-      targetTab: 'labor'
+      village: 'Melur Village'
     },
     {
-      id: 'MATCH-102',
-      serviceName: isTamil ? 'ட்ராக்டர் வாடகை' : 'Tractor & Rotavator',
-      requirement: 'Rotavator for 3 acres tilling',
-      matchedPersonName: 'Kannan Equipment',
-      matchedPersonRole: '55HP Tractor Provider',
+      id: 'req_2',
+      categoryIcon: '🚜',
+      categoryTitleTa: 'டிராக்டர் தேவை',
+      categoryTitleEn: 'Tractor Required',
+      userRequirementTa: 'நீங்கள் கேட்டது: 3 ஏக்கருக்கு Rotavator',
+      userRequirementEn: 'You requested: Rotavator for 3 acres',
+      personName: 'Kannan Equipment',
+      personRole: '55HP Tractor Provider',
       distanceKm: 4.8,
-      phone: '+91 98765 43211',
-      village: 'Vadipatti',
-      rating: 4.8,
-      vouchedCount: 8,
+      isTrusted: true,
       serviceType: 'equipment',
-      targetTab: 'rentals'
+      village: 'Vadipatti'
     },
     {
-      id: 'MATCH-103',
-      serviceName: isTamil ? 'மோட்டார் பழுதுபார்ப்பு' : 'Motor & Drip Repair',
-      requirement: 'Drip irrigation line check',
-      matchedPersonName: 'Senthil Kumar',
-      matchedPersonRole: 'Certified Irrigation Technician',
+      id: 'req_3',
+      categoryIcon: '🔧',
+      categoryTitleTa: 'பழுதுபார்ப்பு உதவி',
+      categoryTitleEn: 'Repair Assistance',
+      userRequirementTa: 'நீங்கள் கேட்டது: Drip irrigation check',
+      userRequirementEn: 'You requested: Drip irrigation check',
+      personName: 'Senthil Kumar',
+      personRole: 'Certified Irrigation Technician',
       distanceKm: 6.2,
-      phone: '+91 98765 43212',
-      village: 'Melur Village',
-      rating: 4.7,
-      vouchedCount: 4,
+      isTrusted: true,
       serviceType: 'technician',
-      targetTab: 'labor'
+      village: 'Melur Village'
     }
-  ];
-
-  // Navigate directly to existing Uzhavan360 feature page
-  const navigateToFeature = (targetTab: string, sub?: string) => {
-    let url = `/dashboard?tab=${targetTab}&from=ooruconnect`;
-    if (sub) url += `&sub=${sub}`;
-    router.push(url);
-  };
+  ]);
 
   // Handle voice intent confirmation
   const handleVoiceIntent = (intentText: string) => {
     setActiveVoiceSummary({
       service: isTamil ? 'வேலையாட்கள்' : 'Labour Squad',
       requirement: intentText || (isTamil ? '5 நபர்கள் அறுவடை தேவை' : '5 people needed for harvesting'),
-      count: 5,
-      date: isTamil ? 'நாளை' : 'Tomorrow',
-      location: 'Melur Village (Current Location)',
       targetTab: 'labor'
     });
   };
 
   const handleConfirmVoiceRequest = () => {
     if (!activeVoiceSummary) return;
+    
+    // Add newly created request to matched list
+    const newItem: UserRequirementMatch = {
+      id: `req_${Date.now()}`,
+      categoryIcon: '👷',
+      categoryTitleTa: 'அறுவடை வேலை',
+      categoryTitleEn: 'Harvesting Request',
+      userRequirementTa: `நீங்கள் கேட்டது: ${activeVoiceSummary.requirement}`,
+      userRequirementEn: `You requested: ${activeVoiceSummary.requirement}`,
+      personName: 'Raman Squad',
+      personRole: 'Harvesting Squad Lead',
+      distanceKm: 1.8,
+      isTrusted: true,
+      serviceType: 'labor',
+      village: 'Local Village'
+    };
+
+    setMatchedItems(prev => [newItem, ...prev]);
     setActiveVoiceSummary(null);
-    navigateToFeature(activeVoiceSummary.targetTab);
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-16">
+    <div className="space-y-6 max-w-4xl mx-auto pb-16 px-2 sm:px-4">
       
-      {/* 1. OoruConnect Header */}
-      <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-r from-emerald-900 via-primary-900 to-earth-950 p-6 sm:p-8 text-white shadow-xl border border-primary-800/30">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 border border-primary-400/30 backdrop-blur-md text-primary-300 text-xs font-bold font-mono">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>OoruConnect Dispatch Layer</span>
+      {/* 1. Header */}
+      <div className="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-green-950 p-6 sm:p-8 text-white shadow-xl border border-emerald-700/40 space-y-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black font-display text-white flex items-center gap-2">
+            <span>🤝 OoruConnect</span>
+          </h1>
+          <h2 className="text-base sm:text-lg font-bold text-emerald-200 mt-1">
+            {isTamil ? 'உதவி வேண்டுமா? சரியான நபரை கண்டுபிடிக்கிறோம்.' : 'Need help? We find the right person for you.'}
+          </h2>
+        </div>
+
+        {/* 2. Primary Voice Action */}
+        <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-center sm:text-left space-y-1">
+            <div className="flex items-center justify-center sm:justify-start gap-2 text-amber-300 font-bold text-xs">
+              <Sparkles className="w-4 h-4" />
+              <span>{isTamil ? 'முதன்மை செயல்' : 'Primary Action'}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-white flex items-center gap-2">
-              <span>🤝 OoruConnect</span>
-            </h1>
-            <h2 className="text-lg font-bold text-emerald-200">
-              {isTamil ? 'சரியான நபருடன் நேரடியாக இணைக' : 'Connect directly with the right relevant person'}
-            </h2>
-            <p className="text-xs text-earth-200 font-semibold leading-relaxed">
-              {isTamil 
-                ? 'உங்களின் தேவைகளுக்கேற்ப கண்டறியப்பட்ட நபருடன் ஒரே ஸ்வைப்பில் தொடர்புகொள்ளுங்கள்.' 
-                : 'Match with verified local service providers and swipe to connect instantly.'}
+            <p className="text-sm font-bold text-white">
+              {isTamil ? 'உங்களுக்கு என்ன உதவி வேண்டும் என்று சொல்லுங்கள்.' : 'Tell us what help you need.'}
+            </p>
+            <p className="text-xs text-emerald-200 italic">
+              {isTamil ? 'உதாரணம்: "நாளைக்கு 5 பேர் அறுவடைக்கு வேண்டும்."' : 'Example: "Need 5 workers for harvesting tomorrow."'}
             </p>
           </div>
 
-          {/* Voice Action */}
-          <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-3 shrink-0 sm:min-w-[220px]">
-            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
-              {isTamil ? 'குரல் மூலம் கோரிக்கை' : 'Voice Request'}
-            </span>
-            <button
-              onClick={() => setShowVoiceModal(true)}
-              className="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-xl shadow-amber-500/30 flex items-center justify-center gap-2 transition-all cursor-pointer border-0 active:scale-95"
-            >
-              <Mic className="w-4 h-4 animate-bounce" />
-              <span>🎙️ {isTamil ? 'பேசுங்கள்' : 'Speak Now'}</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setShowVoiceModal(true)}
+            className="w-full sm:w-auto py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-sm shadow-xl shadow-amber-500/30 flex items-center justify-center gap-2 transition-all cursor-pointer border-0 active:scale-95 shrink-0"
+          >
+            <Mic className="w-5 h-5 animate-pulse" />
+            <span>🎙️ {isTamil ? 'பேசுங்கள்' : 'Speak Now'}</span>
+          </button>
         </div>
       </div>
 
-      {/* 2. Voice Request Summary Modal Confirmation */}
+      {/* Voice Confirmation Banner if active */}
       {activeVoiceSummary && (
-        <div className="p-6 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-foreground space-y-4 animate-fade-in">
+        <div className="p-5 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-foreground space-y-3 animate-fade-in">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
+            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-base font-black text-foreground">
-                {isTamil ? 'இந்த தேவையை பதிவு செய்யவா?' : 'Confirm creating this request?'}
+              <h3 className="text-sm font-black text-foreground">
+                {isTamil ? 'இந்த உதவியை பதிவு செய்யவா?' : 'Confirm this request?'}
               </h3>
-              <p className="text-xs text-earth-450 mt-1">
-                {isTamil ? 'குரல் மூலம் பெறப்பட்ட விவரங்கள் கீழே சரிபார்க்கப்பட்டது:' : 'Extracted request details from voice:'}
+              <p className="text-xs text-earth-450 mt-0.5">
+                {activeVoiceSummary.requirement}
               </p>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white dark:bg-[#111714] p-4 rounded-xl border border-earth-200 dark:border-earth-850 text-xs">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-earth-400 block">Service</span>
-              <span className="font-bold text-foreground">{activeVoiceSummary.service}</span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold text-earth-400 block">Requirement</span>
-              <span className="font-bold text-foreground">{activeVoiceSummary.requirement}</span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold text-earth-400 block">Date</span>
-              <span className="font-bold text-foreground">{activeVoiceSummary.date}</span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold text-earth-400 block">Location</span>
-              <span className="font-bold text-foreground">{activeVoiceSummary.location}</span>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-1">
             <button
               onClick={() => setActiveVoiceSummary(null)}
-              className="py-2.5 px-4 rounded-xl bg-earth-100 hover:bg-earth-200 text-earth-700 text-xs font-bold cursor-pointer border-0"
+              className="py-2 px-4 rounded-xl bg-earth-100 dark:bg-earth-900 text-earth-700 dark:text-earth-300 text-xs font-bold cursor-pointer border-0"
             >
               {isTamil ? 'ரத்து' : 'Cancel'}
             </button>
             <button
               onClick={handleConfirmVoiceRequest}
-              className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md cursor-pointer border-0 flex items-center gap-2"
+              className="py-2 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md cursor-pointer border-0 flex items-center gap-1.5"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{isTamil ? 'உறுதி செய் (Confirm & Open Service)' : 'Confirm & Open Service'}</span>
+              <span>{isTamil ? 'உறுதி செய் (Confirm)' : 'Confirm'}</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* 3. Main Section: 🤝 உங்கள் Matches (Your Active Matches) */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-earth-850 shadow-xs space-y-6">
-        <div className="flex items-center justify-between border-b border-earth-150/40 dark:border-earth-900/10 pb-4">
-          <div>
-            <h3 className="text-base font-black text-foreground font-display flex items-center gap-2">
-              <Users className="w-4.5 h-4.5 text-emerald-500" />
-              <span>{isTamil ? '🤝 உங்கள் Matches' : '🤝 Your Active Matches'}</span>
-            </h3>
-            <p className="text-xs text-earth-450 mt-0.5">
-              {isTamil ? 'உங்களின் தேவைகளுக்கேற்ப பொருத்தப்பட்ட நபர்கள் — ஸ்வைப் செய்து அழைக்கலாம்' : 'Relevant matched contacts for your current needs — swipe to call'}
-            </p>
-          </div>
-
-          <span className="px-3 py-1 bg-emerald-500/10 text-emerald-600 rounded-full font-mono font-bold text-xs">
-            {activeMatches.length} {isTamil ? 'பொருத்தங்கள்' : 'Active Matches'}
-          </span>
-        </div>
-
+      {/* 3. Matched People Section */}
+      {matchedItems.length > 0 ? (
         <div className="space-y-5">
-          {activeMatches.map((match) => (
-            <div 
-              key={match.id} 
-              className="p-5 rounded-2xl bg-earth-50/50 dark:bg-earth-950/30 border border-earth-200/50 dark:border-earth-900/20 space-y-4 hover:border-primary-500/30 transition-all"
-            >
-              {/* Match Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-primary-500">{match.id}</span>
-                    <h4 className="text-sm font-black text-foreground">{match.serviceName}</h4>
-                  </div>
-                  <p className="text-xs text-earth-450 font-semibold mt-0.5">{match.requirement}</p>
-                </div>
-
-                <button
-                  onClick={() => navigateToFeature(match.targetTab)}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline border-0 bg-transparent self-start sm:self-auto cursor-pointer"
-                >
-                  <span>{isTamil ? 'சேவையை காண்க' : 'View Service'}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Matched Person Card */}
-              <div className="p-4 rounded-xl bg-white dark:bg-[#111714] border border-earth-150 dark:border-earth-850 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-base shrink-0">
-                    👤
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h5 className="text-xs font-black text-foreground">{match.matchedPersonName}</h5>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-md">
-                        📍 {match.distanceKm} km
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-earth-500 font-semibold">{match.matchedPersonRole} • {match.village}</p>
-                    <div className="flex items-center gap-3 text-[10px] text-earth-400 font-bold mt-1">
-                      <span className="text-amber-600">⭐ {match.rating} Rating</span>
-                      <span className="text-emerald-600">✓ {match.vouchedCount} {isTamil ? 'நபர்கள் சான்றளித்துள்ளனர்' : 'people vouched'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Swipe to Connect Component */}
-              <div className="pt-2 border-t border-earth-150/40 dark:border-earth-900/10">
-                <SwipeToConnect
-                  currentScreen="OoruConnectBoard"
-                  currentFeature={match.serviceName}
-                  requestId={match.id}
-                  serviceType={match.serviceType}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. Trusted Connections & Village Verification */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-[#111714] border border-earth-200/60 dark:border-earth-850 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-earth-150/40 dark:border-earth-900/10">
-          <div>
-            <h3 className="text-base font-black text-foreground font-display flex items-center gap-2">
-              <Star className="w-4 h-4 text-amber-500" />
-              <span>{isTamil ? '⭐ சான்றளிக்கப்பட்டவர்கள் (Trusted Connections)' : '⭐ Trusted Connections'}</span>
-            </h3>
-            <p className="text-xs text-earth-450 mt-0.5">
-              {isTamil ? 'ஊராரால் உறுதி செய்யப்பட்ட சேவை நபர்கள்' : 'Community verified & vouched by village members'}
+          <div className="border-b border-earth-200/60 dark:border-earth-850 pb-3">
+            <h2 className="text-lg font-black text-foreground font-display flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-600" />
+              <span>{isTamil ? '👥 உங்களுக்கு கிடைத்தவர்கள்' : '👥 People Matched For You'}</span>
+            </h2>
+            <p className="text-xs text-earth-450 mt-0.5 font-semibold">
+              {isTamil ? 'உங்கள் தேவைக்கு பொருந்தியவர்கள்' : 'Relevant contacts found based on your need'}
             </p>
           </div>
-        </div>
 
-        <div className="space-y-3">
-          {activeMatches.map(p => (
-            <div key={p.id} className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/15 flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <h4 className="text-xs font-black text-foreground">{p.matchedPersonName}</h4>
+          <div className="space-y-4">
+            {matchedItems.map((item) => (
+              <div 
+                key={item.id} 
+                className="p-5 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200/80 dark:border-earth-850 shadow-sm space-y-3 hover:border-emerald-500/40 transition-all"
+              >
+                {/* Need Title & Requirement */}
+                <div className="flex items-center justify-between border-b border-earth-100 dark:border-earth-900/60 pb-3 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{item.categoryIcon}</span>
+                    <h3 className="text-base font-black text-foreground">
+                      {isTamil ? item.categoryTitleTa : item.categoryTitleEn}
+                    </h3>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">
+                    {isTamil ? item.userRequirementTa : item.userRequirementEn}
+                  </span>
                 </div>
-                <p className="text-[11px] text-earth-500 font-semibold">{p.matchedPersonRole}</p>
-                <div className="flex items-center gap-3 text-[10px] text-earth-400 font-bold">
-                  <span className="text-amber-600">⭐ {p.rating} Rating</span>
-                  <span className="text-emerald-600">✓ {p.vouchedCount} {isTamil ? 'நபர்கள் சான்றளித்துள்ளனர்' : 'people vouched'}</span>
+
+                {/* Person details */}
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-base shrink-0">
+                      👤
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-black text-foreground">{item.personName}</h4>
+                        {item.isTrusted && (
+                          <span className="text-[10px] font-black px-2 py-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-300 rounded-md flex items-center gap-1">
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                            <span>{isTamil ? 'நம்பகமானவர்' : 'Trusted'}</span>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-earth-500 dark:text-earth-400 font-semibold mt-0.5">
+                        {item.personRole} • 📍 {item.distanceKm} km ({item.village})
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Swipe to Connect Widget */}
+                <div className="pt-2">
+                  <SwipeToConnect
+                    currentScreen="OoruConnectBoard"
+                    currentFeature={item.categoryTitleTa}
+                    requestId={item.id}
+                    serviceType={item.serviceType}
+                  />
                 </div>
               </div>
-
-              <button
-                onClick={() => window.location.href = `tel:${p.phone}`}
-                className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-sm flex items-center gap-1.5 cursor-pointer border-0"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>{isTamil ? 'அழைக்க' : 'Call'}</span>
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* 8. Empty State */
+        <div className="p-8 rounded-3xl bg-white dark:bg-[#111714] border border-earth-200/80 dark:border-earth-850 text-center space-y-4 shadow-sm">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-3xl mx-auto">
+            🤝
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-black text-foreground">
+              {isTamil ? 'இன்னும் பொருத்தமான நபர் கிடைக்கவில்லை' : 'No matched person found yet'}
+            </h3>
+            <p className="text-xs text-earth-450 font-bold">
+              {isTamil ? 'முதலில் உங்கள் தேவையை சொல்லுங்கள்.' : 'First tell us what help you need.'}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowVoiceModal(true)}
+            className="py-3 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs shadow-lg shadow-amber-500/30 inline-flex items-center gap-2 cursor-pointer border-0"
+          >
+            <Mic className="w-4 h-4" />
+            <span>🎙️ {isTamil ? 'பேசுங்கள்' : 'Speak Now'}</span>
+          </button>
+        </div>
+      )}
 
       {/* Voice Assistant Modal */}
       <VoiceAssistantModal
@@ -347,7 +286,6 @@ export default function OoruConnectBoard() {
         onClose={() => setShowVoiceModal(false)}
         onIntentExtracted={handleVoiceIntent}
       />
-
     </div>
   );
 }
