@@ -112,7 +112,7 @@ export default function Sidebar() {
                     }`}
                   >
                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-earth-400 group-hover:text-primary-500'}`} />
-                    <span>{item.name}</span>
+                    <span suppressHydrationWarning>{item.name}</span>
                   </Link>
                 );
               })}
@@ -126,14 +126,14 @@ export default function Sidebar() {
             {isOffline ? (
               <>
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                <span className="text-[9px] font-mono font-bold text-amber-500 tracking-wider">
+                <span suppressHydrationWarning className="text-[9px] font-mono font-bold text-amber-500 tracking-wider">
                   {language === 'ta' ? 'உள்ளூர்' : 'OFFLINE'}
                 </span>
               </>
             ) : (
               <>
                 <div className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse"></div>
-                <span className="text-[9px] font-mono font-bold text-primary-500 tracking-wider">
+                <span suppressHydrationWarning className="text-[9px] font-mono font-bold text-primary-500 tracking-wider">
                   {language === 'ta' ? 'இணைக்கப்பட்டது' : 'ONLINE'}
                 </span>
               </>

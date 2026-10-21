@@ -1036,13 +1036,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const userName = appUser?.displayName || 'User';
 
   // ── Language ──
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('vlink_language');
-      if (saved === 'en' || saved === 'ta') return saved;
+  const [language, setLanguage] = useState<Language>('ta');
+  const [isLanguageHydrated, setIsLanguageHydrated] = useState(false);
+
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('vlink_language') : null;
+    if (saved === 'en' || saved === 'ta') {
+      setLanguage(saved);
     }
-    return 'ta';
-  });
+    setIsLanguageHydrated(true);
+  }, []);
+
   const currentTranslations = translations[language] || translations.en;
 
   const t = useCallback(
@@ -1054,6 +1058,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Persist language changes to localStorage and profiles / metadata
   useEffect(() => {
+    if (!isLanguageHydrated) return;
     if (typeof window !== 'undefined') {
       localStorage.setItem('vlink_language', language);
     }
@@ -1181,61 +1186,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isOffline, setIsOffline] = useState(false);
 
   // ── FPO Coordination States ──
-  const [fpoMembers, setFpoMembers] = useState<FPOMember[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('vlink_fpo_members');
-      return saved ? JSON.parse(saved) : [...SEED_FPO_MEMBERS];
-    }
-    return [...SEED_FPO_MEMBERS];
-  });
-  const [fpoProduce, setFpoProduce] = useState<FPOProduce[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('vlink_fpo_produce');
-      return saved ? JSON.parse(saved) : [...SEED_FPO_PRODUCE];
-    }
-    return [...SEED_FPO_PRODUCE];
-  });
-  const [fpoAggregations, setFpoAggregations] = useState<FPOAggregationBatch[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('vlink_fpo_aggregations');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
-  const [fpoTransactions, setFpoTransactions] = useState<FPOTransaction[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('vlink_fpo_transactions');
-      return saved ? JSON.parse(saved) : [...SEED_FPO_TRANSACTIONS];
-    }
-    return [...SEED_FPO_TRANSACTIONS];
-  });
-  const [simulatedOffline, setSimulatedOffline] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('vlink_simulated_offline');
-      return saved === 'true';
-    }
-    return false;
-  });
+  const [fpoMembers, setFpoMembers] = useState<FPOMember[]>(() => [...SEED_FPO_MEMBERS]);
+  const [fpoProduce, setFpoProduce] = useState<FPOProduce[]>(() => [...SEED_FPO_PRODUCE]);
+  const [fpoAggregations, setFpoAggregations] = useState<FPOAggregationBatch[]>([]);
+  const [fpoTransactions, setFpoTransactions] = useState<FPOTransaction[]>(() => [...SEED_FPO_TRANSACTIONS]);
+  const [simulatedOffline, setSimulatedOffline] = useState<boolean>(false);
+  const [isFpoHydrated, setIsFpoHydrated] = useState(false);
 
   useEffect(() => {
+    try {
+      const savedMembers = localStorage.getItem('vlink_fpo_members');
+      if (savedMembers) setFpoMembers(JSON.parse(savedMembers));
+      const savedProduce = localStorage.getItem('vlink_fpo_produce');
+      if (savedProduce) setFpoProduce(JSON.parse(savedProduce));
+      const savedAgg = localStorage.getItem('vlink_fpo_aggregations');
+      if (savedAgg) setFpoAggregations(JSON.parse(savedAgg));
+      const savedTx = localStorage.getItem('vlink_fpo_transactions');
+      if (savedTx) setFpoTransactions(JSON.parse(savedTx));
+      const savedOff = localStorage.getItem('vlink_simulated_offline');
+      if (savedOff) setSimulatedOffline(savedOff === 'true');
+    } catch (e) {
+      console.warn('Failed restoring FPO state from localStorage:', e);
+    }
+    setIsFpoHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isFpoHydrated) return;
     localStorage.setItem('vlink_fpo_members', JSON.stringify(fpoMembers));
-  }, [fpoMembers]);
+  }, [fpoMembers, isFpoHydrated]);
 
   useEffect(() => {
+    if (!isFpoHydrated) return;
     localStorage.setItem('vlink_fpo_produce', JSON.stringify(fpoProduce));
-  }, [fpoProduce]);
+  }, [fpoProduce, isFpoHydrated]);
 
   useEffect(() => {
+    if (!isFpoHydrated) return;
     localStorage.setItem('vlink_fpo_aggregations', JSON.stringify(fpoAggregations));
-  }, [fpoAggregations]);
+  }, [fpoAggregations, isFpoHydrated]);
 
   useEffect(() => {
+    if (!isFpoHydrated) return;
     localStorage.setItem('vlink_fpo_transactions', JSON.stringify(fpoTransactions));
-  }, [fpoTransactions]);
+  }, [fpoTransactions, isFpoHydrated]);
 
   useEffect(() => {
+    if (!isFpoHydrated) return;
     localStorage.setItem('vlink_simulated_offline', String(simulatedOffline));
-  }, [simulatedOffline]);
+  }, [simulatedOffline, isFpoHydrated]);
 
   // ── Offline Queue Helpers ──
   const enqueueOfflineAction = useCallback((actionType: string, payload: any) => {

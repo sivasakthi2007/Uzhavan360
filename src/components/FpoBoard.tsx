@@ -1008,7 +1008,7 @@ export default function FpoBoard() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-earth-450">LoRa Local Buffer Queue:</span>
-                    <span className="font-mono font-bold">
+                    <span suppressHydrationWarning className="font-mono font-bold">
                       {typeof window !== 'undefined' 
                         ? (JSON.parse(localStorage.getItem('vlink_offline_queue') || '[]')).length 
                         : 0} packets pending
@@ -1016,7 +1016,7 @@ export default function FpoBoard() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-earth-450">Last Cloud Sync:</span>
-                    <span className="font-mono">{new Date().toLocaleString()}</span>
+                    <span suppressHydrationWarning className="font-mono">{new Date().toLocaleString()}</span>
                   </div>
                 </div>
 
