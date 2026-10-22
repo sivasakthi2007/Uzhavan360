@@ -17,18 +17,21 @@ export interface VillageInfo {
 }
 
 export interface ParsedHelpRequest {
-  request_type: RequestCategory;
+  service_category: RequestCategory;
+  request_type?: RequestCategory; // Alias for backward compatibility
   work_type: string | null;
   quantity: number | null;
   unit: string | null;
-  required_date: string | null;
+  required_date: string | null; // ISO YYYY-MM-DD
   village: string | null;
   location: LocationCoords | null;
+  radius_km: number;
   additional_requirements: string | null;
   missing_fields: ('work_type' | 'village' | 'required_date')[];
-  confidence: number;
+  confidence: number | null;
   raw_input: string;
   extraction_source: 'gemini' | 'openai' | 'rule_based_fallback';
+  is_llm_configured?: boolean;
 }
 
 export interface FollowUpQuestion {
@@ -59,7 +62,7 @@ export interface ServiceProvider {
   capacity_descriptionTa: string;
   capacity_descriptionEn: string;
   availability_status: AvailabilityStatus;
-  availability_date: string; // ISO date or 'today' | 'tomorrow'
+  availability_date: string; // ISO date YYYY-MM-DD or 'today' | 'tomorrow'
   availability_updated_at: string;
   is_verified: boolean;
   verification_badge: VerificationBadge;

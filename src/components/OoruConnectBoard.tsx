@@ -24,7 +24,8 @@ import {
   Info,
   Sliders,
   Send,
-  Radio
+  Radio,
+  Clock
 } from 'lucide-react';
 import {
   ParsedHelpRequest,
@@ -38,7 +39,8 @@ import {
   extractWithLinguisticEngine,
   generateFollowUpQuestions,
   matchAndRankProviders,
-  resolveVillageCoords
+  resolveVillageCoords,
+  getLocalDateString
 } from '@/services/ooruConnectEngine';
 
 export default function OoruConnectBoard() {
@@ -47,15 +49,17 @@ export default function OoruConnectBoard() {
 
   // Input & Speech state
   const [inputText, setInputText] = useState('');
+  const [interimText, setInterimText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
-  const [micError, setMicError] = useState<string | null>(null);
+  const [micStatusMessage, setMicStatusMessage] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
 
   // Active Request & Extraction State
   const [currentRequest, setCurrentRequest] = useState<ParsedHelpRequest | null>(null);
   const [followUpQuestions, setFollowUpQuestions] = useState<FollowUpQuestion[]>([]);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
+  const [isLlmConfigured, setIsLlmConfigured] = useState<boolean | null>(null);
+  const [skipFollowUpNotice, setSkipFollowUpNotice] = useState(false);
 
   // Matching Results State
   const [matches, setMatches] = useState<ProviderMatchResult[]>([]);
@@ -74,39 +78,68 @@ export default function OoruConnectBoard() {
 
   // User location preference
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; village: string } | null>(null);
-  const [locationPermissionPrompt, setLocationPermissionPrompt] = useState(false);
 
   const recognitionRef = useRef<any>(null);
 
-  // ── Initialize Default Demo State on Mount ─────────────────────────────
+  // ── Initial Mount: Display Default Available Community Providers ──────────
   useEffect(() => {
-    // Default initial demonstration match so users immediately see demo cards
-    const initialReq = extractWithLinguisticEngine(
-      'Naalaikku harvesting-ku 5 workers venum Melur la',
-      { lat: 10.0333, lng: 78.3333, village: 'Melur Village' }
+    // Show default sample community providers so user sees available services
+    const initialMatches = matchAndRankProviders(
+      {
+        service_category: 'general',
+        request_type: 'general',
+        work_type: null,
+        quantity: null,
+        unit: null,
+        required_date: null,
+        village: 'Melur Village',
+        location: KNOWN_VILLAGES.melur.coords,
+        radius_km: 25,
+        additional_requirements: null,
+        missing_fields: [],
+        confidence: null,
+        raw_input: '',
+        extraction_source: 'rule_based_fallback'
+      },
+      { maxDistanceKm: 25 }
     );
-    setCurrentRequest(initialReq);
-    const initialMatches = matchAndRankProviders(initialReq, { maxDistanceKm: 25 });
     setMatches(initialMatches);
-    setHasSearched(true);
   }, []);
 
-  // ── Web Speech API Handler ─────────────────────────────────────────────
-  const startSpeechRecognition = () => {
-    setMicError(null);
+  // ── Speech Recognition using Web Speech API (ta-IN Locale) ───────────────
+  const startSpeechRecognition = async () => {
+    setMicStatusMessage(null);
+    setInterimText('');
 
-    // Check browser support
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       setSpeechSupported(false);
-      setMicError(
+      setMicStatusMessage(
         isTa
-          ? 'உங்கள் உலாவியில் குரல் உள்ளீடு ஆதரிக்கப்படவில்லை. தயவுசெய்து கீழே தட்டச்சு செய்யவும்.'
-          : 'Speech recognition is not supported in this browser. Please type below.'
+          ? 'உங்கள் உலாவியில் குரல் அறிதல் (Speech Recognition) ஆதரிக்கப்படவில்லை. தயவுசெய்து கீழே தட்டச்சு செய்யவும்.'
+          : 'Speech recognition is not supported in this browser. Please type your request.'
       );
       return;
+    }
+
+    // Request microphone permission through browser API first
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Immediately release stream since SpeechRecognition handles its own input channel
+        stream.getTracks().forEach((track) => track.stop());
+      } catch (err: any) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setMicStatusMessage(
+            isTa
+              ? 'மைக்ரோஃபோன் அனுமதி மறுக்கப்பட்டது. உங்கள் உலாவி அமைப்பில் மைக் அனுமதியை வழங்கவும்.'
+              : 'Microphone permission denied. Please allow microphone access in your browser settings.'
+          );
+          return;
+        }
+      }
     }
 
     try {
@@ -116,49 +149,84 @@ export default function OoruConnectBoard() {
 
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = isTa ? 'ta-IN' : 'en-IN';
+      recognition.interimResults = true;
+      recognition.lang = 'ta-IN'; // Set to Tamil (India)
+      recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
         setIsListening(true);
+        setMicStatusMessage(
+          isTa ? '🎙️ கேட்கிறது... தமிழில் பேசுங்கள் (Listening... Speak now)' : '🎙️ Listening... Speak now'
+        );
       };
 
       recognition.onresult = (event: any) => {
-        const speechResult = event.results[0][0].transcript;
-        setInputText(speechResult);
-        setIsListening(false);
-        // Automatically process the spoken text
-        handleProcessRequest(speechResult);
+        let interim = '';
+        let finalStr = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalStr += transcript;
+          } else {
+            interim += transcript;
+          }
+        }
+
+        if (interim) {
+          setInterimText(interim);
+        }
+
+        if (finalStr) {
+          // Insert recognized text into input. DO NOT auto-submit; allow user to edit!
+          setInputText((prev) => (prev ? `${prev} ${finalStr}` : finalStr));
+          setInterimText('');
+          setMicStatusMessage(
+            isTa
+              ? '✓ குரல் பதிவு செய்யப்பட்டது. தேவைப்பட்டால் திருத்தி "உதவியை தேடுங்கள்" அழுத்தவும்.'
+              : '✓ Speech captured. You can edit the text and click "Find Help".'
+          );
+        }
       };
 
       recognition.onerror = (event: any) => {
         setIsListening(false);
+        setInterimText('');
         if (event.error === 'not-allowed') {
-          setMicError(
+          setMicStatusMessage(
             isTa
-              ? 'மைக்ரோஃபோன் அனுமதி மறுக்கப்பட்டது. உங்கள் உலாவி அமைப்புகளில் அனுமதியை வழங்கவும்.'
-              : 'Microphone permission denied. Please allow microphone access in browser settings.'
+              ? 'மைக்ரோஃபோன் அனுமதி மறுக்கப்பட்டது. உலாவியில் மைக் அனுமதியை வழங்கவும்.'
+              : 'Microphone permission denied. Please allow microphone access.'
           );
         } else if (event.error === 'no-speech') {
-          setMicError(
-            isTa ? 'குரல் கேட்கவில்லை. மீண்டும் முயற்சி செய்யவும்.' : 'No speech detected. Please try speaking again.'
+          setMicStatusMessage(
+            isTa
+              ? 'எந்தக் குரலும் கேட்கவில்லை. மீண்டும் "பேசுங்கள்" பொத்தானை அழுத்திப் பேசவும்.'
+              : 'No speech was detected. Please tap "Speak Now" again and speak.'
           );
-        } else {
-          setMicError(
-            isTa ? `குரல் பிழை: ${event.error}` : `Speech recognition error: ${event.error}`
+        } else if (event.error === 'network') {
+          setMicStatusMessage(
+            isTa
+              ? 'குரல் அறிதலில் நெட்வொர்க் பிழை ஏற்பட்டது. இணைய இணைப்பை சரிபார்க்கவும்.'
+              : 'Network error occurred during speech recognition. Check internet connection.'
+          );
+        } else if (event.error !== 'aborted') {
+          setMicStatusMessage(
+            isTa ? `குரல் அறிதல் பிழை: ${event.error}` : `Speech recognition error: ${event.error}`
           );
         }
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        setInterimText('');
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err: any) {
       setIsListening(false);
-      setMicError(err?.message || 'Failed to initialize speech recognition');
+      setMicStatusMessage(err?.message || 'Failed to start speech recognition');
     }
   };
 
@@ -167,19 +235,23 @@ export default function OoruConnectBoard() {
       recognitionRef.current.stop();
     }
     setIsListening(false);
+    setInterimText('');
   };
 
-  // ── Handle Request Processing (API or Fallback) ────────────────────────
+  // ── Handle Request Submission ───────────────────────────────────────────
   const handleProcessRequest = async (overrideText?: string) => {
     const textToProcess = (overrideText !== undefined ? overrideText : inputText).trim();
-    if (!textToProcess) return;
+    if (!textToProcess) {
+      setMicStatusMessage(isTa ? 'தயவுசெய்து உங்கள் தேவையை உள்ளிடவும்.' : 'Please enter what help you need.');
+      return;
+    }
 
     setIsExtracting(true);
-    setMicError(null);
+    setMicStatusMessage(null);
     setBroadcastSubmitted(false);
+    setSkipFollowUpNotice(false);
 
     try {
-      // 1. Send to server-side extraction API
       const res = await fetch('/api/ooruconnect/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -194,59 +266,56 @@ export default function OoruConnectBoard() {
       if (res.ok) {
         const json = await res.json();
         extracted = json.data;
+        setIsLlmConfigured(Boolean(extracted.is_llm_configured));
       } else {
-        // Fallback to client-side linguistic engine if API is unreachable
         extracted = extractWithLinguisticEngine(textToProcess, userLocation || undefined);
+        setIsLlmConfigured(false);
       }
 
       setCurrentRequest(extracted);
-      setSelectedAnswers({});
+      setHasSearched(true);
 
-      // 2. Check for Missing Details (Feature B)
-      if (extracted.missing_fields.length > 0) {
+      // Check Missing Essential Fields (Dynamic follow-up questions)
+      if (extracted.missing_fields && extracted.missing_fields.length > 0) {
         const questions = generateFollowUpQuestions(extracted.missing_fields, extracted);
         setFollowUpQuestions(questions);
-        setMatches([]); // Hold matches until critical details are clarified
-        setHasSearched(false);
+        // Show tentative matches for category, but prompt for missing details
+        executeProviderMatching(extracted, searchRadius);
       } else {
-        // All details complete! Proceed to matching
         setFollowUpQuestions([]);
         executeProviderMatching(extracted, searchRadius);
       }
     } catch (err) {
-      console.warn('Extraction fallback triggered:', err);
+      console.warn('Extraction fallback to client linguistic engine:', err);
       const fallbackExtracted = extractWithLinguisticEngine(textToProcess, userLocation || undefined);
       setCurrentRequest(fallbackExtracted);
+      setIsLlmConfigured(false);
+      setHasSearched(true);
+
       if (fallbackExtracted.missing_fields.length > 0) {
         setFollowUpQuestions(generateFollowUpQuestions(fallbackExtracted.missing_fields, fallbackExtracted));
-        setMatches([]);
-        setHasSearched(false);
       } else {
         setFollowUpQuestions([]);
-        executeProviderMatching(fallbackExtracted, searchRadius);
       }
+      executeProviderMatching(fallbackExtracted, searchRadius);
     } finally {
       setIsExtracting(false);
     }
   };
 
-  // ── Execute Provider Matching & Ranking (Feature C) ───────────────────
+  // ── Execute Provider Matching (Hard filter + 40/25/20/10/5 Weighted Rank) ─
   const executeProviderMatching = (request: ParsedHelpRequest, radius: number) => {
     const matchedList = matchAndRankProviders(request, {
       maxDistanceKm: radius,
       providers: SAMPLE_PROVIDERS
     });
     setMatches(matchedList);
-    setHasSearched(true);
   };
 
-  // ── Handle Answering Follow-up Questions ───────────────────────────────
+  // ── Handle Answering Follow-up Questions Interactively ─────────────────
   const handleSelectAnswer = (field: string, value: string) => {
-    setSelectedAnswers(prev => ({ ...prev, [field]: value }));
-
     if (!currentRequest) return;
 
-    // Apply the selected answer to update the request object
     const updatedRequest: ParsedHelpRequest = { ...currentRequest };
 
     if (field === 'work_type') {
@@ -258,25 +327,23 @@ export default function OoruConnectBoard() {
       updatedRequest.required_date = value;
     }
 
-    // Recalculate missing fields
-    const newMissing = updatedRequest.missing_fields.filter(f => f !== field);
+    const newMissing = updatedRequest.missing_fields.filter((f) => f !== field);
     updatedRequest.missing_fields = newMissing;
     setCurrentRequest(updatedRequest);
 
-    // If all essential fields are answered, run matching!
     if (newMissing.length === 0) {
       setFollowUpQuestions([]);
       executeProviderMatching(updatedRequest, searchRadius);
     } else {
       setFollowUpQuestions(generateFollowUpQuestions(newMissing, updatedRequest));
+      executeProviderMatching(updatedRequest, searchRadius);
     }
   };
 
-  // ── Request Device Location ───────────────────────────────────────────
+  // ── Request GPS Location ────────────────────────────────────────────────
   const requestCurrentLocation = () => {
-    setLocationPermissionPrompt(false);
     if (!navigator.geolocation) {
-      setMicError(isTa ? 'உங்கள் உலாவியில் இருப்பிட வசதி இல்லை.' : 'Geolocation not supported by this browser.');
+      setMicStatusMessage(isTa ? 'உங்கள் உலாவியில் GPS வசதி இல்லை.' : 'Geolocation not supported by this browser.');
       return;
     }
 
@@ -289,21 +356,23 @@ export default function OoruConnectBoard() {
           village: 'Current Device Location'
         });
         if (currentRequest) {
-          const updated = {
+          const updated: ParsedHelpRequest = {
             ...currentRequest,
             location: coords,
-            village: 'Current Location',
-            missing_fields: currentRequest.missing_fields.filter(f => f !== 'village')
+            village: 'Current GPS Location',
+            missing_fields: currentRequest.missing_fields.filter((f) => f !== 'village')
           };
           setCurrentRequest(updated);
           if (updated.missing_fields.length === 0) {
             setFollowUpQuestions([]);
-            executeProviderMatching(updated, searchRadius);
+          } else {
+            setFollowUpQuestions(generateFollowUpQuestions(updated.missing_fields, updated));
           }
+          executeProviderMatching(updated, searchRadius);
         }
       },
-      (err) => {
-        setMicError(
+      () => {
+        setMicStatusMessage(
           isTa
             ? 'இருப்பிட அனுமதி மறுக்கப்பட்டது. தயவுசெய்து மேலேயுள்ள ஊர்களில் ஒன்றைத் தேர்ந்தெடுக்கவும்.'
             : 'Location access denied. Please select a village from the options.'
@@ -312,7 +381,7 @@ export default function OoruConnectBoard() {
     );
   };
 
-  // ── Contact Provider Modal Action ─────────────────────────────────────
+  // ── Contact Provider Action Handler ─────────────────────────────────────
   const handleInitiateContact = (provider: ServiceProvider, actionType: 'call' | 'sms' | 'request') => {
     if (actionType === 'call') {
       window.location.href = `tel:${provider.phone.replace(/\s+/g, '')}`;
@@ -336,17 +405,15 @@ export default function OoruConnectBoard() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20 px-2 sm:px-4">
-      
       {/* ── 1. MAIN HERO HEADER & BRANDING ──────────────────────────────── */}
       <div className="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-green-950 p-6 sm:p-8 text-white shadow-xl border border-emerald-700/40 space-y-5 relative overflow-hidden">
-        {/* Decorative background glow */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-[11px] font-black uppercase tracking-wider text-emerald-200 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>OoruConnect • AI Local Match</span>
+              <span>OoruConnect • Local Help Matching</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black font-display text-white flex items-center gap-2">
               <span>🤝 OoruConnect</span>
@@ -356,14 +423,13 @@ export default function OoruConnectBoard() {
             </h2>
           </div>
 
-          {/* Demo Mode Badge */}
           <div className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs font-bold flex items-center gap-1.5">
             <Info className="w-4 h-4 text-amber-300" />
-            <span>{isTa ? 'டெமோ முறை (Demo Records)' : 'Demo Mode Active'}</span>
+            <span>{isTa ? 'டெமோ முறை (Demo Mode)' : 'Demo Mode Active'}</span>
           </div>
         </div>
 
-        {/* ── 2. REQUEST INPUT & VOICE ACTION ───────────────────────────── */}
+        {/* ── 2. REQUEST INPUT & VOICE RECOGNITION ──────────────────────── */}
         <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl p-4 sm:p-5 space-y-4">
           <div className="space-y-1">
             <label htmlFor="ooru-request-input" className="block text-xs sm:text-sm font-bold text-emerald-100">
@@ -390,7 +456,11 @@ export default function OoruConnectBoard() {
                   }
                 }}
                 placeholder={
-                  isTa
+                  isListening
+                    ? isTa
+                      ? 'கேட்கிறது... பேசவும்...'
+                      : 'Listening... Speak now...'
+                    : isTa
                     ? 'தமிழில் அல்லது ஆங்கிலத்தில் கேட்கலாம்...'
                     : 'Type in Tamil, Tanglish or English...'
                 }
@@ -407,7 +477,7 @@ export default function OoruConnectBoard() {
               )}
             </div>
 
-            {/* Microphone Button (Speech to Text) */}
+            {/* Microphone Button (Web Speech API ta-IN) */}
             <button
               type="button"
               onClick={isListening ? stopSpeechRecognition : startSpeechRecognition}
@@ -420,7 +490,7 @@ export default function OoruConnectBoard() {
               {isListening ? (
                 <>
                   <MicOff className="w-5 h-5 animate-bounce" />
-                  <span>{isTa ? 'கேட்கிறது...' : 'Listening...'}</span>
+                  <span>{isTa ? 'நிறுத்து' : 'Stop'}</span>
                 </>
               ) : (
                 <>
@@ -451,17 +521,24 @@ export default function OoruConnectBoard() {
             </button>
           </div>
 
-          {/* Sample Quick Prompt Pills */}
+          {/* Interim speech recognition preview */}
+          {interimText && (
+            <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-100 text-xs font-semibold flex items-center gap-2 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-emerald-300" />
+              <span>{isTa ? `கேட்டுக் கொண்டிருக்கிறது: "${interimText}"` : `Hearing: "${interimText}"`}</span>
+            </div>
+          )}
+
+          {/* Quick Voice & Typing Sample Prompts */}
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
             <span className="text-emerald-200 font-bold text-[11px]">
-              {isTa ? 'முயற்சிக்க:' : 'Try:'}
+              {isTa ? 'மாதிரி தேவைகள்:' : 'Try Samples:'}
             </span>
             <button
               type="button"
               onClick={() => {
-                const s = 'Naalaikku harvesting-ku 5 workers venum Melur la';
+                const s = 'Naalaikku harvesting-ku 5 workers venum';
                 setInputText(s);
-                handleProcessRequest(s);
               }}
               className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[11px] font-semibold cursor-pointer transition-colors"
             >
@@ -470,9 +547,8 @@ export default function OoruConnectBoard() {
             <button
               type="button"
               onClick={() => {
-                const s = '3 acre-ku rotavator tractor venum Vadipatti la';
+                const s = '3 acre-ku rotavator tractor venum';
                 setInputText(s);
-                handleProcessRequest(s);
               }}
               className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[11px] font-semibold cursor-pointer transition-colors"
             >
@@ -481,28 +557,37 @@ export default function OoruConnectBoard() {
             <button
               type="button"
               onClick={() => {
-                const s = 'En drip irrigation repair pannanum Melur la';
+                const s = 'En drip irrigation repair pannanum';
                 setInputText(s);
-                handleProcessRequest(s);
               }}
               className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[11px] font-semibold cursor-pointer transition-colors"
             >
               "En drip irrigation repair pannanum"
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                const s = 'நாளைக்கு 5 பேர் அறுவடைக்கு வேண்டும்';
+                setInputText(s);
+              }}
+              className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[11px] font-semibold cursor-pointer transition-colors"
+            >
+              "நாளைக்கு 5 பேர் அறுவடைக்கு வேண்டும்"
+            </button>
           </div>
         </div>
 
-        {/* Microphone Error Alert */}
-        {micError && (
-          <div className="p-3.5 rounded-xl bg-red-500/20 border border-red-400/40 text-red-100 text-xs flex items-center justify-between gap-2 animate-fade-in">
+        {/* Microphone Status Alert / Error Banner */}
+        {micStatusMessage && (
+          <div className="p-3.5 rounded-xl bg-white/15 border border-white/25 text-white text-xs flex items-center justify-between gap-2 animate-fade-in">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-300" />
-              <span>{micError}</span>
+              <Info className="w-4 h-4 shrink-0 text-amber-300" />
+              <span>{micStatusMessage}</span>
             </div>
             <button
               type="button"
-              onClick={() => setMicError(null)}
-              className="p-1 text-red-200 hover:text-white border-0 bg-transparent cursor-pointer"
+              onClick={() => setMicStatusMessage(null)}
+              className="p-1 text-white/70 hover:text-white border-0 bg-transparent cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -510,54 +595,100 @@ export default function OoruConnectBoard() {
         )}
       </div>
 
-      {/* ── 3. AI EXTRACTION SUMMARY BANNER ───────────────────────────────── */}
-      {currentRequest && (
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200/80 dark:border-earth-850 shadow-xs flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-              <Sparkles className="w-4.5 h-4.5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-black text-foreground">
-                  {isTa ? 'புரிந்துகொண்ட விவரங்கள்:' : 'Parsed Request Details:'}
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                  {currentRequest.extraction_source === 'gemini'
-                    ? 'AI Model'
-                    : currentRequest.extraction_source === 'openai'
-                    ? 'OpenAI'
-                    : 'Linguistic Engine'}
-                </span>
-                <span className="text-[10px] font-mono text-earth-400">
-                  ({Math.round(currentRequest.confidence * 100)}% {isTa ? 'நம்பகத்தன்மை' : 'confidence'})
-                </span>
+      {/* ── 3. AI EXTRACTION REVIEW BANNER (SECTION 5 CONFIDENCE FIX) ─────── */}
+      {currentRequest && hasSearched && (
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#111714] border border-earth-200/80 dark:border-earth-850 shadow-xs space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-4.5 h-4.5" />
               </div>
-              <p className="text-xs text-earth-500 font-semibold mt-0.5">
-                {currentRequest.work_type || (isTa ? 'பணி வகை குறிப்பிடப்படவில்லை' : 'Work type not specified')}
-                {currentRequest.quantity ? ` • ${currentRequest.quantity} ${currentRequest.unit}` : ''}
-                {currentRequest.village ? ` • 📍 ${currentRequest.village}` : ''}
-                {currentRequest.required_date ? ` • 📅 ${currentRequest.required_date}` : ''}
-              </p>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black text-foreground">
+                    {isTa ? 'விவரங்கள் புரிந்துகொள்ளப்பட்டன' : 'Request Details Understood'}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                    {currentRequest.extraction_source === 'gemini'
+                      ? 'Gemini AI Model'
+                      : 'Rule-Based Tamil Engine'}
+                  </span>
+                  <span className="text-[10px] font-semibold text-earth-500">
+                    ({isTa ? 'கீழே உள்ள விவரங்களை சரிபார்க்கவும்' : 'Review extracted details below'})
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowRadiusFilter(!showRadiusFilter)}
+                className="py-1 px-3 rounded-lg border border-earth-200 dark:border-earth-800 text-xs font-bold text-earth-600 dark:text-earth-300 hover:bg-earth-100/50 flex items-center gap-1.5 cursor-pointer bg-transparent"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>{isTa ? `ஆரம்: ${searchRadius} km` : `Radius: ${searchRadius} km`}</span>
+              </button>
             </div>
           </div>
 
-          {/* Quick Location / Distance Filter toggle */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowRadiusFilter(!showRadiusFilter)}
-              className="py-1.5 px-3 rounded-lg border border-earth-200 dark:border-earth-800 text-xs font-bold text-earth-600 dark:text-earth-300 hover:bg-earth-100/50 flex items-center gap-1.5 cursor-pointer bg-transparent"
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>{isTa ? `ஆரம்: ${searchRadius} கி.மீ` : `Radius: ${searchRadius} km`}</span>
-            </button>
+          {/* Structured Fields Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+            <div className="p-2.5 rounded-xl bg-earth-50 dark:bg-earth-950 border border-earth-150 dark:border-earth-900">
+              <span className="text-[10px] font-bold text-earth-400 block uppercase">
+                {isTa ? 'பணி வகை (Work)' : 'Work Type'}
+              </span>
+              <span className="font-bold text-foreground truncate block">
+                {currentRequest.work_type || (isTa ? '⚠️ தேவைப்படுகிறது' : '⚠️ Missing')}
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-earth-50 dark:bg-earth-950 border border-earth-150 dark:border-earth-900">
+              <span className="text-[10px] font-bold text-earth-400 block uppercase">
+                {isTa ? 'அளவு (Quantity)' : 'Quantity'}
+              </span>
+              <span className="font-bold text-foreground truncate block">
+                {currentRequest.quantity
+                  ? `${currentRequest.quantity} ${currentRequest.unit}`
+                  : (isTa ? 'குறிப்பிடப்படவில்லை' : 'Not specified')}
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-earth-50 dark:bg-earth-950 border border-earth-150 dark:border-earth-900">
+              <span className="text-[10px] font-bold text-earth-400 block uppercase">
+                {isTa ? 'தேவைப்படும் தேதி (Date)' : 'Required Date'}
+              </span>
+              <span className="font-bold text-foreground truncate block">
+                {currentRequest.required_date || (isTa ? '⚠️ தேவைப்படுகிறது' : '⚠️ Missing')}
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-earth-50 dark:bg-earth-950 border border-earth-150 dark:border-earth-900">
+              <span className="text-[10px] font-bold text-earth-400 block uppercase">
+                {isTa ? 'கிராமம் (Village)' : 'Village'}
+              </span>
+              <span className="font-bold text-foreground truncate block">
+                {currentRequest.village || (isTa ? '⚠️ தேவைப்படுகிறது' : '⚠️ Missing')}
+              </span>
+            </div>
           </div>
+
+          {/* Configuration status notice when API key is missing */}
+          {isLlmConfigured === false && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] font-semibold flex items-center gap-2">
+              <Info className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+              <span>
+                {isTa
+                  ? 'AI API Key (GEMINI_API_KEY) இணைக்கப்படவில்லை. தமிழ் மொழி விதிமுறை அடிப்படையிலான பாகுபடுத்தி வெற்றிகரமாக இயங்குகிறது.'
+                  : 'AI API Key not configured. Running on high-accuracy Tamil linguistic rule-based fallback.'}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Search Radius Slider filter (when opened) */}
-      {showRadiusFilter && currentRequest && (
+      {/* Radius Slider Accordion */}
+      {showRadiusFilter && (
         <div className="p-4 rounded-2xl bg-earth-50 dark:bg-earth-950 border border-earth-200/60 dark:border-earth-900 space-y-2 animate-fade-in">
           <div className="flex justify-between items-center text-xs font-bold">
             <span className="text-foreground">{isTa ? 'தேடல் வரம்பு ஆரம்' : 'Search Distance Radius'}:</span>
@@ -572,20 +703,22 @@ export default function OoruConnectBoard() {
             onChange={(e) => {
               const r = Number(e.target.value);
               setSearchRadius(r);
-              executeProviderMatching(currentRequest, r);
+              if (currentRequest) {
+                executeProviderMatching(currentRequest, r);
+              }
             }}
             className="w-full accent-emerald-600 cursor-pointer"
           />
           <div className="flex justify-between text-[10px] text-earth-450 font-bold">
-            <span>5 km (உள்ளூர் / Local)</span>
+            <span>5 km (உள்ளூர்)</span>
             <span>25 km (வட்டம் / Taluk)</span>
-            <span>50 km (மாவட்டம் / District)</span>
+            <span>50 km (மாவட்டம்)</span>
           </div>
         </div>
       )}
 
-      {/* ── 4. AI FEATURE B — MISSING DETAILS & FOLLOW-UP QUESTIONS ──────── */}
-      {followUpQuestions.length > 0 && currentRequest && (
+      {/* ── 4. DYNAMIC MISSING DETAILS & FOLLOW-UP QUESTIONS (FEATURE B) ──── */}
+      {followUpQuestions.length > 0 && currentRequest && !skipFollowUpNotice && (
         <div className="p-5 sm:p-6 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 space-y-4 animate-fade-in shadow-xs">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
@@ -595,12 +728,12 @@ export default function OoruConnectBoard() {
               <h3 className="text-sm sm:text-base font-black text-foreground">
                 {isTa
                   ? 'துல்லியமான நபரை கண்டுபிடிக்க சில விவரங்கள் தேவை'
-                  : 'A few more details needed for exact matching'}
+                  : 'A few details needed for exact matching'}
               </h3>
               <p className="text-xs text-earth-500 font-semibold mt-0.5">
                 {isTa
-                  ? 'தவறான நபர்களை காண்பிக்காமல் இருக்க, கீழ்வரும் கேள்விகளுக்கு பதிலளிக்கவும்:'
-                  : 'To avoid misleading matches, please clarify the missing details below:'}
+                  ? 'தேவையான விவரங்களை மட்டும் தேர்ந்தெடுத்து பொருத்தமான நபர்களைப் பெறுங்கள்:'
+                  : 'Please select only the missing details needed to rank confirmed providers:'}
               </p>
             </div>
           </div>
@@ -621,7 +754,7 @@ export default function OoruConnectBoard() {
                   {isTa ? q.helperTextTa : q.helperTextEn}
                 </p>
 
-                {/* 1-Tap Pill Suggestions */}
+                {/* 1-Tap Option Chips */}
                 <div className="flex flex-wrap gap-2 pt-1">
                   {q.suggestions.map((sug) => (
                     <button
@@ -640,7 +773,7 @@ export default function OoruConnectBoard() {
                       className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-400/40 hover:bg-emerald-100 flex items-center gap-1.5 cursor-pointer"
                     >
                       <MapPin className="w-3.5 h-3.5" />
-                      <span>{isTa ? 'என் இருப்பிடத்தை பயன்படுத்து' : 'Use Current GPS'}</span>
+                      <span>{isTa ? 'என் GPS இருப்பிடம்' : 'Use Current GPS'}</span>
                     </button>
                   )}
                 </div>
@@ -652,17 +785,26 @@ export default function OoruConnectBoard() {
             <button
               type="button"
               onClick={() => {
-                // If user wants to see tentative matches anyway
-                if (currentRequest) {
-                  setFollowUpQuestions([]);
-                  executeProviderMatching(currentRequest, searchRadius);
-                }
+                setSkipFollowUpNotice(true);
+                executeProviderMatching(currentRequest, searchRadius);
               }}
               className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer border-0 bg-transparent"
             >
               {isTa ? 'விவரங்களை பிறகு சேர்க்கிறேன், இப்போதே தேடு →' : 'Search with available details anyway →'}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Notice when user skipped follow-up details */}
+      {skipFollowUpNotice && currentRequest && currentRequest.missing_fields.length > 0 && (
+        <div className="p-3.5 rounded-2xl bg-earth-100/60 dark:bg-earth-900/40 border border-earth-200 dark:border-earth-800 text-xs text-earth-600 dark:text-earth-300 flex items-center gap-2">
+          <Info className="w-4 h-4 text-earth-500 shrink-0" />
+          <span>
+            {isTa
+              ? `குறிப்பிடப்படாத விவரங்கள்: ${currentRequest.missing_fields.join(', ')}. கிடைக்கக்கூடிய விவரங்களின் அடிப்படையில் பொருத்தங்கள் காண்பிக்கப்படுகின்றன.`
+              : `Unspecified fields: ${currentRequest.missing_fields.join(', ')}. Showing matches based on available details.`}
+          </span>
         </div>
       )}
 
@@ -700,7 +842,7 @@ export default function OoruConnectBoard() {
                   key={provider.id}
                   className="p-5 rounded-3xl bg-white dark:bg-[#111714] border border-earth-200/80 dark:border-earth-850 shadow-xs space-y-4 hover:border-emerald-500/40 transition-all"
                 >
-                  {/* Top Bar: Request Requirement Pill & Match Score */}
+                  {/* Top Bar: Request Summary & Match Score */}
                   <div className="flex items-center justify-between gap-2 flex-wrap border-b border-earth-100 dark:border-earth-900 pb-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-base">
@@ -717,7 +859,7 @@ export default function OoruConnectBoard() {
                           ? `நீங்கள் கேட்டது: ${currentRequest?.work_type || 'விவசாய உதவி'}${
                               currentRequest?.quantity ? ` (${currentRequest.quantity} ${currentRequest.unit})` : ''
                             }`
-                          : `You requested: ${currentRequest?.work_type || 'Help'}${
+                          : `You requested: ${currentRequest?.work_type || 'Agri assistance'}${
                               currentRequest?.quantity ? ` (${currentRequest.quantity} ${currentRequest.unit})` : ''
                             }`}
                       </span>
@@ -734,7 +876,7 @@ export default function OoruConnectBoard() {
                     </button>
                   </div>
 
-                  {/* Main Provider Card Details */}
+                  {/* Provider Card Content */}
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3.5">
                       <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black text-xl shrink-0 mt-0.5">
@@ -821,7 +963,7 @@ export default function OoruConnectBoard() {
                     ))}
                   </div>
 
-                  {/* Transparent Score Breakdown Accordion (Feature C Requirement) */}
+                  {/* Transparent Score Breakdown Accordion */}
                   {isScoreExpanded && (
                     <div className="p-4 rounded-2xl bg-earth-50 dark:bg-earth-950 border border-earth-200/60 dark:border-earth-900 space-y-3 text-xs animate-fade-in">
                       <div className="flex items-center justify-between border-b border-earth-200 dark:border-earth-850 pb-2">
@@ -1128,7 +1270,6 @@ export default function OoruConnectBoard() {
           <span>{contactSuccessToast}</span>
         </div>
       )}
-
     </div>
   );
 }

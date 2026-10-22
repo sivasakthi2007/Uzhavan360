@@ -9,7 +9,7 @@ import {
   LocationCoords
 } from '@/types/ooruConnect';
 
-// ── 1. KNOWN VILLAGES & COORDINATES ──────────────────────────────────────────
+// ── 1. KNOWN VILLAGES & PRECISE LOCAL CLUSTERS ──────────────────────────────
 export const KNOWN_VILLAGES: Record<string, VillageInfo> = {
   melur: {
     name: 'Melur Village',
@@ -67,9 +67,7 @@ export const KNOWN_VILLAGES: Record<string, VillageInfo> = {
   }
 };
 
-// ── 2. SEED REALISTIC SERVICE PROVIDER RECORDS (DEMO MODE) ─────────────────
-// Each record represents a real profile structure. is_synthetic_demo: true indicates
-// clearly to users and mentors that these are synthetic demonstration records.
+// ── 2. SEED REALISTIC SERVICE PROVIDER RECORDS (DEMO DATASET) ────────────────
 export const SAMPLE_PROVIDERS: ServiceProvider[] = [
   {
     id: 'prov_raman_squad',
@@ -262,6 +260,16 @@ export const SAMPLE_PROVIDERS: ServiceProvider[] = [
   }
 ];
 
+// Helper to calculate local dates
+export function getLocalDateString(offsetDays: number = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // ── 3. DISTANCE CALCULATION (HAVERSINE FORMULA) ─────────────────────────────
 export function calculateHaversineDistance(
   lat1: number,
@@ -283,10 +291,9 @@ export function calculateHaversineDistance(
   return Math.round(d * 10) / 10; // Round to 1 decimal place
 }
 
-// Helper to resolve coordinates from village string or default cluster
 export function resolveVillageCoords(villageName: string | null): LocationCoords {
   if (!villageName) {
-    return KNOWN_VILLAGES.melur.coords; // Default center
+    return KNOWN_VILLAGES.melur.coords;
   }
   const clean = villageName.toLowerCase().trim();
   for (const [key, info] of Object.entries(KNOWN_VILLAGES)) {
@@ -305,7 +312,7 @@ export function extractWithLinguisticEngine(
   const text = rawText.toLowerCase().trim();
 
   // 1. Determine Request Category & Work Type
-  let request_type: RequestCategory = 'general';
+  let service_category: RequestCategory = 'general';
   let work_type: string | null = null;
   let unit: string | null = null;
   let quantity: number | null = null;
@@ -319,6 +326,7 @@ export function extractWithLinguisticEngine(
     text.includes('peru') ||
     text.includes('பேர்') ||
     text.includes('வேலையாள்') ||
+    text.includes('வேலையாட்கள்') ||
     text.includes('weeding') ||
     text.includes('களை') ||
     text.includes('நடவு') ||
@@ -356,6 +364,7 @@ export function extractWithLinguisticEngine(
     text.includes('starter') ||
     text.includes('repair') ||
     text.includes('பழுது') ||
+    text.includes('சரி செய்ய') ||
     text.includes('start aagala') ||
     text.includes('wiring') ||
     text.includes('electrician') ||
@@ -373,35 +382,35 @@ export function extractWithLinguisticEngine(
     text.includes('ஏற்றுமதி');
 
   if (isLabor) {
-    request_type = 'labor';
+    service_category = 'labor';
     unit = 'workers';
     if (text.includes('harvest') || text.includes('அறுவடை')) work_type = 'Harvesting (அறுவடை)';
     else if (text.includes('weed') || text.includes('களை')) work_type = 'Weeding (களை எடுத்தல்)';
     else if (text.includes('transplant') || text.includes('நடவு')) work_type = 'Transplantation (நடவு பணி)';
     else if (text.includes('load') || text.includes('மூட்டை')) work_type = 'Bag Loading (மூட்டை ஏற்றுதல்)';
-    else work_type = null; // Specific work missing! Will ask follow-up question
+    else work_type = null; // Specific work missing
   } else if (isEquipment) {
-    request_type = 'equipment';
+    service_category = 'equipment';
     unit = text.includes('acre') || text.includes('ஏக்கர்') ? 'acres' : 'hours';
     if (text.includes('rotavator') || text.includes('ரோட்டவேட்டர்')) work_type = 'Rotavator Ploughing (ரோட்டவேட்டர்)';
     else if (text.includes('jcb')) work_type = 'JCB Earthmover (JCB இயந்திரம்)';
     else if (text.includes('harvester')) work_type = 'Combine Harvester (இயந்திர அறுவடை)';
     else if (text.includes('plough') || text.includes('உழவு')) work_type = 'Ploughing (உழவு பணி)';
-    else work_type = null; // Specific attachment missing! Will ask follow-up question
+    else work_type = null; // Specific attachment missing
   } else if (isTechnician) {
-    request_type = 'technician';
+    service_category = 'technician';
     unit = 'visit';
-    if (text.includes('drip') || text.includes('சொட்டு நீர்') || text.includes('irrigation')) {
+    if (text.includes('drip') || text.includes('சொட்டு நீர்') || text.includes('irrigation') || text.includes('பாசனம்')) {
       work_type = 'Drip Irrigation Repair (சொட்டு நீர் பாசன பழுது)';
     } else if (text.includes('motor') || text.includes('மோட்டார்') || text.includes('pump') || text.includes('பம்ப்')) {
       work_type = 'Motor & Pump Mechanic (மோட்டார் & பம்ப் மெக்கானிக்)';
     } else if (text.includes('wire') || text.includes('electrician') || text.includes('எலக்ட்ரீஷியன்')) {
       work_type = 'Electrician & Wiring (எலக்ட்ரிக்கல் ஒயரிங்)';
     } else {
-      work_type = null;
+      work_type = 'General Repair (தொழில்நுட்ப பழுது)';
     }
   } else if (isTransport) {
-    request_type = 'transport';
+    service_category = 'transport';
     unit = 'trip';
     work_type = 'Agri Freight Transport (விவசாய சரக்கு போக்குவரத்து)';
   }
@@ -419,16 +428,24 @@ export function extractWithLinguisticEngine(
     }
   }
 
-  // 3. Extract Date
+  // 3. Extract Required Date
   let required_date: string | null = null;
-  const now = new Date();
-  if (text.includes('naalaikku') || text.includes('நாளை') || text.includes('tomorrow')) {
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    required_date = tomorrow.toISOString().split('T')[0];
-  } else if (text.includes('innikku') || text.includes('இன்று') || text.includes('today')) {
-    required_date = now.toISOString().split('T')[0];
+  if (
+    text.includes('naalaikku') ||
+    text.includes('நாளை') ||
+    text.includes('tomorrow') ||
+    text.includes('நாளைக்கு')
+  ) {
+    required_date = getLocalDateString(1);
+  } else if (
+    text.includes('innikku') ||
+    text.includes('இன்று') ||
+    text.includes('today') ||
+    text.includes('இன்னிக்கு')
+  ) {
+    required_date = getLocalDateString(0);
   } else {
-    // Check for explicit YYYY-MM-DD or DD-MM format
+    // Check for explicit YYYY-MM-DD
     const dateMatch = text.match(/\b(202\d-\d{2}-\d{2})\b/);
     if (dateMatch) {
       required_date = dateMatch[1];
@@ -440,14 +457,26 @@ export function extractWithLinguisticEngine(
   let location: LocationCoords | null = userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null;
 
   for (const [key, vInfo] of Object.entries(KNOWN_VILLAGES)) {
-    if (text.includes(key) || text.includes(vInfo.name.toLowerCase()) || text.includes(vInfo.nameTa.toLowerCase())) {
+    if (
+      text.includes(key) ||
+      text.includes(vInfo.name.toLowerCase()) ||
+      text.includes(vInfo.nameTa.toLowerCase()) ||
+      text.includes(vInfo.nameTa.replace(' கிராமம்', ''))
+    ) {
       village = vInfo.name;
       location = vInfo.coords;
       break;
     }
   }
 
-  // 5. Detect Missing Essential Fields
+  // 5. Extract Radius if mentioned
+  let radius_km = 20;
+  const radiusMatch = text.match(/(\d+)\s*(km|கி\.மீ|radius)/i);
+  if (radiusMatch) {
+    radius_km = parseInt(radiusMatch[1], 10);
+  }
+
+  // 6. Detect Missing Essential Fields (Strictly based on requirements)
   const missing_fields: ('work_type' | 'village' | 'required_date')[] = [];
   if (!work_type) {
     missing_fields.push('work_type');
@@ -459,30 +488,26 @@ export function extractWithLinguisticEngine(
     missing_fields.push('required_date');
   }
 
-  // Confidence score
-  let confidence = 0.5;
-  if (work_type) confidence += 0.2;
-  if (quantity) confidence += 0.1;
-  if (village) confidence += 0.1;
-  if (required_date) confidence += 0.1;
-
   return {
-    request_type,
+    service_category,
+    request_type: service_category,
     work_type,
     quantity,
-    unit: unit || (request_type === 'labor' ? 'workers' : request_type === 'equipment' ? 'acres' : 'visit'),
+    unit: unit || (service_category === 'labor' ? 'workers' : service_category === 'equipment' ? 'acres' : 'visit'),
     required_date,
     village,
     location,
-    additional_requirements: text.length > 40 ? text : null,
+    radius_km,
+    additional_requirements: text.length > 50 ? text : null,
     missing_fields,
-    confidence: Math.min(confidence, 0.95),
+    confidence: null, // As requested in Section 5: do not present arbitrary self-reported percentage
     raw_input: rawText,
-    extraction_source: 'rule_based_fallback'
+    extraction_source: 'rule_based_fallback',
+    is_llm_configured: false
   };
 }
 
-// ── 5. LLM REQUEST UNDERSTANDING WITH STRICT SERVER VALIDATION ──────────────
+// ── 5. SERVER-SIDE LLM EXTRACTION WITH STRICT SCHEMA VALIDATION ─────────────
 export async function extractHelpRequest(
   rawText: string,
   userLocation?: { lat: number; lng: number; village?: string }
@@ -490,37 +515,44 @@ export async function extractHelpRequest(
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
 
-  // If no LLM key configured on server, use rule-based fallback immediately
+  // If no LLM key configured on server, return rule-based fallback with is_llm_configured: false
   if (!geminiKey && !openaiKey) {
-    return extractWithLinguisticEngine(rawText, userLocation);
+    return {
+      ...extractWithLinguisticEngine(rawText, userLocation),
+      is_llm_configured: false
+    };
   }
 
-  const prompt = `You are an expert NLP parser for UZHAVAN360 OoruConnect (Tamil Nadu agricultural platform).
-Parse the following rural user request in Tamil, Tanglish, or English.
+  const currentDate = getLocalDateString(0);
+  const tomorrowDate = getLocalDateString(1);
+
+  const prompt = `You are a strict NLP parser for UZHAVAN360 OoruConnect (Tamil Nadu agricultural platform).
+Parse the user's agricultural help request in Tamil, Tanglish, or English.
 
 CRITICAL INSTRUCTIONS:
 - DO NOT invent, hallucinate, or guess a village, date, provider, price, or availability!
 - If the user did not explicitly mention a village, set "village": null.
-- If the user did not specify a date or relative day (today, tomorrow), set "required_date": null.
-- If the user said "5 workers venum" without saying what work, set "work_type": null.
-- Set "missing_fields" as an array containing any of ["work_type", "village", "required_date"] that are null.
-- "request_type" MUST be one of: "labor", "equipment", "technician", "transport", "general".
-
-Current Date for reference: ${new Date().toISOString().split('T')[0]}
+- If the user said "naalaikku" or "நாளைக்கு" (tomorrow), set "required_date": "${tomorrowDate}".
+- If the user said "innikku" or "இன்று" (today), set "required_date": "${currentDate}".
+- If the user did not specify any date or relative day, set "required_date": null.
+- If the user said "5 workers venum" without specifying the work (harvesting, weeding, etc.), set "work_type": null.
+- Set "service_category" to one of: "labor", "equipment", "technician", "transport", "general".
+- "missing_fields" must be an array containing any of ["work_type", "village", "required_date"] that are null.
+- If a date is provided, "required_date" MUST NOT be in "missing_fields".
 
 User Input: "${rawText}"
 
-Return ONLY a valid JSON object matching this schema without markdown fences:
+Return ONLY a valid JSON object without markdown fences matching:
 {
-  "request_type": "labor" | "equipment" | "technician" | "transport" | "general",
+  "service_category": "labor" | "equipment" | "technician" | "transport" | "general",
   "work_type": string or null,
   "quantity": number or null,
   "unit": string or null,
   "required_date": "YYYY-MM-DD" or null,
   "village": string or null,
+  "radius_km": number,
   "additional_requirements": string or null,
-  "missing_fields": string[],
-  "confidence": number between 0.0 and 1.0
+  "missing_fields": string[]
 }`;
 
   try {
@@ -546,8 +578,7 @@ Return ONLY a valid JSON object matching this schema without markdown fences:
         const contentText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (contentText) {
           const parsed = JSON.parse(contentText.trim());
-          
-          // Re-validate essential constraints
+
           const missing: ('work_type' | 'village' | 'required_date')[] = [];
           if (!parsed.work_type) missing.push('work_type');
           if (!parsed.village && !userLocation?.village) missing.push('village');
@@ -557,45 +588,52 @@ Return ONLY a valid JSON object matching this schema without markdown fences:
           const coords = resolveVillageCoords(finalVillage);
 
           return {
-            request_type: parsed.request_type || 'general',
+            service_category: parsed.service_category || 'general',
+            request_type: parsed.service_category || 'general',
             work_type: parsed.work_type || null,
             quantity: typeof parsed.quantity === 'number' ? parsed.quantity : null,
             unit: parsed.unit || null,
             required_date: parsed.required_date || null,
             village: finalVillage,
             location: finalVillage ? coords : userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null,
+            radius_km: typeof parsed.radius_km === 'number' ? parsed.radius_km : 20,
             additional_requirements: parsed.additional_requirements || null,
             missing_fields: missing,
-            confidence: Math.max(0.6, Math.min(parsed.confidence || 0.9, 0.98)),
+            confidence: null,
             raw_input: rawText,
-            extraction_source: 'gemini'
+            extraction_source: 'gemini',
+            is_llm_configured: true
           };
         }
       }
     }
   } catch (err) {
-    console.warn('[OoruConnectEngine] LLM extraction error or timeout. Falling back to linguistic engine:', err);
+    console.warn('[OoruConnectEngine] LLM extraction error. Falling back to linguistic engine:', err);
   }
 
-  // Graceful fallback
-  return extractWithLinguisticEngine(rawText, userLocation);
+  // Fallback to linguistic engine
+  return {
+    ...extractWithLinguisticEngine(rawText, userLocation),
+    is_llm_configured: Boolean(geminiKey || openaiKey)
+  };
 }
 
-// ── 6. MISSING DETAILS & FOLLOW-UP QUESTIONS (FEATURE B) ───────────────────
+// ── 6. DYNAMIC FOLLOW-UP QUESTIONS (FEATURE B) ───────────────────────────────
 export function generateFollowUpQuestions(
   missingFields: ('work_type' | 'village' | 'required_date')[],
   currentRequest: ParsedHelpRequest
 ): FollowUpQuestion[] {
   const questions: FollowUpQuestion[] = [];
+  const cat = currentRequest.service_category || currentRequest.request_type;
 
   for (const field of missingFields) {
     if (field === 'work_type') {
-      if (currentRequest.request_type === 'labor') {
+      if (cat === 'labor') {
         questions.push({
           field: 'work_type',
           questionTa: 'எந்த வேலைக்கு ஆட்கள் வேண்டும்?',
           questionEn: 'What work do you need workers for?',
-          helperTextTa: 'வேலையை தேர்வு செய்தால் சிறந்த மேஸ்திரியை இணைக்க முடியும்.',
+          helperTextTa: 'வேலையை தேர்வு செய்தால் சிறந்த தொழிலாளர் படை இணைக்கப்படும்.',
           helperTextEn: 'Choosing the exact work ensures matching the right labor squad.',
           suggestions: [
             { labelTa: '🌾 நெல் அறுவடை (Harvesting)', labelEn: '🌾 Paddy Harvesting', value: 'Harvesting (அறுவடை)' },
@@ -604,7 +642,7 @@ export function generateFollowUpQuestions(
             { labelTa: '📦 மூட்டை ஏற்றுதல் (Loading)', labelEn: '📦 Bag Loading', value: 'Bag Loading (மூட்டை ஏற்றுதல்)' }
           ]
         });
-      } else if (currentRequest.request_type === 'equipment') {
+      } else if (cat === 'equipment') {
         questions.push({
           field: 'work_type',
           questionTa: 'டிராக்டருக்கு எந்த வகையான உழவு கருவி வேண்டும்?',
@@ -612,12 +650,12 @@ export function generateFollowUpQuestions(
           helperTextTa: 'கருவியின் வகையை குறிப்பிட்டால் சரியான உரிமையாளர் கிடைப்பார்.',
           helperTextEn: 'Specifying the attachment connects you to the right machinery owner.',
           suggestions: [
-            { labelTa: '🚜 ரோட்டவேட்டர் (Rotavator)', labelEn: '🚜 Rotavator (Wet/Dry)', value: 'Rotavator (ரோட்டவேட்டர்)' },
-            { labelTa: '⚙️ 5 கொழு கலப்பை (Plough)', labelEn: '⚙️ 5-Tyne Plough', value: 'Plough (கலப்பை உழவு)' },
-            { labelTa: '🌾 அறுவடை இயந்திரம் (Harvester)', labelEn: '🌾 Combine Harvester', value: 'Harvester (இயந்திர அறுவடை)' }
+            { labelTa: '🚜 ரோட்டவேட்டர் (Rotavator)', labelEn: '🚜 Rotavator (Wet/Dry)', value: 'Rotavator Ploughing (ரோட்டவேட்டர்)' },
+            { labelTa: '⚙️ 5 கொழு கலப்பை (Plough)', labelEn: '⚙️ 5-Tyne Plough', value: 'Ploughing (உழவு பணி)' },
+            { labelTa: '🌾 அறுவடை இயந்திரம் (Harvester)', labelEn: '🌾 Combine Harvester', value: 'Combine Harvester (இயந்திர அறுவடை)' }
           ]
         });
-      } else if (currentRequest.request_type === 'technician') {
+      } else if (cat === 'technician') {
         questions.push({
           field: 'work_type',
           questionTa: 'எந்த வகையான தொழில்நுட்ப பழுது?',
@@ -625,9 +663,9 @@ export function generateFollowUpQuestions(
           helperTextTa: 'பழுது விவரத்தை குறிப்பிட்டால் பொருத்தமான மெக்கானிக் வருவார்.',
           helperTextEn: 'Clarifying the issue ensures the technician arrives with right tools.',
           suggestions: [
-            { labelTa: '💧 சொட்டு நீர் குழாய் அடைப்பு (Drip Repair)', labelEn: '💧 Drip Irrigation Issue', value: 'Drip Irrigation Repair' },
-            { labelTa: '⚡ மோட்டார் ஸ்டார்ட்டர் பழுது (Motor/Starter)', labelEn: '⚡ Pump/Motor Repair', value: 'Motor & Pump Mechanic' },
-            { labelTa: '🔌 மின்சார ஒயரிங் (Electrical Wiring)', labelEn: '🔌 Farm Wiring/Phase', value: 'Electrician & Wiring' }
+            { labelTa: '💧 சொட்டு நீர் குழாய் அடைப்பு (Drip Repair)', labelEn: '💧 Drip Irrigation Issue', value: 'Drip Irrigation Repair (சொட்டு நீர் பாசன பழுது)' },
+            { labelTa: '⚡ மோட்டார் ஸ்டார்ட்டர் பழுது (Motor/Starter)', labelEn: '⚡ Pump/Motor Repair', value: 'Motor & Pump Mechanic (மோட்டார் & பம்ப் மெக்கானிக்)' },
+            { labelTa: '🔌 மின்சார ஒயரிங் (Electrical Wiring)', labelEn: '🔌 Farm Wiring/Phase', value: 'Electrician & Wiring (எலக்ட்ரிக்கல் ஒயரிங்)' }
           ]
         });
       } else {
@@ -635,12 +673,12 @@ export function generateFollowUpQuestions(
           field: 'work_type',
           questionTa: 'உங்களுக்கு என்ன வகையான சேவை தேவை?',
           questionEn: 'What service category do you need?',
-          helperTextTa: 'உங்கள் விவசாய தேவையை சுருக்கமாக தேர்ந்தெடுக்கவும்.',
+          helperTextTa: 'உங்கள் விவசாய தேவையை தேர்ந்தெடுக்கவும்.',
           helperTextEn: 'Select the primary service needed.',
           suggestions: [
-            { labelTa: '👷 விவசாய ஆட்கள் (Labour Squad)', labelEn: '👷 Harvesting/Labour', value: 'Agricultural Labour' },
-            { labelTa: '🚜 டிராக்டர் வாடகை (Tractor Rental)', labelEn: '🚜 Tractor Ploughing', value: 'Tractor Ploughing' },
-            { labelTa: '🔧 மெக்கானிக் & பழுது (Technician)', labelEn: '🔧 Motor/Drip Mechanic', value: 'Technician Assistance' }
+            { labelTa: '👷 விவசாய ஆட்கள் (Labour Squad)', labelEn: '👷 Harvesting/Labour', value: 'Harvesting (அறுவடை)' },
+            { labelTa: '🚜 டிராக்டர் வாடகை (Tractor Rental)', labelEn: '🚜 Tractor Ploughing', value: 'Rotavator Ploughing (ரோட்டவேட்டர்)' },
+            { labelTa: '🔧 மெக்கானிக் & பழுது (Technician)', labelEn: '🔧 Motor/Drip Mechanic', value: 'Drip Irrigation Repair (சொட்டு நீர் பாசன பழுது)' }
           ]
         });
       }
@@ -660,9 +698,9 @@ export function generateFollowUpQuestions(
         ]
       });
     } else if (field === 'required_date') {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const tomorrowDate = new Date(Date.now() + 24 * 3600 * 1000);
-      const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
+      const todayStr = getLocalDateString(0);
+      const tomorrowStr = getLocalDateString(1);
+      const in3DaysStr = getLocalDateString(3);
 
       questions.push({
         field: 'required_date',
@@ -673,7 +711,7 @@ export function generateFollowUpQuestions(
         suggestions: [
           { labelTa: '⚡ இன்று உடனே (Today)', labelEn: '⚡ Today (Immediate)', value: todayStr },
           { labelTa: '📅 நாளை (Tomorrow)', labelEn: '📅 Tomorrow', value: tomorrowStr },
-          { labelTa: '🗓️ 3 நாட்களில் (In 3 Days)', labelEn: '🗓️ In 3 Days', value: new Date(Date.now() + 3 * 24 * 3600 * 1000).toISOString().split('T')[0] }
+          { labelTa: '🗓️ 3 நாட்களில் (In 3 Days)', labelEn: '🗓️ In 3 Days', value: in3DaysStr }
         ]
       });
     }
@@ -694,44 +732,43 @@ export function matchAndRankProviders(
   options: MatchingOptions = {}
 ): ProviderMatchResult[] {
   const providerPool = options.providers || SAMPLE_PROVIDERS;
-  const maxDistance = options.maxDistanceKm || 30; // 30 km radius default
-  const reqCoords = request.location || resolveVillageCoords(request.village);
+  const maxDistance = options.maxDistanceKm || request.radius_km || 30;
+  const reqCategory = request.service_category || request.request_type;
 
-  // 1. HARD FILTER:
-  // Must match category if specified (e.g. labor request only matches labor squads)
+  // 1. Hard category filter
   const categoryFiltered = providerPool.filter((p) => {
-    if (request.request_type && request.request_type !== 'general') {
-      if (p.service_category !== request.request_type) {
+    if (reqCategory && reqCategory !== 'general') {
+      if (p.service_category !== reqCategory) {
         return false;
       }
     }
     return true;
   });
 
+  const reqCoords = request.location || (request.village ? resolveVillageCoords(request.village) : null);
   const results: ProviderMatchResult[] = [];
 
   for (const provider of categoryFiltered) {
-    // 2. Compute Actual Distance
-    const distanceKm = calculateHaversineDistance(
-      reqCoords.lat,
-      reqCoords.lng,
-      provider.coords.lat,
-      provider.coords.lng
-    );
-
-    if (distanceKm > maxDistance) {
-      continue;
+    // 2. Distance Calculation
+    let distanceKm = 0;
+    if (reqCoords) {
+      distanceKm = calculateHaversineDistance(
+        reqCoords.lat,
+        reqCoords.lng,
+        provider.coords.lat,
+        provider.coords.lng
+      );
+      if (distanceKm > maxDistance) {
+        continue;
+      }
+    } else {
+      // Village unknown: assume cluster average 5 km for initial ranking
+      distanceKm = 5.0;
     }
 
-    // 3. WEIGHTED SCORE CALCULATION (Initial Configurable Weights):
-    // Service & skill match: 40%
-    // Distance: 25%
-    // Confirmed availability: 20%
-    // Capacity match: 10%
-    // Verified profile completeness: 5%
-
+    // 3. Weighted Scoring (40/25/20/10/5)
     // A. Skill Match (Max 40)
-    let skill_match = 20; // baseline for category match
+    let skill_match = 20;
     const reasonsTa: string[] = [];
     const reasonsEn: string[] = [];
 
@@ -740,12 +777,19 @@ export function matchAndRankProviders(
       const skillLower = s.toLowerCase();
       return (
         (reqWork.includes('harvest') && skillLower.includes('harvest')) ||
+        (reqWork.includes('அறுவடை') && (skillLower.includes('அறுவடை') || skillLower.includes('harvest'))) ||
         (reqWork.includes('rotavator') && skillLower.includes('rotavator')) ||
+        (reqWork.includes('ரோட்டவேட்டர்') && (skillLower.includes('ரோட்டவேட்டர்') || skillLower.includes('rotavator'))) ||
         (reqWork.includes('drip') && skillLower.includes('drip')) ||
+        (reqWork.includes('சொட்டு நீர்') && (skillLower.includes('சொட்டு நீர்') || skillLower.includes('drip'))) ||
         (reqWork.includes('motor') && skillLower.includes('motor')) ||
+        (reqWork.includes('மோட்டார்') && (skillLower.includes('மோட்டார்') || skillLower.includes('motor'))) ||
         (reqWork.includes('weed') && skillLower.includes('weed')) ||
+        (reqWork.includes('களை') && (skillLower.includes('களை') || skillLower.includes('weed'))) ||
         (reqWork.includes('plough') && skillLower.includes('plough')) ||
-        (reqWork.includes('transport') && skillLower.includes('transport'))
+        (reqWork.includes('உழவு') && (skillLower.includes('உழவு') || skillLower.includes('plough'))) ||
+        (reqWork.includes('transport') && skillLower.includes('transport')) ||
+        (reqWork.includes('சரக்கு') && (skillLower.includes('சரக்கு') || skillLower.includes('transport')))
       );
     });
 
@@ -761,7 +805,11 @@ export function matchAndRankProviders(
 
     // B. Distance Score (Max 25)
     let distance_score = 0;
-    if (distanceKm <= 3.0) {
+    if (!request.village) {
+      distance_score = 15; // Neutral distance score when village is unspecified
+      reasonsTa.push('ஊர் குறிப்பிடப்படவில்லை - தோராய தூரம்');
+      reasonsEn.push('Village unspecified - estimated radius');
+    } else if (distanceKm <= 3.0) {
       distance_score = 25;
       reasonsTa.push(`மிக அருகில்: ${distanceKm} கி.மீ`);
       reasonsEn.push(`Very close: ${distanceKm} km away`);
@@ -781,10 +829,23 @@ export function matchAndRankProviders(
 
     // C. Confirmed Availability (Max 20)
     let availability_score = 0;
+    const isTomorrowReq = request.required_date === getLocalDateString(1);
+    const isTodayReq = request.required_date === getLocalDateString(0);
+
     if (provider.availability_status === 'confirmed') {
-      availability_score = 20;
-      reasonsTa.push('உறுதிப்படுத்தப்பட்ட உடனடி இருப்பு');
-      reasonsEn.push('Confirmed available for this date');
+      if (
+        (isTomorrowReq && provider.availability_date === 'tomorrow') ||
+        (isTodayReq && provider.availability_date === 'today') ||
+        (!request.required_date)
+      ) {
+        availability_score = 20;
+        reasonsTa.push('குறிப்பிட்ட தேதியில் உறுதிப்படுத்தப்பட்ட இருப்பு');
+        reasonsEn.push('Confirmed available on requested date');
+      } else {
+        availability_score = 15;
+        reasonsTa.push('செயலில் உள்ள இருப்பு (தேதி உறுதி தேவை)');
+        reasonsEn.push('Active provider (date confirmation advised)');
+      }
     } else if (provider.availability_status === 'unconfirmed') {
       availability_score = 10;
       reasonsTa.push('அழைத்து உறுதி செய்யப்பட வேண்டும்');
@@ -796,7 +857,7 @@ export function matchAndRankProviders(
     }
 
     // D. Capacity Match (Max 10)
-    let capacity_score = 8; // baseline
+    let capacity_score = 8;
     if (request.quantity && request.quantity > 0) {
       if (provider.capacity_number >= request.quantity) {
         capacity_score = 10;
@@ -838,8 +899,7 @@ export function matchAndRankProviders(
     });
   }
 
-  // Rank providers descending by match score
+  // Sort descending by match score
   results.sort((a, b) => b.match_score - a.match_score);
-
   return results;
 }
