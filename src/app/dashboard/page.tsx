@@ -3,7 +3,6 @@ import { prioritizeProducts } from '@/services/priorityService';
 import ProductCard from '@/components/ProductCard';
 import OrderModal from '@/components/OrderModal';
 import MyFarmBoard from '@/components/MyFarmBoard';
-import OoruConnectBoard from '@/components/OoruConnectBoard';
 import Link from 'next/link';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -132,7 +131,7 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const rawTab = searchParams.get('tab') || 'home';
-  const activeTab = (rawTab === 'vlink' && !enableLayer2) ? 'home' : rawTab;
+  const activeTab = (rawTab === 'vlink' && !enableLayer2) || rawTab === 'ooruconnect' ? 'home' : rawTab;
 
   // Redirect FPO Admin to FPO Console tab by default
   useEffect(() => {
@@ -343,12 +342,7 @@ function DashboardContent() {
               <MyFarmBoard />
             )}
 
-            {/* ========================================================================= */}
-            {/* 0.1 OORUCONNECT DEDICATED TAB */}
-            {/* ========================================================================= */}
-            {activeTab === 'ooruconnect' && (
-              <OoruConnectBoard />
-            )}
+
 
             {/* ========================================================================= */}
             {/* 1. FARMER HOME TAB */}

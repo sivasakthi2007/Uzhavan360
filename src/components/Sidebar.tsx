@@ -38,10 +38,9 @@ export default function Sidebar() {
 
   const activeTab = searchParams.get('tab') || 'home';
 
-  // Primary navigation items (Uzhavan360 + OoruConnect dedicated tab)
+  // Primary navigation items
   const primaryNavItems = [
     { name: language === 'ta' ? 'முகப்பு' : 'Home', icon: Home, path: '/dashboard?tab=home', tabKey: 'home', roles: ['farmer', 'buyer', 'labor', 'vendor', 'delivery'] },
-    { name: language === 'ta' ? '🤝 OoruConnect' : '🤝 OoruConnect', icon: Users, path: '/dashboard?tab=ooruconnect', tabKey: 'ooruconnect', roles: ['farmer', 'buyer', 'labor', 'vendor', 'fpo', 'delivery'] },
     { name: language === 'ta' ? 'FPO கன்சோல்' : 'FPO Console', icon: Users, path: '/dashboard?tab=fpo', tabKey: 'fpo', roles: ['fpo'] },
     { name: language === 'ta' ? 'டிரைவர் கன்சோல்' : 'Driver Console', icon: Truck, path: '/dashboard?tab=driver', tabKey: 'driver', roles: ['delivery'] },
     { name: language === 'ta' ? 'என் பண்ணை' : 'My Farm', icon: Sprout, path: '/dashboard?tab=myfarm', tabKey: 'myfarm', roles: ['farmer'] },
